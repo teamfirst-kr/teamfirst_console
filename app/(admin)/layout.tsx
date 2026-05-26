@@ -1,0 +1,25 @@
+import { AppShell } from "@/components/app-shell";
+import { requireRole } from "@/lib/auth";
+
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user } = await requireRole("admin");
+
+  return (
+    <AppShell
+      title="운영자"
+      email={user.email}
+      nav={[
+        { href: "/admin/dashboard", label: "대시보드" },
+        { href: "/admin/requests", label: "매칭 요청" },
+        { href: "/admin/partners", label: "파트너" },
+        { href: "/admin/meetings", label: "미팅" },
+      ]}
+    >
+      {children}
+    </AppShell>
+  );
+}

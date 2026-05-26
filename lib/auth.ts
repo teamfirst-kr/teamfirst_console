@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 import { createClient } from "@/lib/supabase/server";
 
 export type Role = "client" | "partner" | "admin";
@@ -11,18 +13,55 @@ export async function getCurrentUser() {
 }
 
 export async function getCurrentRole(): Promise<Role | null> {
-  const user = await getCurrentUser();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return null;
-  const role = user.app_metadata?.role;
-  if (role === "client" || role === "partner" || role === "admin") {
-    return role;
-  }
-  return null;
+
+  const { data } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single<{ role: Role }>();
+
+  return data?.role ?? null;
 }
 
+// 로그인 + 역할 일치 보장. 미일치 시 안전한 경로로 리다이렉트.
 export async function requireRole(role: Role) {
-  const current = await getCurrentRole();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(`/login?next=${encodeURIComponent("/")}`);
+  }
+
+  const { data } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single<{ role: Role }>();
+
+  const current = data?.role ?? null;
   if (current !== role) {
-    throw new Error(`Forbidden: ${role} 권한이 필요합니다.`);
+    redirect(roleHome(current));
+  }
+
+  return { user, role: current };
+}
+
+export function roleHome(role: Role | null): string {
+  switch (role) {
+    case "admin":
+      return "/admin/dashboard";
+    case "partner":
+      return "/partner/dashboard";
+    case "client":
+      return "/client/dashboard";
+    default:
+      return "/login";
   }
 }
