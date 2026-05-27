@@ -119,4 +119,29 @@
 - **근거**: 이전 대화 위험요소 ③. 일관성·설명가능성.
 - **영향**: 트리거 도달 전까지 코드 변경 없음. 도입 시 `applications`에 점수 컬럼 또는 별도 `application_scores` 테이블 추가.
 
+## 2026-05-26 — 2주차 시작: UI 레퍼런스 + 파트너 신청 폼
+
+### D-021. UI/UX 레퍼런스 = OnePoint
+- **결정**: 유사 매칭 플랫폼 OnePoint의 UI 패턴을 차용. 단, 컬러는 TeamFirst 정체성(navy `#004AAD` primary, `#111E38` secondary) 유지.
+- **차용 패턴**:
+  1. 다크 사이드바(`bg-secondary`) + 라이트 콘텐츠 영역
+  2. 흰 카드 + 둥근 모서리 + 여유 패딩, 회사명은 primary blue
+  3. 빈 상태: 점선 박스 + 아이콘 원형 배경 + 안내 문구
+  4. 통계 카드: primary 헤더 + 큰 숫자 + 보조 hint
+  5. 후기/태그: blue pill 배지 (`Badge` 컴포넌트)
+  6. 지원서 폼: 섹션 헤더 underline + textarea char counter + 풀폭 primary CTA (4주차 적용)
+  7. 정산 카드: divider row + 우측 정렬 금액 + 강조 합계 (Phase 2 정산 화면에 적용)
+- **근거**: 입증된 양면 매칭 플랫폼의 UI는 학습된 사용자 멘탈 모델이 있어 도입 마찰이 적음.
+- **영향**: `AppShell`을 사이드바 레이아웃으로 리팩토링. `EmptyState`, `Badge` 컴포넌트 도입.
+
+### D-022. /partner/apply는 RLS anon insert 정책에 의존
+- **결정**: 파트너 등록 신청 폼은 미인증 anon 키로 직접 `partners` insert. `partners_insert_anon` 정책이 `status='pending' AND user_id IS NULL`만 허용하므로 안전.
+- **근거**: service_role 우회 최소화 원칙(CLAUDE.md §9.2). 운영자 개입 없이 신청 접수 가능.
+- **영향**: 사업자등록증·포트폴리오 파일 업로드는 별도 PR로 분리. Storage 정책 + multipart 처리가 추가로 필요.
+
+### D-023. 사업자등록번호 정규화
+- **결정**: 입력 시 `000-00-00000` 또는 숫자 10자리 모두 허용. DB 저장 시 하이픈 형식으로 통일.
+- **근거**: `partners.biz_reg_no UNIQUE` 제약 → 표기 차이로 중복 가입 방지.
+- **영향**: `lib/schemas/partner-application.ts` `normalizeBizRegNo()`.
+
 <!-- 새 결정은 아래에 추가 -->
