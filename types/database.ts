@@ -19,6 +19,8 @@ export type PartnerStatus =
   | "suspended"
   | "rejected";
 
+export type ContractStatus = "sent" | "signed" | "expired" | "cancelled";
+
 export type StaffSize = "20명 미만" | "20-50명" | "51-100명" | "100명 이상";
 
 type PartnerRow = {
@@ -105,7 +107,13 @@ export type Database = {
       partners: {
         Row: PartnerRow;
         Insert: PartnerInsert;
-        Update: Partial<PartnerInsert>;
+        Update: Partial<
+          PartnerInsert & {
+            applied_at: string;
+            reviewed_at: string | null;
+            contracted_at: string | null;
+          }
+        >;
         Relationships: [];
       };
       partner_categories: {
@@ -119,12 +127,51 @@ export type Database = {
         Update: Partial<PartnerCategoryInsert>;
         Relationships: [];
       };
+      contracts: {
+        Row: {
+          id: string;
+          partner_id: string;
+          glosign_doc_id: string | null;
+          glosign_url: string | null;
+          signed_pdf_url: string | null;
+          status: ContractStatus;
+          sent_at: string;
+          signed_at: string | null;
+          expires_at: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          partner_id: string;
+          glosign_doc_id?: string | null;
+          glosign_url?: string | null;
+          signed_pdf_url?: string | null;
+          status?: ContractStatus;
+          sent_at?: string;
+          signed_at?: string | null;
+          expires_at?: string | null;
+          notes?: string | null;
+        };
+        Update: Partial<{
+          glosign_doc_id: string | null;
+          glosign_url: string | null;
+          signed_pdf_url: string | null;
+          status: ContractStatus;
+          signed_at: string | null;
+          expires_at: string | null;
+          notes: string | null;
+        }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
     Enums: {
       user_role: UserRole;
       partner_status: PartnerStatus;
+      contract_status: ContractStatus;
     };
   };
 };

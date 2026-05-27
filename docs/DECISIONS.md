@@ -144,4 +144,24 @@
 - **근거**: `partners.biz_reg_no UNIQUE` 제약 → 표기 차이로 중복 가입 방지.
 - **영향**: `lib/schemas/partner-application.ts` `normalizeBizRegNo()`.
 
+## 2026-05-26 — 2주차 진행: 운영자 신청 처리 화면
+
+### D-024. 파트너 상태 전이 워크플로우
+- **결정**: `pending → reviewing → contracted`(또는 `rejected`) 단방향 흐름. 운영자는 다음 액션을 명시적으로 트리거.
+  - `markReviewing`: pending → reviewing
+  - `attachContract`: contracts 행 생성(status=sent), pending이면 reviewing으로 동시 승격
+  - `markContractedAndIssueAccount`: contracts.status=signed로 마감 + partners.status=contracted + auth 계정 발급
+  - `rejectPartner`: pending/reviewing → rejected. 사유는 admin_memo에 저장
+- **근거**: 글로싸인은 수동 발송(CLAUDE.md §10.5)이라 시스템이 자동으로 contracted로 못 넘어감. 운영자가 신호를 줘야 함.
+
+### D-025. 파트너 계정 발급 = service_role 사용 정당화
+- **결정**: `markContractedAndIssueAccount`에서 `createAdminClient()` (service_role)로 `auth.admin.createUser` 호출. 트리거가 `public.users`를 만들고, app_metadata.role='partner'로 명시. 임시 비밀번호는 server action 응답으로 한 번만 운영자에게 노출.
+- **근거**: CLAUDE.md §9.2의 "운영자 알림 일괄 발송 / n8n webhook / 백그라운드 잡"에 해당. 일반 anon/유저 세션으로는 createUser 불가.
+- **영향**: 추후 Resend 붙으면 임시 비번을 운영자 화면에 노출하는 대신 메일로 직접 발송하도록 변경.
+
+### D-026. supabase-js relational select 회피
+- **결정**: `from("partners").select("..., partner_categories(category)")` 같은 중첩 select는 `types/database.ts`의 `Relationships: []`에서 `never`로 추론됨. 별도 쿼리 + Map 매핑으로 우회.
+- **근거**: 자동 생성 타입(`supabase gen types`)으로 갈아끼우면 해결되지만, 그 전까지는 명시적 분리 쿼리가 안전.
+- **영향**: 리스트/상세 페이지 모두 카테고리·계약 별도 fetch. 약간의 N+1 비용이 있으나 운영 화면이라 무시.
+
 <!-- 새 결정은 아래에 추가 -->
