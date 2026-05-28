@@ -33,13 +33,18 @@ export type RequestStatus =
   | "closed_lost"
   | "cancelled";
 
-export type StaffSize = "20명 미만" | "20-50명" | "51-100명" | "100명 이상";
+export type StaffSize =
+  | "1인 대행사"
+  | "2명~5명"
+  | "6명~20명"
+  | "20명~50명"
+  | "50명 이상";
 
 type PartnerRow = {
   id: string;
   user_id: string | null;
   company_name: string;
-  biz_reg_no: string;
+  biz_reg_no: string | null;
   representative: string | null;
   established_year: number | null;
   staff_size: StaffSize | null;
@@ -53,7 +58,9 @@ type PartnerRow = {
   reviewed_at: string | null;
   contracted_at: string | null;
   intro: string | null;
+  specialty: string | null;
   portfolio: Json | null;
+  application: Json | null;
   strengths: string[] | null;
   notable_clients: string[] | null;
   admin_memo: string | null;
@@ -65,7 +72,7 @@ type PartnerInsert = {
   id?: string;
   user_id?: string | null;
   company_name: string;
-  biz_reg_no: string;
+  biz_reg_no?: string | null;
   representative?: string | null;
   established_year?: number | null;
   staff_size?: StaffSize | null;
@@ -76,7 +83,9 @@ type PartnerInsert = {
   address?: string | null;
   status?: PartnerStatus;
   intro?: string | null;
+  specialty?: string | null;
   portfolio?: Json | null;
+  application?: Json | null;
   strengths?: string[] | null;
   notable_clients?: string[] | null;
   admin_memo?: string | null;

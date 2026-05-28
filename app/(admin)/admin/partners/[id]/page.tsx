@@ -42,6 +42,21 @@ const CONTRACT_BADGE: Record<
   cancelled: { label: "취소", variant: "destructive" },
 };
 
+type ApplicationMeta = {
+  budget_ranges?: string[];
+  contract_periods?: string[];
+  performance_based?: boolean;
+  marketing_goals?: string[];
+  kpis?: string[];
+  report_cycles?: string[];
+  meeting_cycles?: string[];
+  tools?: string[];
+  preferred_client_traits?: string | null;
+  avoided_client_traits?: string | null;
+  payment_methods?: string[];
+  fee_agreement?: boolean;
+};
+
 export const dynamic = "force-dynamic";
 
 export default async function AdminPartnerDetailPage({
@@ -55,7 +70,7 @@ export default async function AdminPartnerDetailPage({
   const { data: partner } = await supabase
     .from("partners")
     .select(
-      "id, company_name, biz_reg_no, representative, established_year, staff_size, website, contact_person, contact_email, contact_phone, address, status, applied_at, reviewed_at, contracted_at, intro, strengths, notable_clients, admin_memo, user_id, portfolio",
+      "id, company_name, biz_reg_no, staff_size, website, specialty, contact_person, contact_email, contact_phone, status, applied_at, intro, application, admin_memo, user_id",
     )
     .eq("id", id)
     .single();
@@ -75,33 +90,26 @@ export default async function AdminPartnerDetailPage({
   const badge = STATUS_BADGE[status];
   const categories = categoryRows ?? [];
   const contracts = contractRows ?? [];
+  const meta = (partner.application ?? {}) as ApplicationMeta;
 
-  // 첨부파일 signed URL 생성 (service_role, 10분 유효)
-  const portfolio = (partner.portfolio ?? null) as {
-    business_registration?: string | null;
+  // 첨부파일 signed URL
+  const { data: pf } = await supabase
+    .from("partners")
+    .select("portfolio")
+    .eq("id", id)
+    .single();
+  const portfolio = (pf?.portfolio ?? null) as {
     items?: { name: string; path: string }[];
   } | null;
-  const attachments: { label: string; name: string; url: string }[] = [];
-  if (portfolio) {
+  const attachments: { name: string; url: string }[] = [];
+  if (portfolio?.items?.length) {
     const admin = createAdminClient();
-    const paths: { label: string; name: string; path: string }[] = [];
-    if (portfolio.business_registration) {
-      paths.push({
-        label: "사업자등록증",
-        name: "사업자등록증",
-        path: portfolio.business_registration,
-      });
-    }
-    for (const item of portfolio.items ?? []) {
-      paths.push({ label: "포트폴리오", name: item.name, path: item.path });
-    }
-    for (const p of paths) {
+    for (const item of portfolio.items) {
       const { data: signed } = await admin.storage
         .from("partner-files")
-        .createSignedUrl(p.path, 600);
-      if (signed?.signedUrl) {
-        attachments.push({ label: p.label, name: p.name, url: signed.signedUrl });
-      }
+        .createSignedUrl(item.path, 600);
+      if (signed?.signedUrl)
+        attachments.push({ name: item.name, url: signed.signedUrl });
     }
   }
 
@@ -119,7 +127,7 @@ export default async function AdminPartnerDetailPage({
             {partner.company_name}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {partner.biz_reg_no} · 신청{" "}
+            {partner.specialty ? `${partner.specialty} · ` : ""}신청{" "}
             {format(new Date(partner.applied_at), "yyyy.MM.dd")}
           </p>
         </div>
@@ -130,14 +138,9 @@ export default async function AdminPartnerDetailPage({
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>회사 정보</CardTitle>
+              <CardTitle>회사 / 담당자</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2 text-sm">
-              <Field label="대표자" value={partner.representative} />
-              <Field
-                label="설립 연도"
-                value={partner.established_year?.toString()}
-              />
               <Field label="인원 규모" value={partner.staff_size} />
               <Field
                 label="웹사이트"
@@ -154,29 +157,21 @@ export default async function AdminPartnerDetailPage({
                   ) : null
                 }
               />
-              <Field label="주소" value={partner.address} span={2} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>담당자</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-2 text-sm">
-              <Field label="이름" value={partner.contact_person} />
+              <Field label="담당자" value={partner.contact_person} />
               <Field label="연락처" value={partner.contact_phone} />
-              <Field label="이메일" value={partner.contact_email} span={2} />
+              <Field label="이메일" value={partner.contact_email} />
+              <Field label="사업자등록번호" value={partner.biz_reg_no} />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>전문 분야 및 강점</CardTitle>
+              <CardTitle>광고 매체 및 소개</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               <div>
                 <div className="text-xs text-muted-foreground mb-1.5">
-                  전문 분야
+                  광고대행 가능 매체
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {categories.length === 0 ? (
@@ -192,36 +187,46 @@ export default async function AdminPartnerDetailPage({
               </div>
               <div>
                 <div className="text-xs text-muted-foreground mb-1.5">
-                  강점 키워드
+                  마케팅 능력 소개
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  {(partner.strengths ?? []).length === 0 ? (
-                    <span className="text-muted-foreground">-</span>
-                  ) : (
-                    (partner.strengths ?? []).map((s: string) => (
-                      <Badge key={s} variant="muted">
-                        {s}
-                      </Badge>
-                    ))
-                  )}
-                </div>
+                <p className="whitespace-pre-wrap text-foreground">
+                  {partner.intro || "-"}
+                </p>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>매칭 희망사항</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <TagRow label="희망 예산대" values={meta.budget_ranges} />
+              <TagRow label="희망 계약기간" values={meta.contract_periods} />
+              <Field
+                label="성과형 보수(CPA)"
+                value={meta.performance_based ? "가능" : "불가/미선택"}
+              />
+              <TagRow label="마케팅 목표" values={meta.marketing_goals} />
+              <TagRow label="중요 KPI" values={meta.kpis} />
+              <TagRow label="리포트 주기" values={meta.report_cycles} />
+              <TagRow label="미팅 주기" values={meta.meeting_cycles} />
+              <TagRow label="운영 툴" values={meta.tools} />
+              <TagRow label="희망 계약 방식" values={meta.payment_methods} />
               <div>
                 <div className="text-xs text-muted-foreground mb-1.5">
-                  주요 클라이언트
+                  희망 광고주 특징
                 </div>
-                <p className="text-foreground">
-                  {(partner.notable_clients ?? []).length === 0
-                    ? "-"
-                    : (partner.notable_clients ?? []).join(", ")}
+                <p className="whitespace-pre-wrap text-foreground">
+                  {meta.preferred_client_traits || "-"}
                 </p>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground mb-1.5">
-                  소개글
+                  비희망 광고주 특징
                 </div>
                 <p className="whitespace-pre-wrap text-foreground">
-                  {partner.intro || "-"}
+                  {meta.avoided_client_traits || "-"}
                 </p>
               </div>
             </CardContent>
@@ -246,10 +251,7 @@ export default async function AdminPartnerDetailPage({
                       key={a.url}
                       className="flex items-center justify-between rounded-lg border bg-muted/30 p-3 text-sm"
                     >
-                      <div>
-                        <Badge variant="muted">{a.label}</Badge>
-                        <span className="ml-2 text-foreground">{a.name}</span>
-                      </div>
+                      <span className="text-foreground">{a.name}</span>
                       <a
                         href={a.url}
                         target="_blank"
@@ -280,7 +282,7 @@ export default async function AdminPartnerDetailPage({
               ) : (
                 <ul className="space-y-3">
                   {contracts.map((c) => {
-                    const cb = CONTRACT_BADGE[c.status];
+                    const cb = CONTRACT_BADGE[c.status as ContractStatus];
                     return (
                       <li
                         key={c.id}
@@ -289,8 +291,7 @@ export default async function AdminPartnerDetailPage({
                         <div className="flex items-center justify-between">
                           <Badge variant={cb.variant}>{cb.label}</Badge>
                           <span className="text-xs text-muted-foreground">
-                            발송{" "}
-                            {format(new Date(c.sent_at), "yyyy.MM.dd")}
+                            발송 {format(new Date(c.sent_at), "yyyy.MM.dd")}
                           </span>
                         </div>
                         {c.glosign_url ? (
@@ -304,9 +305,7 @@ export default async function AdminPartnerDetailPage({
                           </a>
                         ) : null}
                         {c.notes ? (
-                          <p className="mt-2 text-muted-foreground">
-                            {c.notes}
-                          </p>
+                          <p className="mt-2 text-muted-foreground">{c.notes}</p>
                         ) : null}
                       </li>
                     );
@@ -343,16 +342,33 @@ export default async function AdminPartnerDetailPage({
 function Field({
   label,
   value,
-  span,
 }: {
   label: string;
   value: React.ReactNode;
-  span?: number;
 }) {
   return (
-    <div className={span === 2 ? "sm:col-span-2" : undefined}>
+    <div>
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className="mt-1 text-foreground">{value || "-"}</div>
+    </div>
+  );
+}
+
+function TagRow({ label, values }: { label: string; values?: string[] }) {
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground mb-1.5">{label}</div>
+      <div className="flex flex-wrap gap-1">
+        {!values || values.length === 0 ? (
+          <span className="text-muted-foreground">-</span>
+        ) : (
+          values.map((v) => (
+            <Badge key={v} variant="muted">
+              {v}
+            </Badge>
+          ))
+        )}
+      </div>
     </div>
   );
 }

@@ -1,76 +1,155 @@
 import { z } from "zod";
 
+// 광고대행 가능 매체 — RFP 매칭의 핵심 기준 (partner_categories에 저장)
 export const PARTNER_CATEGORIES = [
-  { value: "performance", label: "퍼포먼스" },
-  { value: "branding", label: "브랜딩" },
-  { value: "sns", label: "SNS" },
-  { value: "search", label: "검색광고" },
-  { value: "youtube", label: "유튜브" },
-  { value: "influencer", label: "인플루언서" },
+  { value: "naver", label: "네이버 SA & GFA" },
+  { value: "kakao", label: "카카오 SA & DA" },
+  { value: "google", label: "Google Ads" },
+  { value: "meta", label: "META Ads" },
+  { value: "tiktok", label: "틱톡" },
+  { value: "network", label: "네트워크 채널 (타겟팅게이츠/모비온/크리테오 등)" },
+  { value: "press", label: "언론송출 광고" },
+  { value: "ooh", label: "옥외광고" },
+  { value: "viral", label: "바이럴마케팅" },
+  { value: "influencer", label: "인플루언서 마케팅 (공동구매 포함)" },
+  { value: "shortform", label: "숏폼 마케팅 (영상기획 & 제작)" },
 ] as const;
 
 export const STAFF_SIZE_OPTIONS = [
-  "20명 미만",
-  "20-50명",
-  "51-100명",
-  "100명 이상",
+  "1인 대행사",
+  "2명~5명",
+  "6명~20명",
+  "20명~50명",
+  "50명 이상",
 ] as const;
 
-// 사업자등록번호 표기 정규화: 숫자 10자리 또는 'XXX-XX-XXXXX'
-const bizRegNoRegex = /^(\d{3}-?\d{2}-?\d{5})$/;
+export const BUDGET_RANGE_OPTIONS = [
+  "상관없음",
+  "300만원 이상",
+  "500만원 이상",
+  "1,000만원 이상",
+  "3,000만원 이상",
+  "5,000만원 이상",
+] as const;
+
+export const CONTRACT_PERIOD_OPTIONS = [
+  "상관없음",
+  "3개월 미만 or 프로젝트성",
+  "1년 미만 단기대행",
+  "연간대행",
+  "장기대행",
+] as const;
+
+export const MARKETING_GOAL_OPTIONS = [
+  "매출액 증대",
+  "신규 고객 확보",
+  "재구매율 향상",
+  "브랜드 인지도 강화",
+  "앱 설치",
+  "회원가입",
+  "SNS 활성화",
+  "기타",
+] as const;
+
+export const KPI_OPTIONS = [
+  "ROAS or ROI",
+  "CPA",
+  "CTR",
+  "전환수",
+  "앱 설치 수",
+  "SNS 팔로워 증가",
+  "콘텐츠 조회수",
+] as const;
+
+export const REPORT_CYCLE_OPTIONS = ["주간", "월간", "분기", "연간"] as const;
+
+export const MEETING_CYCLE_OPTIONS = [
+  "주간",
+  "월간",
+  "분기",
+  "연간",
+  "별도 요청시 진행",
+] as const;
+
+export const TOOL_OPTIONS = [
+  "GA4",
+  "GTM (구글 태그 매니저)",
+  "CRM 툴",
+  "MMP 툴",
+  "해당없음 또는 기타",
+] as const;
+
+export const PAYMENT_METHOD_OPTIONS = [
+  "공식광고 대행 or 대대행 (무료대행)",
+  "월 광고비용의 일정 비율(%) 대행비용 지급",
+  "월 관리비 정액제",
+  "대행기간 관리비용 선지급 방식",
+  "대행사측 광고비 선결제, 이후 광고비용 + 대행비용 지불",
+] as const;
+
+const optionalText = (max: number) =>
+  z.string().max(max).optional().or(z.literal("").transform(() => undefined));
 
 export const partnerApplicationSchema = z.object({
-  company_name: z.string().min(1, "회사명을 입력해주세요.").max(200),
-  biz_reg_no: z
-    .string()
-    .regex(bizRegNoRegex, "사업자등록번호 형식이 올바르지 않습니다. (000-00-00000)"),
-  representative: z.string().max(50).optional(),
-  established_year: z
-    .union([
-      z.coerce
-        .number()
-        .int()
-        .min(1900, "올바른 연도를 입력해주세요.")
-        .max(new Date().getFullYear(), "올바른 연도를 입력해주세요."),
-      z.literal("").transform(() => undefined),
-    ])
-    .optional(),
-  staff_size: z.enum(STAFF_SIZE_OPTIONS).optional(),
+  // 1. 회사 기본정보
+  company_name: z.string().min(1, "대행사명을 입력해주세요.").max(200),
+  contact_person: z.string().min(1, "담당자 성함/직책을 입력해주세요.").max(100),
+  contact_email: z.string().email("올바른 이메일을 입력해주세요."),
+  contact_phone: z.string().min(1, "직통 연락처를 입력해주세요.").max(30),
   website: z
     .union([z.string().url("올바른 URL을 입력해주세요."), z.literal("")])
     .optional(),
-  contact_person: z.string().max(50).optional(),
-  contact_email: z.string().email("올바른 이메일을 입력해주세요."),
-  contact_phone: z.string().max(30).optional(),
-  address: z.string().max(200).optional(),
-  intro: z.string().max(2000).optional(),
-  strengths: z.string().max(500).optional(), // 콤마 구분 입력 → 서버에서 split
-  notable_clients: z.string().max(1000).optional(), // 콤마 구분 입력
+  specialty: optionalText(300),
+  staff_size: z.enum(STAFF_SIZE_OPTIONS, {
+    message: "직원수를 선택해주세요.",
+  }),
+  intro: optionalText(3000),
+
+  // 광고대행 가능 매체 (partner_categories)
   categories: z
     .array(z.enum(PARTNER_CATEGORIES.map((c) => c.value) as [string, ...string[]]))
-    .min(1, "전문 분야를 한 개 이상 선택해주세요."),
-  privacy_consent: z
-    .literal(true, {
-      message: "개인정보 처리방침에 동의해주세요.",
-    }),
+    .min(1, "광고대행 가능 매체를 한 개 이상 선택해주세요."),
+
+  // 매칭 희망사항 (application JSONB)
+  budget_ranges: z.array(z.enum(BUDGET_RANGE_OPTIONS)).optional(),
+  contract_periods: z.array(z.enum(CONTRACT_PERIOD_OPTIONS)).optional(),
+  performance_based: z.boolean().optional(),
+  marketing_goals: z.array(z.enum(MARKETING_GOAL_OPTIONS)).optional(),
+  kpis: z.array(z.enum(KPI_OPTIONS)).optional(),
+  report_cycles: z.array(z.enum(REPORT_CYCLE_OPTIONS)).optional(),
+  meeting_cycles: z.array(z.enum(MEETING_CYCLE_OPTIONS)).optional(),
+  tools: z.array(z.enum(TOOL_OPTIONS)).optional(),
+  preferred_client_traits: optionalText(1000),
+  avoided_client_traits: optionalText(1000),
+  payment_methods: z.array(z.enum(PAYMENT_METHOD_OPTIONS)).optional(),
+
+  // 동의
+  fee_agreement: z.literal(true, {
+    message: "수수료 발생에 대한 동의가 필요합니다.",
+  }),
+  privacy_consent: z.literal(true, {
+    message: "개인정보 처리방침에 동의해주세요.",
+  }),
 });
 
 export type PartnerApplicationInput = z.input<typeof partnerApplicationSchema>;
 export type PartnerApplicationOutput = z.output<typeof partnerApplicationSchema>;
 
-export function normalizeBizRegNo(value: string): string {
-  const digits = value.replace(/\D/g, "");
-  if (digits.length !== 10) return value;
-  return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
-}
-
-export function splitCsv(value: string | undefined): string[] {
-  if (!value) return [];
-  return value
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
+// application JSONB로 직렬화되는 매칭 희망사항 구조
+export type PartnerApplicationMeta = {
+  budget_ranges: string[];
+  contract_periods: string[];
+  performance_based: boolean;
+  marketing_goals: string[];
+  kpis: string[];
+  report_cycles: string[];
+  meeting_cycles: string[];
+  tools: string[];
+  preferred_client_traits: string | null;
+  avoided_client_traits: string | null;
+  payment_methods: string[];
+  fee_agreement: boolean;
+};
 
 // 파일 업로드 제약
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -80,23 +159,23 @@ export const ALLOWED_FILE_TYPES = [
   "image/jpeg",
   "image/jpg",
   "image/webp",
+  "application/zip",
+  "application/x-zip-compressed",
 ];
 export const MAX_PORTFOLIO_FILES = 5;
 
 export function validateUploadFile(file: File): string | null {
-  if (file.size === 0) return null; // 빈 입력은 무시
+  if (file.size === 0) return null;
   if (file.size > MAX_FILE_SIZE) {
     return `${file.name}: 파일 크기는 10MB 이하여야 합니다.`;
   }
   if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-    return `${file.name}: PDF 또는 이미지(PNG/JPG/WEBP)만 업로드할 수 있습니다.`;
+    return `${file.name}: PDF·이미지·ZIP만 업로드할 수 있습니다.`;
   }
   return null;
 }
 
 export function sanitizeFileName(name: string): string {
-  // 경로/특수문자 제거, 한글·영문·숫자·일부 기호만 유지
   const base = name.replace(/[^\w.\-가-힣]/g, "_");
   return base.slice(0, 120) || "file";
 }
-
