@@ -71,3 +71,32 @@ export function splitCsv(value: string | undefined): string[] {
     .map((s) => s.trim())
     .filter(Boolean);
 }
+
+// 파일 업로드 제약
+export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+export const ALLOWED_FILE_TYPES = [
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+];
+export const MAX_PORTFOLIO_FILES = 5;
+
+export function validateUploadFile(file: File): string | null {
+  if (file.size === 0) return null; // 빈 입력은 무시
+  if (file.size > MAX_FILE_SIZE) {
+    return `${file.name}: 파일 크기는 10MB 이하여야 합니다.`;
+  }
+  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    return `${file.name}: PDF 또는 이미지(PNG/JPG/WEBP)만 업로드할 수 있습니다.`;
+  }
+  return null;
+}
+
+export function sanitizeFileName(name: string): string {
+  // 경로/특수문자 제거, 한글·영문·숫자·일부 기호만 유지
+  const base = name.replace(/[^\w.\-가-힣]/g, "_");
+  return base.slice(0, 120) || "file";
+}
+

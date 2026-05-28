@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PARTNER_CATEGORIES } from "@/lib/schemas/partner-application";
 import type { ContractStatus, PartnerStatus } from "@/types/database";
 
@@ -54,7 +55,7 @@ export default async function AdminPartnerDetailPage({
   const { data: partner } = await supabase
     .from("partners")
     .select(
-      "id, company_name, biz_reg_no, representative, established_year, staff_size, website, contact_person, contact_email, contact_phone, address, status, applied_at, reviewed_at, contracted_at, intro, strengths, notable_clients, admin_memo, user_id",
+      "id, company_name, biz_reg_no, representative, established_year, staff_size, website, contact_person, contact_email, contact_phone, address, status, applied_at, reviewed_at, contracted_at, intro, strengths, notable_clients, admin_memo, user_id, portfolio",
     )
     .eq("id", id)
     .single();
@@ -74,6 +75,35 @@ export default async function AdminPartnerDetailPage({
   const badge = STATUS_BADGE[status];
   const categories = categoryRows ?? [];
   const contracts = contractRows ?? [];
+
+  // 첨부파일 signed URL 생성 (service_role, 10분 유효)
+  const portfolio = (partner.portfolio ?? null) as {
+    business_registration?: string | null;
+    items?: { name: string; path: string }[];
+  } | null;
+  const attachments: { label: string; name: string; url: string }[] = [];
+  if (portfolio) {
+    const admin = createAdminClient();
+    const paths: { label: string; name: string; path: string }[] = [];
+    if (portfolio.business_registration) {
+      paths.push({
+        label: "사업자등록증",
+        name: "사업자등록증",
+        path: portfolio.business_registration,
+      });
+    }
+    for (const item of portfolio.items ?? []) {
+      paths.push({ label: "포트폴리오", name: item.name, path: item.path });
+    }
+    for (const p of paths) {
+      const { data: signed } = await admin.storage
+        .from("partner-files")
+        .createSignedUrl(p.path, 600);
+      if (signed?.signedUrl) {
+        attachments.push({ label: p.label, name: p.name, url: signed.signedUrl });
+      }
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -194,6 +224,44 @@ export default async function AdminPartnerDetailPage({
                   {partner.intro || "-"}
                 </p>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>첨부 파일</CardTitle>
+              <CardDescription>
+                다운로드 링크는 10분간 유효합니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {attachments.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  첨부된 파일이 없습니다.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {attachments.map((a) => (
+                    <li
+                      key={a.url}
+                      className="flex items-center justify-between rounded-lg border bg-muted/30 p-3 text-sm"
+                    >
+                      <div>
+                        <Badge variant="muted">{a.label}</Badge>
+                        <span className="ml-2 text-foreground">{a.name}</span>
+                      </div>
+                      <a
+                        href={a.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-medium text-primary hover:underline"
+                      >
+                        다운로드
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </CardContent>
           </Card>
 

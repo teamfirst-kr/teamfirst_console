@@ -3,11 +3,16 @@
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  MAX_PORTFOLIO_FILES,
   normalizeBizRegNo,
   partnerApplicationSchema,
+  sanitizeFileName,
   splitCsv,
+  validateUploadFile,
 } from "@/lib/schemas/partner-application";
+import type { Json } from "@/types/database";
 
 export type ApplyState =
   | { error: string; fieldErrors?: Record<string, string[]> }
@@ -43,6 +48,26 @@ export async function submitPartnerApplication(
       (fieldErrors[key] ||= []).push(issue.message);
     }
     return { error: "입력값을 다시 확인해주세요.", fieldErrors };
+  }
+
+  // 파일 추출 + 검증 (insert 전에 먼저 막아 불완전 데이터 방지)
+  const bizRegFile = formData.get("biz_reg_file");
+  const portfolioFiles = formData
+    .getAll("portfolio_files")
+    .filter((f): f is File => f instanceof File && f.size > 0);
+
+  const filesToCheck: File[] = [];
+  if (bizRegFile instanceof File && bizRegFile.size > 0) {
+    filesToCheck.push(bizRegFile);
+  }
+  filesToCheck.push(...portfolioFiles);
+
+  if (portfolioFiles.length > MAX_PORTFOLIO_FILES) {
+    return { error: `포트폴리오는 최대 ${MAX_PORTFOLIO_FILES}개까지 첨부할 수 있습니다.` };
+  }
+  for (const file of filesToCheck) {
+    const fileError = validateUploadFile(file);
+    if (fileError) return { error: fileError };
   }
 
   const data = parsed.data;
@@ -103,6 +128,40 @@ export async function submitPartnerApplication(
           "등록은 접수됐지만 카테고리 저장에 실패했습니다. 운영자에게 문의해주세요.",
       };
     }
+  }
+
+  // 파일 업로드: 익명 사용자이므로 service_role로 서버에서 처리.
+  // 업로드 실패는 신청 자체를 무효화하지 않고 운영자가 별도 요청하도록 둔다.
+  if (filesToCheck.length > 0) {
+    const admin = createAdminClient();
+    const portfolioItems: { name: string; path: string }[] = [];
+    let bizRegPath: string | null = null;
+
+    if (bizRegFile instanceof File && bizRegFile.size > 0) {
+      const path = `${inserted.id}/biz-reg/${sanitizeFileName(bizRegFile.name)}`;
+      const { error } = await admin.storage
+        .from("partner-files")
+        .upload(path, bizRegFile, { upsert: true, contentType: bizRegFile.type });
+      if (!error) bizRegPath = path;
+    }
+
+    for (const file of portfolioFiles) {
+      const path = `${inserted.id}/portfolio/${sanitizeFileName(file.name)}`;
+      const { error } = await admin.storage
+        .from("partner-files")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (!error) portfolioItems.push({ name: file.name, path });
+    }
+
+    const portfolio = {
+      business_registration: bizRegPath,
+      items: portfolioItems,
+    } satisfies Record<string, Json>;
+
+    await admin
+      .from("partners")
+      .update({ portfolio })
+      .eq("id", inserted.id);
   }
 
   redirect("/partner/apply/success");

@@ -164,4 +164,16 @@
 - **근거**: 자동 생성 타입(`supabase gen types`)으로 갈아끼우면 해결되지만, 그 전까지는 명시적 분리 쿼리가 안전.
 - **영향**: 리스트/상세 페이지 모두 카테고리·계약 별도 fetch. 약간의 N+1 비용이 있으나 운영 화면이라 무시.
 
+## 2026-05-26 — 2주차: 파일 업로드
+
+### D-027. partner-files 버킷 = private + service_role 전용 접근
+- **결정**: Storage 버킷 `partner-files`는 private. 익명 사용자가 신청하므로 업로드는 서버 액션에서 service_role로 처리. 운영자 다운로드도 service_role로 signed URL(10분) 생성.
+- **근거**: 익명 anon 키로 Storage 직접 업로드하려면 광범위한 insert 정책이 필요해 위험. 서버 경유가 안전하고 경로를 `{partner_id}/...`로 강제 가능.
+- **영향**: `db/migrations/004_storage.sql` 버킷 생성만. storage.objects RLS 정책 불필요(service_role 우회). `next.config.ts` serverActions bodySizeLimit 15mb.
+
+### D-028. 첨부 경로는 partners.portfolio(jsonb)에 저장
+- **결정**: 별도 파일 테이블 없이 `partners.portfolio = { business_registration: path, items: [{name, path}] }`로 저장.
+- **근거**: MVP 단계에서 파일 메타가 단순. 스키마 변경 없이 기존 jsonb 컬럼 활용.
+- **영향**: 파일당 최대 10MB, 포트폴리오 최대 5개, PDF·이미지만. 업로드 실패는 신청을 무효화하지 않고 운영자가 수동 요청.
+
 <!-- 새 결정은 아래에 추가 -->

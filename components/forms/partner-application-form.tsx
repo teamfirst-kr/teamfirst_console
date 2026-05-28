@@ -199,6 +199,42 @@ export function PartnerApplicationForm() {
         </CardContent>
       </Card>
 
+      {/* 첨부 파일 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>첨부 파일</CardTitle>
+          <CardDescription>
+            PDF 또는 이미지(PNG/JPG/WEBP), 파일당 최대 10MB.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="biz_reg_file">사업자등록증</Label>
+            <Input
+              id="biz_reg_file"
+              name="biz_reg_file"
+              type="file"
+              accept=".pdf,image/png,image/jpeg,image/webp"
+              className="cursor-pointer file:mr-3 file:rounded file:border-0 file:bg-muted file:px-3 file:py-1 file:text-sm"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="portfolio_files">포트폴리오 (최대 5개)</Label>
+            <Input
+              id="portfolio_files"
+              name="portfolio_files"
+              type="file"
+              multiple
+              accept=".pdf,image/png,image/jpeg,image/webp"
+              className="cursor-pointer file:mr-3 file:rounded file:border-0 file:bg-muted file:px-3 file:py-1 file:text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              대표 사례 소개서, 성과 리포트 등을 첨부해주세요.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* 동의 + 제출 */}
       <Card>
         <CardContent className="pt-6 space-y-4">
@@ -215,10 +251,6 @@ export function PartnerApplicationForm() {
             </span>
           </label>
           <FieldError messages={errors.privacy_consent} />
-          <p className="text-xs text-muted-foreground">
-            사업자등록증, 포트폴리오 파일은 입점 검토 단계에서 운영자가 별도로
-            요청드립니다.
-          </p>
         </CardContent>
         <CardFooter className="flex flex-col gap-3 items-stretch">
           {state?.error ? (
