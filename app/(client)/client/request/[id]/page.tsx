@@ -18,6 +18,7 @@ import {
 import type { RequestStatus } from "@/types/database";
 
 import { CandidateCards, type CandidateView } from "./candidate-cards";
+import { SpendSection, type SpendRow } from "./spend-section";
 
 const MEDIA_LABEL = Object.fromEntries(REQUEST_MEDIA.map((m) => [m.value, m.label]));
 
@@ -70,6 +71,23 @@ export default async function ClientRequestDetailPage({
   const appById = new Map((candApps ?? []).map((a) => [a.id, a]));
   const partnerById = new Map((candPartners ?? []).map((p) => [p.id, p]));
 
+  // 분석권한 부여 현황 (candidate_id → platform[])
+  const candidateIds = (candidateRows ?? []).map((c) => c.id);
+  const { data: grants } = candidateIds.length
+    ? await supabase
+        .from("access_grants")
+        .select("candidate_id, platform, grant_type, status")
+        .in("candidate_id", candidateIds)
+        .eq("grant_type", "analysis")
+    : { data: [] as { candidate_id: string; platform: string; grant_type: string; status: string }[] };
+  const grantsByCandidate = new Map<string, string[]>();
+  for (const g of grants ?? []) {
+    if (g.status === "revoked") continue;
+    const list = grantsByCandidate.get(g.candidate_id) ?? [];
+    list.push(g.platform);
+    grantsByCandidate.set(g.candidate_id, list);
+  }
+
   const candidates: CandidateView[] = (candidateRows ?? []).map((c) => {
     const app = appById.get(c.application_id);
     const proposal = (app?.proposal ?? {}) as {
@@ -92,8 +110,19 @@ export default async function ClientRequestDetailPage({
       differentiation: proposal.differentiation ?? null,
       quote: app?.quote_monthly ?? null,
       startAvailable: app?.start_available ?? null,
+      grantedPlatforms: grantsByCandidate.get(c.id) ?? [],
     };
   });
+
+  // 광고비 신고 이력
+  const { data: spendRows } = await supabase
+    .from("ad_spend_history")
+    .select("period_yearmonth, platform_amounts")
+    .eq("request_id", id);
+  const spend: SpendRow[] = (spendRows ?? []).map((s) => ({
+    period: s.period_yearmonth,
+    amounts: (s.platform_amounts ?? {}) as Record<string, number>,
+  }));
 
   const brief = (request.brief ?? {}) as MatchingBrief;
   const status = request.status as RequestStatus;
@@ -133,6 +162,8 @@ export default async function ClientRequestDetailPage({
       </div>
 
       <CandidateCards requestId={request.id} candidates={candidates} />
+
+      <SpendSection requestId={request.id} existing={spend} />
 
       <Card>
         <CardHeader>

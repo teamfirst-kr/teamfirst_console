@@ -37,6 +37,24 @@ export type CandidateStatus =
   | "won"
   | "lost";
 
+export type AccessGrantType = "analysis" | "management";
+
+export type AccessGrantStatus =
+  | "requested"
+  | "consented"
+  | "granted"
+  | "revoked"
+  | "expired";
+
+export type AdPlatform =
+  | "naver"
+  | "kakao"
+  | "google"
+  | "meta"
+  | "tiktok"
+  | "youtube"
+  | "other";
+
 export type RequestStatus =
   | "draft"
   | "submitted"
@@ -372,6 +390,68 @@ export type Database = {
           status: CandidateStatus;
           recommendation_reason: string | null;
           viewed_at: string | null;
+        }>;
+        Relationships: [];
+      };
+      access_grants: {
+        Row: {
+          id: string;
+          candidate_id: string;
+          grant_type: AccessGrantType;
+          platform: AdPlatform;
+          account_id: string | null;
+          status: AccessGrantStatus;
+          requested_at: string;
+          consented_at: string | null;
+          granted_at: string | null;
+          revoked_at: string | null;
+          notes: string | null;
+        };
+        Insert: {
+          id?: string;
+          candidate_id: string;
+          grant_type: AccessGrantType;
+          platform: AdPlatform;
+          account_id?: string | null;
+          status?: AccessGrantStatus;
+          requested_at?: string;
+          consented_at?: string | null;
+          granted_at?: string | null;
+          revoked_at?: string | null;
+          notes?: string | null;
+        };
+        Update: Partial<{
+          status: AccessGrantStatus;
+          account_id: string | null;
+          consented_at: string | null;
+          granted_at: string | null;
+          revoked_at: string | null;
+          notes: string | null;
+        }>;
+        Relationships: [];
+      };
+      ad_spend_history: {
+        Row: {
+          id: string;
+          candidate_id: string | null;
+          request_id: string;
+          period_yearmonth: string;
+          platform_amounts: Json;
+          proof_url: string | null;
+          uploaded_at: string;
+        };
+        Insert: {
+          id?: string;
+          candidate_id?: string | null;
+          request_id: string;
+          period_yearmonth: string;
+          platform_amounts: Json;
+          proof_url?: string | null;
+          uploaded_at?: string;
+        };
+        Update: Partial<{
+          platform_amounts: Json;
+          proof_url: string | null;
         }>;
         Relationships: [];
       };

@@ -210,4 +210,19 @@
 - **근거**: 견적/시작일은 비교·정렬에 자주 쓰여 컬럼화. 서술형은 JSONB.
 - **영향**: 운영자 요청 상세에 지원 대행사 비교 카드(견적·제안·팀·차별점). 상위 3개 선정 UI는 5주차.
 
+## 2026-05-26 — 5주차: 후보 선정·분석권한·광고비
+
+### D-035. 상위 3개사 선정 = candidates 재생성 + 지원서 상태 갱신
+- **결정**: 운영자가 선택을 확정하면 기존 candidates 삭제 후 rank 순으로 재생성(재선정 허용). 선정=applications.shortlisted, 미선정=rejected. 요청 상태 candidates_sent. 선정/미선정 통보 메일 자동 발송(D-018 위험요소 반영).
+- **근거**: 운영자 큐레이션(CLAUDE.md §4.1). MAX_CANDIDATES=3 고정.
+
+### D-036. 분석권한은 매체별 access_grants(analysis) 행
+- **결정**: 광고주가 관심(또는 미팅예정) 후보에게 매체(ad_platform)별로 분석권한 부여. `access_grants(grant_type='analysis', status='granted', consented_at/granted_at)`. 재부여는 (candidate_id,grant_type,platform) 유니크로 중복 무시.
+- **근거**: CLAUDE.md §4.1 — 분석권한은 미팅 전 광고주 동의로 임시 부여. 관리권한(management)과 분리.
+- **영향**: 파트너는 RLS ash_partner_view로 interested/meeting_set/won 후보일 때 ad_spend_history 열람.
+
+### D-037. 광고비 신고 = ad_spend_history 월별 upsert
+- **결정**: 광고주가 요청 상세에서 월별(YYYY-MM) 매체별 소진액을 입력 → `ad_spend_history` upsert(request_id+period 유니크). proof 파일은 매칭 요청 단계의 brief.ad_spend_proof로 이미 수집.
+- **근거**: 5주차 분석용. Phase 2 정산의 월 소진액 추적 기반 데이터 축적.
+
 <!-- 새 결정은 아래에 추가 -->
