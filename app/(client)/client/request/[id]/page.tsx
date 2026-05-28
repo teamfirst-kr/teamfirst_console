@@ -88,6 +88,17 @@ export default async function ClientRequestDetailPage({
     grantsByCandidate.set(g.candidate_id, list);
   }
 
+  // 미팅 (candidate_id → meeting)
+  const { data: meetingRows } = candidateIds.length
+    ? await supabase
+        .from("meetings")
+        .select("candidate_id, status, proposed_slots, scheduled_at, meet_url")
+        .in("candidate_id", candidateIds)
+    : { data: [] as { candidate_id: string; status: string; proposed_slots: string[] | null; scheduled_at: string | null; meet_url: string | null }[] };
+  const meetingByCandidate = new Map(
+    (meetingRows ?? []).map((m) => [m.candidate_id, m]),
+  );
+
   const candidates: CandidateView[] = (candidateRows ?? []).map((c) => {
     const app = appById.get(c.application_id);
     const proposal = (app?.proposal ?? {}) as {
@@ -111,6 +122,16 @@ export default async function ClientRequestDetailPage({
       quote: app?.quote_monthly ?? null,
       startAvailable: app?.start_available ?? null,
       grantedPlatforms: grantsByCandidate.get(c.id) ?? [],
+      meeting: (() => {
+        const m = meetingByCandidate.get(c.id);
+        if (!m) return null;
+        return {
+          status: m.status,
+          proposedSlots: m.proposed_slots ?? [],
+          scheduledAt: m.scheduled_at,
+          meetUrl: m.meet_url,
+        };
+      })(),
     };
   });
 

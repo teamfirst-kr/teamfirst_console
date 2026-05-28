@@ -14,7 +14,17 @@ import {
 import { CANDIDATE_STATUS_LABEL } from "@/lib/schemas/candidate";
 import { AD_PLATFORM_OPTIONS } from "@/lib/schemas/ad-spend";
 
+import { Input } from "@/components/ui/input";
+
 import { grantAnalysisAccess, setCandidateInterest } from "./candidate-actions";
+import { proposeMeeting } from "./meeting-actions";
+
+export type CandidateMeeting = {
+  status: string;
+  proposedSlots: string[];
+  scheduledAt: string | null;
+  meetUrl: string | null;
+};
 
 export type CandidateView = {
   id: string;
@@ -30,7 +40,16 @@ export type CandidateView = {
   quote: number | null;
   startAvailable: string | null;
   grantedPlatforms: string[];
+  meeting: CandidateMeeting | null;
 };
+
+function fmtKst(iso: string): string {
+  return new Date(iso).toLocaleString("ko-KR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Seoul",
+  });
+}
 
 export function CandidateCards({
   requestId,
@@ -153,12 +172,124 @@ function CandidateItem({
       </div>
 
       {status === "interested" || status === "meeting_set" ? (
-        <AnalysisGrant
-          candidateId={candidate.id}
-          requestId={requestId}
-          granted={candidate.grantedPlatforms}
-        />
+        <>
+          <AnalysisGrant
+            candidateId={candidate.id}
+            requestId={requestId}
+            granted={candidate.grantedPlatforms}
+          />
+          <MeetingBlock
+            candidateId={candidate.id}
+            requestId={requestId}
+            meeting={candidate.meeting}
+          />
+        </>
       ) : null}
+    </div>
+  );
+}
+
+function MeetingBlock({
+  candidateId,
+  requestId,
+  meeting,
+}: {
+  candidateId: string;
+  requestId: string;
+  meeting: CandidateMeeting | null;
+}) {
+  const [pending, startTransition] = useTransition();
+  const [slots, setSlots] = useState<string[]>(["", "", ""]);
+  const [error, setError] = useState<string | null>(null);
+
+  function submit() {
+    setError(null);
+    startTransition(async () => {
+      const r = await proposeMeeting(
+        candidateId,
+        requestId,
+        slots.filter(Boolean),
+      );
+      if (!r.ok) setError(r.error);
+    });
+  }
+
+  // 확정된 미팅
+  if (meeting?.status === "confirmed" && meeting.scheduledAt) {
+    return (
+      <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm">
+        <p className="font-medium text-emerald-700">미팅 확정</p>
+        <p className="mt-1 text-foreground">{fmtKst(meeting.scheduledAt)}</p>
+        {meeting.meetUrl ? (
+          <a
+            href={meeting.meetUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-1 block text-primary hover:underline"
+          >
+            화상미팅 링크
+          </a>
+        ) : (
+          <p className="mt-1 text-xs text-muted-foreground">
+            화상미팅 링크는 미팅 2~3일 전 안내됩니다.
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // 제안했고 파트너 응답 대기 중
+  if (meeting && meeting.proposedSlots.length > 0) {
+    return (
+      <div className="mt-4 rounded-md border bg-muted/30 p-3 text-sm">
+        <p className="font-medium text-foreground">제안한 미팅 일정 (응답 대기)</p>
+        <ul className="mt-1 list-disc list-inside text-muted-foreground">
+          {meeting.proposedSlots.map((s) => (
+            <li key={s}>{fmtKst(s)}</li>
+          ))}
+        </ul>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {meeting.status === "rescheduling"
+            ? "대행사가 대안 일정을 요청했습니다. 다시 제안해주세요."
+            : "대행사의 응답을 기다리는 중입니다."}
+        </p>
+      </div>
+    );
+  }
+
+  // 아직 미팅 제안 전
+  return (
+    <div className="mt-4 rounded-md border bg-muted/30 p-3">
+      <p className="text-xs font-medium text-foreground">미팅 일정 제안</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        가능한 시간 후보를 최대 3개 제안하세요. 대행사가 응답하면 확정됩니다.
+      </p>
+      <div className="mt-2 space-y-2">
+        {slots.map((s, i) => (
+          <Input
+            key={i}
+            type="datetime-local"
+            value={s}
+            className="max-w-[260px]"
+            onChange={(e) =>
+              setSlots((prev) => {
+                const next = [...prev];
+                next[i] = e.target.value;
+                return next;
+              })
+            }
+          />
+        ))}
+      </div>
+      {error ? <p className="mt-2 text-xs text-destructive">{error}</p> : null}
+      <Button
+        size="sm"
+        className="mt-3"
+        disabled={pending || slots.every((s) => !s)}
+        onClick={submit}
+      >
+        {pending ? "전송 중..." : "일정 제안하기"}
+      </Button>
     </div>
   );
 }

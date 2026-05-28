@@ -12,6 +12,7 @@ export type SendEmailInput = {
   to: string;
   subject: string;
   html: string;
+  attachments?: { filename: string; content: string }[];
 };
 
 // 키가 없으면 조용히 건너뛴다 (로컬/미설정 환경에서 크래시 방지).
@@ -20,6 +21,7 @@ export async function sendEmail({
   to,
   subject,
   html,
+  attachments,
 }: SendEmailInput): Promise<{ ok: boolean; skipped?: boolean; error?: string }> {
   if (!resend) {
     console.warn("[email] RESEND_API_KEY 미설정 — 발송 생략:", subject);
@@ -32,6 +34,7 @@ export async function sendEmail({
       subject,
       html,
       ...(replyTo ? { replyTo } : {}),
+      ...(attachments ? { attachments } : {}),
     });
     if (error) {
       console.error("[email] 발송 실패:", error);

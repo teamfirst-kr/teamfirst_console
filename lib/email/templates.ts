@@ -99,6 +99,49 @@ export function candidateProposedEmail(params: {
   };
 }
 
+export function meetingProposedEmail(params: {
+  companyName: string;
+  requestTitle: string;
+  slots: string[];
+  dashboardUrl: string;
+}): { subject: string; html: string } {
+  const slotList = params.slots
+    .map((s) => `<li>${s}</li>`)
+    .join("");
+  return {
+    subject: "[TeamFirst] 미팅 일정 후보가 도착했습니다",
+    html: layout(
+      "미팅 일정 조율 요청",
+      `<p>${params.companyName} 담당자님,</p>
+       <p>「${params.requestTitle}」 광고주가 아래 미팅 일정 후보를 제안했습니다.
+       가능한 시간을 선택하거나 대안을 제시해주세요.</p>
+       <ul>${slotList}</ul>
+       <p>${button(params.dashboardUrl, "일정 응답하기")}</p>`,
+    ),
+  };
+}
+
+export function meetingConfirmedEmail(params: {
+  recipientName: string;
+  requestTitle: string;
+  scheduledAt: string;
+  meetUrl?: string | null;
+}): { subject: string; html: string } {
+  return {
+    subject: "[TeamFirst] 미팅 일정이 확정되었습니다",
+    html: layout(
+      "미팅 일정 확정",
+      `<p>${params.recipientName} 담당자님,</p>
+       <p>「${params.requestTitle}」 미팅 일정이 아래와 같이 확정되었습니다.
+       첨부된 캘린더 파일(.ics)을 등록해주세요.</p>
+       <div style="margin:16px 0;padding:16px;background:#f1f5f9;border-radius:8px;font-size:14px;">
+         <div>일시: <strong>${params.scheduledAt}</strong></div>
+         ${params.meetUrl ? `<div>화상미팅: <a href="${params.meetUrl}">${params.meetUrl}</a></div>` : "<div>화상미팅 링크는 미팅 2~3일 전 안내됩니다.</div>"}
+       </div>`,
+    ),
+  };
+}
+
 export function partnerRejectedEmail(params: {
   companyName: string;
   reason?: string;

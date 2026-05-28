@@ -17,6 +17,8 @@ import {
   type MatchingBrief,
 } from "@/lib/schemas/matching-request";
 
+import { MeetingResponse } from "./meeting-response";
+
 const MEDIA_LABEL = Object.fromEntries(REQUEST_MEDIA.map((m) => [m.value, m.label]));
 
 export const dynamic = "force-dynamic";
@@ -64,6 +66,21 @@ export default async function PartnerRfpDetailPage({
     .eq("partner_id", partnerId)
     .maybeSingle();
 
+  // 내 후보 + 미팅
+  const { data: myCandidate } = await supabase
+    .from("candidates")
+    .select("id")
+    .eq("request_id", id)
+    .eq("partner_id", partnerId)
+    .maybeSingle();
+  const { data: meeting } = myCandidate
+    ? await supabase
+        .from("meetings")
+        .select("id, status, proposed_slots, scheduled_at, meet_url")
+        .eq("candidate_id", myCandidate.id)
+        .maybeSingle()
+    : { data: null };
+
   const brief = (request.brief ?? {}) as MatchingBrief;
 
   return (
@@ -89,6 +106,17 @@ export default async function PartnerRfpDetailPage({
           </Button>
         )}
       </div>
+
+      {meeting ? (
+        <MeetingResponse
+          meetingId={meeting.id}
+          requestId={id}
+          status={meeting.status}
+          proposedSlots={meeting.proposed_slots ?? []}
+          scheduledAt={meeting.scheduled_at}
+          meetUrl={meeting.meet_url}
+        />
+      ) : null}
 
       <Card>
         <CardHeader>

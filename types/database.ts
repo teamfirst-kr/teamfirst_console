@@ -37,6 +37,15 @@ export type CandidateStatus =
   | "won"
   | "lost";
 
+export type MeetingStatus =
+  | "requested"
+  | "pending"
+  | "confirmed"
+  | "rescheduling"
+  | "completed"
+  | "cancelled"
+  | "no_show";
+
 export type AccessGrantType = "analysis" | "management";
 
 export type AccessGrantStatus =
@@ -455,6 +464,39 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      meetings: {
+        Row: {
+          id: string;
+          candidate_id: string;
+          proposed_slots: string[] | null;
+          scheduled_at: string | null;
+          duration_minutes: number | null;
+          meet_url: string | null;
+          status: MeetingStatus;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          candidate_id: string;
+          proposed_slots?: string[] | null;
+          scheduled_at?: string | null;
+          duration_minutes?: number | null;
+          meet_url?: string | null;
+          status?: MeetingStatus;
+          notes?: string | null;
+        };
+        Update: Partial<{
+          proposed_slots: string[] | null;
+          scheduled_at: string | null;
+          duration_minutes: number | null;
+          meet_url: string | null;
+          status: MeetingStatus;
+          notes: string | null;
+        }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -465,6 +507,7 @@ export type Database = {
       request_status: RequestStatus;
       application_status: ApplicationStatus;
       candidate_status: CandidateStatus;
+      meeting_status: MeetingStatus;
     };
   };
 };

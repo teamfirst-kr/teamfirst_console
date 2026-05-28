@@ -225,4 +225,20 @@
 - **결정**: 광고주가 요청 상세에서 월별(YYYY-MM) 매체별 소진액을 입력 → `ad_spend_history` upsert(request_id+period 유니크). proof 파일은 매칭 요청 단계의 brief.ad_spend_proof로 이미 수집.
 - **근거**: 5주차 분석용. Phase 2 정산의 월 소진액 추적 기반 데이터 축적.
 
+## 2026-05-26 — 6주차: 미팅 일정 조율
+
+### D-038. 미팅 1건 = candidate 1:1, 광고주 제안 → 파트너 수락
+- **결정**: `meetings`는 candidate당 1건. 광고주가 `proposed_slots`(최대 3) 제안(status=pending) → 파트너가 슬롯 수락 시 scheduled_at 확정(status=confirmed), candidate=meeting_set, request=meeting_scheduled. 파트너 대안 요청 시 rescheduling → 광고주 재제안.
+- **근거**: CLAUDE.md §11 — 광고주 우선 선택 → 대행사 응답.
+
+### D-039. 파트너 확정 시 교차 엔티티 갱신은 service_role
+- **결정**: 파트너는 matching_requests를 수정할 RLS 권한이 없으므로, 미팅 확정 시 요청 상태(meeting_scheduled) 갱신·양측 메일·n8n은 service_role(admin)로 처리. meetings/candidates는 파트너 세션(RLS)로.
+- **근거**: 자동화 성격의 백그라운드 갱신. CLAUDE.md §9.2 허용 범위.
+- **영향**: 확정 시 `.ics` 첨부 메일을 광고주(brief.email)·파트너 양측 발송, `meeting.confirmed` n8n 이벤트(워크플로우 ② 연결).
+
+### D-040. 미팅 후 7일 데드라인은 표시 기반
+- **결정**: `DECISION_DEADLINE_DAYS=7`. 운영자 미팅 화면에서 scheduled_at+7일 기준 D-day 카운터 표시(D-2 이하 빨강). 5일째 자동 리마인드는 n8n/스케줄러 영역으로 위임(앱은 데이터 제공).
+- **근거**: CLAUDE.md §4.1. 자동 리마인드 발송 스케줄링은 n8n cron이 적합.
+- **영향**: 구글미트 링크는 운영자가 미팅 2~3일 전 수동 입력(meet_url).
+
 <!-- 새 결정은 아래에 추가 -->
