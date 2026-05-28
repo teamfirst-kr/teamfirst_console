@@ -10,6 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
+import { buildRequestTimeline } from "@/lib/timeline";
+import { Timeline } from "@/components/timeline";
 import {
   REQUEST_MEDIA,
   REQUEST_STATUS_LABEL,
@@ -145,6 +147,8 @@ export default async function ClientRequestDetailPage({
     amounts: (s.platform_amounts ?? {}) as Record<string, number>,
   }));
 
+  const timeline = await buildRequestTimeline(id);
+
   const brief = (request.brief ?? {}) as MatchingBrief;
   const status = request.status as RequestStatus;
   const statusBadge = REQUEST_STATUS_LABEL[status] ?? {
@@ -181,6 +185,15 @@ export default async function ClientRequestDetailPage({
         </div>
         <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>진행 타임라인</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Timeline events={timeline} />
+        </CardContent>
+      </Card>
 
       <CandidateCards requestId={request.id} candidates={candidates} />
 

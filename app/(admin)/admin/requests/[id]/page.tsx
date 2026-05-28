@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { buildRequestTimeline } from "@/lib/timeline";
+import { Timeline } from "@/components/timeline";
 import {
   REQUEST_MEDIA,
   REQUEST_STATUS_LABEL,
@@ -41,6 +43,8 @@ export default async function AdminRequestDetailPage({
     .single();
 
   if (!request) notFound();
+
+  const timeline = await buildRequestTimeline(id);
 
   const brief = (request.brief ?? {}) as MatchingBrief;
   const status = request.status as RequestStatus;
@@ -154,6 +158,15 @@ export default async function AdminRequestDetailPage({
         contractedCount={contractedCount ?? 0}
         alreadySent={Boolean(sentCount && sentCount > 0)}
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>진행 타임라인</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Timeline events={timeline} />
+        </CardContent>
+      </Card>
 
       <CandidateSelector
         requestId={request.id}

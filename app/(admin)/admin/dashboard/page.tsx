@@ -29,6 +29,21 @@ export default async function AdminDashboardPage() {
     .select("id", { count: "exact", head: true })
     .eq("status", "contracted");
 
+  const { count: submittedReq } = await supabase
+    .from("matching_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "submitted");
+
+  const { count: activeReq } = await supabase
+    .from("matching_requests")
+    .select("id", { count: "exact", head: true })
+    .in("status", ["rfp_sent", "collecting", "curating", "candidates_sent"]);
+
+  const { count: meetingReq } = await supabase
+    .from("matching_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "meeting_scheduled");
+
   return (
     <div className="space-y-8">
       <div>
@@ -38,7 +53,11 @@ export default async function AdminDashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div>
+        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
+          파트너 입점
+        </h2>
+        <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           label="신청 대기"
           value={String(pendingCount ?? 0)}
@@ -57,6 +76,33 @@ export default async function AdminDashboardPage() {
           hint="활성 파트너"
           href="/admin/partners?status=contracted"
         />
+        </div>
+      </div>
+
+      <div>
+        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
+          매칭 진행
+        </h2>
+        <div className="grid gap-4 md:grid-cols-3">
+          <StatCard
+            label="검수 대기 요청"
+            value={String(submittedReq ?? 0)}
+            hint="RFP 발송 필요"
+            href="/admin/requests?status=submitted"
+          />
+          <StatCard
+            label="진행 중 매칭"
+            value={String(activeReq ?? 0)}
+            hint="RFP~후보 선정"
+            href="/admin/requests"
+          />
+          <StatCard
+            label="미팅 예정"
+            value={String(meetingReq ?? 0)}
+            hint="일정 확정/조율"
+            href="/admin/meetings"
+          />
+        </div>
       </div>
 
       <Card>
