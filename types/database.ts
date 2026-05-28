@@ -267,6 +267,32 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      rfp_notifications: {
+        Row: {
+          id: string;
+          request_id: string;
+          partner_id: string;
+          sent_at: string;
+          opened_at: string | null;
+          email_sent: boolean;
+          slide_url: string | null;
+        };
+        Insert: {
+          id?: string;
+          request_id: string;
+          partner_id: string;
+          sent_at?: string;
+          opened_at?: string | null;
+          email_sent?: boolean;
+          slide_url?: string | null;
+        };
+        Update: Partial<{
+          opened_at: string | null;
+          email_sent: boolean;
+          slide_url: string | null;
+        }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

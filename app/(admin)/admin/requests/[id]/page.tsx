@@ -19,6 +19,8 @@ import {
 } from "@/lib/schemas/matching-request";
 import type { RequestStatus } from "@/types/database";
 
+import { RfpPanel } from "./rfp-panel";
+
 const MEDIA_LABEL = Object.fromEntries(REQUEST_MEDIA.map((m) => [m.value, m.label]));
 
 export const dynamic = "force-dynamic";
@@ -46,11 +48,17 @@ export default async function AdminRequestDetailPage({
     variant: "muted" as const,
   };
 
-  // 계약 완료 파트너 수 (RFP 발송 대상 미리보기)
+  // 계약 완료 파트너 수 (RFP 발송 대상)
   const { count: contractedCount } = await supabase
     .from("partners")
     .select("id", { count: "exact", head: true })
     .eq("status", "contracted");
+
+  // 이미 발송된 RFP 수
+  const { count: sentCount } = await supabase
+    .from("rfp_notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("request_id", id);
 
   // 증빙 파일 signed URL
   let proofUrl: string | null = null;
@@ -85,24 +93,18 @@ export default async function AdminRequestDetailPage({
         <Badge variant={badge.variant}>{badge.label}</Badge>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>RFP 발송 대상 미리보기</CardTitle>
-          <CardDescription>
-            현재 입점 완료(contracted) 대행사 전원에게 발송됩니다.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm">
-            발송 대상:{" "}
-            <strong className="text-primary">{contractedCount ?? 0}개사</strong>
-          </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            RFP 자동 발송 기능은 다음 단계에서 연결됩니다. (n8n webhook +
-            rfp_notifications)
-          </p>
-        </CardContent>
-      </Card>
+      {sentCount && sentCount > 0 ? (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-primary">
+          이 요청에 대해 RFP {sentCount}건이 발송되었습니다.
+        </div>
+      ) : null}
+
+      <RfpPanel
+        requestId={request.id}
+        status={status}
+        contractedCount={contractedCount ?? 0}
+        alreadySent={Boolean(sentCount && sentCount > 0)}
+      />
 
       <Card>
         <CardHeader>

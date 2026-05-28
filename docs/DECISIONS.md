@@ -192,4 +192,11 @@
 - **결정**: 매체·마케팅목표·KPI·주기·툴·계약방식 옵션은 `lib/schemas/partner-application.ts`에 정의하고 매칭 요청 스키마가 재사용. (KPI만 광고주용 "콘텐츠 마케팅 활성화" 추가)
 - **근거**: 파트너가 "가능한 매체"와 광고주가 "요청하는 매체"가 같은 분류여야 향후 매칭 가능.
 
+## 2026-05-26 — 3주차: RFP 자동 발송
+
+### D-032. RFP 발송 = rfp_notifications 일괄 생성 + n8n 트리거
+- **결정**: 운영자가 요청 상세에서 "RFP 발송"을 누르면 contracted 파트너 전원에 대해 `rfp_notifications`를 upsert(중복 무시)하고, 요청 상태를 `rfp_sent`로 전환, `rfp_sent_at` 기록. 이후 `triggerN8n("rfp.sent", ...)`로 n8n 워크플로우를 호출.
+- **근거**: CLAUDE.md §10/§12.10 — 슬라이드 생성·메일 발송은 n8n이 계속 담당. 시스템은 발송 대상·이력만 관리하고 DB Webhook/HTTP로 n8n을 트리거.
+- **영향**: `email_sent`는 false로 생성(실제 발송은 n8n). 재발송은 upsert로 안전. `lib/webhooks/n8n.ts`는 미설정/실패 시 흐름을 막지 않음.
+
 <!-- 새 결정은 아래에 추가 -->
