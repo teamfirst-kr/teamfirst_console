@@ -6,7 +6,17 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentRole } from "@/lib/auth";
+import { sendEmail } from "@/lib/email/resend";
+import {
+  partnerApprovedEmail,
+  partnerContractEmail,
+  partnerRejectedEmail,
+} from "@/lib/email/templates";
 import type { PartnerStatus } from "@/types/database";
+
+function appUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+}
 
 async function assertAdmin() {
   const role = await getCurrentRole();
@@ -41,6 +51,13 @@ export async function rejectPartner(
 ): Promise<ActionResult> {
   await assertAdmin();
   const supabase = await createClient();
+
+  const { data: partner } = await supabase
+    .from("partners")
+    .select("company_name, contact_email")
+    .eq("id", partnerId)
+    .single();
+
   const { error } = await supabase
     .from("partners")
     .update({
@@ -50,9 +67,18 @@ export async function rejectPartner(
     .eq("id", partnerId);
 
   if (error) return { ok: false, error: error.message };
+
+  if (partner) {
+    const mail = partnerRejectedEmail({
+      companyName: partner.company_name,
+      reason: reason || undefined,
+    });
+    await sendEmail({ to: partner.contact_email, ...mail });
+  }
+
   revalidatePath(`/admin/partners/${partnerId}`);
   revalidatePath("/admin/partners");
-  return { ok: true, message: "신청을 거절 처리했습니다." };
+  return { ok: true, message: "신청을 거절 처리하고 안내 메일을 발송했습니다." };
 }
 
 export async function attachContract(
@@ -66,6 +92,12 @@ export async function attachContract(
   }
 
   const supabase = await createClient();
+
+  const { data: partner } = await supabase
+    .from("partners")
+    .select("company_name, contact_email")
+    .eq("id", partnerId)
+    .single();
 
   const { error: contractError } = await supabase.from("contracts").insert({
     partner_id: partnerId,
@@ -83,9 +115,20 @@ export async function attachContract(
     .eq("id", partnerId)
     .in("status", ["pending"]);
 
+  if (partner) {
+    const mail = partnerContractEmail({
+      companyName: partner.company_name,
+      glosignUrl,
+    });
+    await sendEmail({ to: partner.contact_email, ...mail });
+  }
+
   revalidatePath(`/admin/partners/${partnerId}`);
   revalidatePath("/admin/partners");
-  return { ok: true, message: "계약서 링크를 등록했습니다." };
+  return {
+    ok: true,
+    message: "계약서 링크를 등록하고 안내 메일을 발송했습니다.",
+  };
 }
 
 function generateTempPassword(): string {
@@ -177,13 +220,24 @@ export async function markContractedAndIssueAccount(
     return { ok: false, error: updateError.message };
   }
 
+  // 새 계정 발급 시 임시 비밀번호 안내 메일 발송
+  if (tempPassword) {
+    const mail = partnerApprovedEmail({
+      companyName: partner.company_name,
+      email: partner.contact_email,
+      tempPassword,
+      loginUrl: `${appUrl()}/login`,
+    });
+    await sendEmail({ to: partner.contact_email, ...mail });
+  }
+
   revalidatePath(`/admin/partners/${partnerId}`);
   revalidatePath("/admin/partners");
 
   return {
     ok: true,
     message: tempPassword
-      ? "파트너 계정을 발급하고 입점 완료 처리했습니다."
+      ? "파트너 계정을 발급하고 안내 메일을 발송했습니다."
       : "기존 계정에 입점 완료 처리했습니다.",
     tempPassword,
   };
