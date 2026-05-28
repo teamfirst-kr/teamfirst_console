@@ -23,6 +23,7 @@ import type { RequestStatus } from "@/types/database";
 
 import { RfpPanel } from "./rfp-panel";
 import { CandidateSelector, type ApplicantCard } from "./candidate-selector";
+import { DecisionPanel, type DecisionCandidate } from "./decision-panel";
 
 const MEDIA_LABEL = Object.fromEntries(REQUEST_MEDIA.map((m) => [m.value, m.label]));
 
@@ -85,14 +86,28 @@ export default async function AdminRequestDetailPage({
     (appPartners ?? []).map((p) => [p.id, p.company_name]),
   );
 
-  // 기존 후보(candidates) — 재선정 시 초기값
+  // 기존 후보(candidates) — 재선정 시 초기값 + 대행 결정
   const { data: candidates } = await supabase
     .from("candidates")
-    .select("application_id, recommendation_reason")
+    .select("id, application_id, partner_id, rank, status, recommendation_reason")
     .eq("request_id", id);
   const candidateMap = new Map(
     (candidates ?? []).map((c) => [c.application_id, c.recommendation_reason]),
   );
+
+  const decisionCandidates: DecisionCandidate[] = (candidates ?? []).map((c) => ({
+    id: c.id,
+    partnerName: partnerNameMap.get(c.partner_id) ?? "대행사",
+    rank: c.rank,
+    status: c.status,
+  }));
+  const isClosed = status === "closed_won" || status === "closed_lost";
+  // 미팅 단계 이후에만 결정 패널 노출
+  const showDecision =
+    decisionCandidates.length > 0 &&
+    ["candidates_sent", "meeting_scheduled", "closed_won", "closed_lost"].includes(
+      status,
+    );
 
   const applicants: ApplicantCard[] = (applications ?? []).map((a) => {
     const proposal = (a.proposal ?? {}) as {
@@ -173,6 +188,14 @@ export default async function AdminRequestDetailPage({
         applicants={applicants}
         locked={false}
       />
+
+      {showDecision ? (
+        <DecisionPanel
+          requestId={request.id}
+          candidates={decisionCandidates}
+          closed={isClosed}
+        />
+      ) : null}
 
       <Card>
         <CardHeader>

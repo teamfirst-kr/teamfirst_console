@@ -142,6 +142,21 @@ export function meetingConfirmedEmail(params: {
   };
 }
 
+export function partnerWonEmail(params: {
+  companyName: string;
+  requestTitle: string;
+}): { subject: string; html: string } {
+  return {
+    subject: "[TeamFirst] 대행이 성사되었습니다",
+    html: layout(
+      "대행 성사 안내",
+      `<p>${params.companyName} 담당자님, 축하드립니다!</p>
+       <p>「${params.requestTitle}」 광고주와의 대행이 성사되었습니다. 운영팀이
+       대행계약서·매체 이관 절차를 곧 안내드리겠습니다.</p>`,
+    ),
+  };
+}
+
 export function partnerRejectedEmail(params: {
   companyName: string;
   reason?: string;

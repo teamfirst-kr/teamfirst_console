@@ -251,4 +251,11 @@
 ### D-042. 전역 loading/error/not-found
 - **결정**: app/loading.tsx·error.tsx·not-found.tsx 추가. 인앱 실시간 알림(Supabase Realtime)은 베타 이후로 미룸(폴링 부담·MVP 범위).
 
+## 2026-05-26 — 매칭 라이프사이클 마감 (대행 결정)
+
+### D-043. 대행 결정으로 매칭 종료
+- **결정**: 운영자가 미팅 단계 이후 후보 중 1곳을 "성사"로 확정 → 해당 candidate=won, 나머지 lost, 요청 closed_won + closed_at, 성사 대행사 안내 메일. 또는 "불발"로 전체 lost + closed_lost.
+- **근거**: 미팅(6주차) 이후 매칭 흐름을 닫는 종결 액션이 없었음. 타임라인·상태 일관성 확보.
+- **영향**: 가계약/정산(deals)·매체 이관은 Phase 2. 여기서는 매칭 성사 여부 마감까지만.
+
 <!-- 새 결정은 아래에 추가 -->
