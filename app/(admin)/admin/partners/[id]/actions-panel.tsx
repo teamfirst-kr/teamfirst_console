@@ -52,9 +52,10 @@ export function PartnerActionsPanel({
 
   const canReview = status === "pending";
   const canAttachContract = status === "pending" || status === "reviewing";
+  // 계정 미발급 파트너에게 입점완료+계정발급. 임포트로 들어온 contracted(계정X)도 포함.
   const canMarkContracted =
-    (status === "reviewing" || status === "pending") &&
-    (hasOpenContract || hasUser);
+    !hasUser &&
+    (status === "pending" || status === "reviewing" || status === "contracted");
   const canReject = status === "pending" || status === "reviewing";
 
   return (
@@ -114,10 +115,13 @@ export function PartnerActionsPanel({
 
           {/* 계약 완료 + 계정 발급 */}
           <div className="space-y-2 rounded-lg border bg-primary/5 p-3">
-            <div className="text-sm font-medium">계약 완료 + 계정 발급</div>
+            <div className="text-sm font-medium">
+              {status === "contracted" ? "파트너 계정 발급" : "계약 완료 + 계정 발급"}
+            </div>
             <p className="text-xs text-muted-foreground">
-              {contactEmail} 으로 파트너 계정을 발급합니다. 발급된 임시
-              비밀번호는 이 화면에서 한 번만 확인 가능합니다.
+              {hasUser
+                ? "이미 계정이 발급된 파트너입니다."
+                : `${contactEmail} 으로 파트너 계정을 발급합니다. 발급된 임시 비밀번호는 이 화면에서 한 번만 확인 가능합니다.`}
             </p>
             <Button
               size="sm"
@@ -127,7 +131,7 @@ export function PartnerActionsPanel({
                 run(() => markContractedAndIssueAccount(partnerId))
               }
             >
-              입점 완료 처리
+              {status === "contracted" ? "계정 발급" : "입점 완료 처리"}
             </Button>
           </div>
 
