@@ -60,6 +60,26 @@ export default async function AdminRequestDetailPage({
     .select("id", { count: "exact", head: true })
     .eq("request_id", id);
 
+  // 지원자 목록 (비교 뷰)
+  const { data: applications } = await supabase
+    .from("applications")
+    .select(
+      "id, partner_id, proposal, quote_monthly, start_available, status, submitted_at",
+    )
+    .eq("request_id", id)
+    .order("submitted_at", { ascending: true });
+
+  const appPartnerIds = (applications ?? []).map((a) => a.partner_id);
+  const { data: appPartners } = appPartnerIds.length
+    ? await supabase
+        .from("partners")
+        .select("id, company_name")
+        .in("id", appPartnerIds)
+    : { data: [] as { id: string; company_name: string }[] };
+  const partnerNameMap = new Map(
+    (appPartners ?? []).map((p) => [p.id, p.company_name]),
+  );
+
   // 증빙 파일 signed URL
   let proofUrl: string | null = null;
   if (brief.ad_spend_proof?.path) {
@@ -105,6 +125,67 @@ export default async function AdminRequestDetailPage({
         contractedCount={contractedCount ?? 0}
         alreadySent={Boolean(sentCount && sentCount > 0)}
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>지원 대행사 ({applications?.length ?? 0})</CardTitle>
+          <CardDescription>
+            지원서를 비교하고 상위 후보를 선정하세요. (선정 UI는 5주차)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!applications || applications.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              아직 지원한 대행사가 없습니다.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {applications.map((a) => {
+                const proposal = (a.proposal ?? {}) as {
+                  approach?: string;
+                  team_composition?: string | null;
+                  similar_cases?: string | null;
+                  differentiation?: string | null;
+                };
+                return (
+                  <div key={a.id} className="rounded-lg border p-4 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-foreground">
+                        {partnerNameMap.get(a.partner_id) ?? "대행사"}
+                      </span>
+                      <span className="text-primary font-medium">
+                        {a.quote_monthly
+                          ? `${a.quote_monthly.toLocaleString()}원/월`
+                          : "견적 미기재"}
+                      </span>
+                    </div>
+                    {a.start_available ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        시작 가능: {a.start_available}
+                      </p>
+                    ) : null}
+                    <p className="mt-2 whitespace-pre-wrap text-foreground">
+                      {proposal.approach}
+                    </p>
+                    {proposal.team_composition ? (
+                      <p className="mt-2 text-muted-foreground">
+                        <span className="text-xs">팀 구성</span> ·{" "}
+                        {proposal.team_composition}
+                      </p>
+                    ) : null}
+                    {proposal.differentiation ? (
+                      <p className="mt-1 text-muted-foreground">
+                        <span className="text-xs">차별점</span> ·{" "}
+                        {proposal.differentiation}
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

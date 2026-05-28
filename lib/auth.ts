@@ -53,6 +53,20 @@ export async function requireRole(role: Role) {
   return { user, role: current };
 }
 
+export async function getCurrentPartnerId(): Promise<string | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("partners")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle<{ id: string }>();
+  return data?.id ?? null;
+}
+
 export function roleHome(role: Role | null): string {
   switch (role) {
     case "admin":

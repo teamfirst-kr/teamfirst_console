@@ -199,4 +199,15 @@
 - **근거**: CLAUDE.md §10/§12.10 — 슬라이드 생성·메일 발송은 n8n이 계속 담당. 시스템은 발송 대상·이력만 관리하고 DB Webhook/HTTP로 n8n을 트리거.
 - **영향**: `email_sent`는 false로 생성(실제 발송은 n8n). 재발송은 upsert로 안전. `lib/webhooks/n8n.ts`는 미설정/실패 시 흐름을 막지 않음.
 
+## 2026-05-26 — 4주차: 파트너 RFP 열람·지원
+
+### D-033. RFP 접근·열람은 rfp_notifications 기준
+- **결정**: 파트너 대시보드 = 본인에게 발송된 `rfp_notifications` 목록. RFP 상세 진입 시 `opened_at` 최초 1회 기록(읽음 표시). 상세/지원 페이지 모두 본인 notification 존재 여부로 접근 제어(추가로 RLS `mr_partner_via_rfp`가 방어).
+- **근거**: CLAUDE.md §9.1 — 파트너는 자기에게 발송된 RFP만 접근.
+
+### D-034. 지원서 proposal은 JSONB, 견적·시작일은 컬럼
+- **결정**: 지원서(Tally lbBZNB)의 제안 개요/팀구성/유사사례/차별점은 `applications.proposal` JSONB, 월 견적·시작가능일은 `quote_monthly`/`start_available` 컬럼. `UNIQUE(request_id, partner_id)`로 1회 지원 보장(23505 → "이미 지원").
+- **근거**: 견적/시작일은 비교·정렬에 자주 쓰여 컬럼화. 서술형은 JSONB.
+- **영향**: 운영자 요청 상세에 지원 대행사 비교 카드(견적·제안·팀·차별점). 상위 3개 선정 UI는 5주차.
+
 <!-- 새 결정은 아래에 추가 -->

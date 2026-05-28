@@ -21,6 +21,12 @@ export type PartnerStatus =
 
 export type ContractStatus = "sent" | "signed" | "expired" | "cancelled";
 
+export type ApplicationStatus =
+  | "submitted"
+  | "shortlisted"
+  | "rejected"
+  | "withdrawn";
+
 export type RequestStatus =
   | "draft"
   | "submitted"
@@ -293,6 +299,41 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      applications: {
+        Row: {
+          id: string;
+          request_id: string;
+          partner_id: string;
+          proposal: Json;
+          quote_monthly: number | null;
+          start_available: string | null;
+          status: ApplicationStatus;
+          submitted_at: string;
+          reviewed_at: string | null;
+          attachments: Json | null;
+        };
+        Insert: {
+          id?: string;
+          request_id: string;
+          partner_id: string;
+          proposal: Json;
+          quote_monthly?: number | null;
+          start_available?: string | null;
+          status?: ApplicationStatus;
+          submitted_at?: string;
+          reviewed_at?: string | null;
+          attachments?: Json | null;
+        };
+        Update: Partial<{
+          proposal: Json;
+          quote_monthly: number | null;
+          start_available: string | null;
+          status: ApplicationStatus;
+          reviewed_at: string | null;
+          attachments: Json | null;
+        }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -301,6 +342,7 @@ export type Database = {
       partner_status: PartnerStatus;
       contract_status: ContractStatus;
       request_status: RequestStatus;
+      application_status: ApplicationStatus;
     };
   };
 };
