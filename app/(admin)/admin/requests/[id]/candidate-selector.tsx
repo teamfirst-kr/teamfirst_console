@@ -11,8 +11,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { MAX_CANDIDATES } from "@/lib/schemas/candidate";
+import {
+  MAX_CANDIDATES,
+  RUBRIC,
+  RUBRIC_MAX,
+  emptyScores,
+  totalScore,
+  type CandidateScores,
+} from "@/lib/schemas/candidate";
 
 import { selectCandidates, type SelectResult } from "./candidate-actions";
 
@@ -26,6 +34,7 @@ export type ApplicantCard = {
   startAvailable: string | null;
   isCandidate: boolean;
   reason: string;
+  scores: CandidateScores | null;
 };
 
 export function CandidateSelector({
@@ -46,6 +55,18 @@ export function CandidateSelector({
   const [reasons, setReasons] = useState<Record<string, string>>(
     Object.fromEntries(applicants.map((a) => [a.applicationId, a.reason])),
   );
+  const [scores, setScores] = useState<Record<string, CandidateScores>>(
+    Object.fromEntries(
+      applicants.map((a) => [a.applicationId, a.scores ?? emptyScores()]),
+    ),
+  );
+
+  function setScore(id: string, key: keyof CandidateScores, value: number) {
+    setScores((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], [key]: Math.max(0, Math.min(10, value)) },
+    }));
+  }
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -61,6 +82,7 @@ export function CandidateSelector({
       const payload = selected.map((id) => ({
         applicationId: id,
         reason: reasons[id] ?? "",
+        scores: scores[id] ?? emptyScores(),
       }));
       setResult(await selectCandidates(requestId, payload));
     });
@@ -126,7 +148,35 @@ export function CandidateSelector({
                 </p>
               ) : null}
               {isSel ? (
-                <div className="mt-3">
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        평가 점수 (각 0~10)
+                      </span>
+                      <span className="text-xs font-semibold text-primary">
+                        총점 {totalScore(scores[a.applicationId])} / {RUBRIC_MAX}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {RUBRIC.map((r) => (
+                        <label key={r.key} className="text-xs">
+                          <span className="text-muted-foreground">{r.label}</span>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={10}
+                            disabled={locked}
+                            value={scores[a.applicationId]?.[r.key] ?? 0}
+                            onChange={(e) =>
+                              setScore(a.applicationId, r.key, Number(e.target.value))
+                            }
+                            className="mt-1 h-8"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                   <Textarea
                     rows={2}
                     placeholder="광고주에게 보여줄 추천 사유"

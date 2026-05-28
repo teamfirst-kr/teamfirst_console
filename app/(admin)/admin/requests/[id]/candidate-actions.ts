@@ -9,8 +9,8 @@ import {
   applicationNotShortlistedEmail,
   candidateProposedEmail,
 } from "@/lib/email/templates";
-import { MAX_CANDIDATES } from "@/lib/schemas/candidate";
-import type { RequestStatus } from "@/types/database";
+import { MAX_CANDIDATES, type CandidateScores } from "@/lib/schemas/candidate";
+import type { Json, RequestStatus } from "@/types/database";
 
 async function assertAdmin() {
   const role = await getCurrentRole();
@@ -29,7 +29,7 @@ export type SelectResult =
 // 선정되지 않은 지원서는 rejected 처리 + 미선정 통보 메일.
 export async function selectCandidates(
   requestId: string,
-  selections: { applicationId: string; reason: string }[],
+  selections: { applicationId: string; reason: string; scores: CandidateScores }[],
 ): Promise<SelectResult> {
   await assertAdmin();
 
@@ -68,6 +68,7 @@ export async function selectCandidates(
     rank: i + 1,
     status: "proposed" as const,
     recommendation_reason: s.reason || null,
+    scores: s.scores as unknown as Json,
   }));
 
   const { error: insertError } = await supabase.from("candidates").insert(rows);

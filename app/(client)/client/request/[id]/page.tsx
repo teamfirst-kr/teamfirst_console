@@ -20,6 +20,7 @@ import {
 import type { RequestStatus } from "@/types/database";
 
 import { CandidateCards, type CandidateView } from "./candidate-cards";
+import { CandidateScoreboard } from "./candidate-scoreboard";
 import { SpendSection, type SpendRow } from "./spend-section";
 
 const MEDIA_LABEL = Object.fromEntries(REQUEST_MEDIA.map((m) => [m.value, m.label]));
@@ -49,7 +50,7 @@ export default async function ClientRequestDetailPage({
   const { data: candidateRows } = await supabase
     .from("candidates")
     .select(
-      "id, rank, partner_id, application_id, status, recommendation_reason",
+      "id, rank, partner_id, application_id, status, recommendation_reason, scores",
     )
     .eq("request_id", id)
     .order("rank", { ascending: true });
@@ -134,6 +135,7 @@ export default async function ClientRequestDetailPage({
           meetUrl: m.meet_url,
         };
       })(),
+      scores: (c.scores ?? null) as Record<string, number> | null,
     };
   });
 
@@ -194,6 +196,8 @@ export default async function ClientRequestDetailPage({
           <Timeline events={timeline} />
         </CardContent>
       </Card>
+
+      <CandidateScoreboard candidates={candidates} />
 
       <CandidateCards requestId={request.id} candidates={candidates} />
 

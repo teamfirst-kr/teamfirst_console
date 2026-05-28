@@ -380,6 +380,7 @@ export type Database = {
           rank: number;
           status: CandidateStatus;
           recommendation_reason: string | null;
+          scores: Json | null;
           proposed_at: string;
           viewed_at: string | null;
         };
@@ -391,6 +392,7 @@ export type Database = {
           rank: number;
           status?: CandidateStatus;
           recommendation_reason?: string | null;
+          scores?: Json | null;
           proposed_at?: string;
           viewed_at?: string | null;
         };
@@ -398,6 +400,7 @@ export type Database = {
           rank: number;
           status: CandidateStatus;
           recommendation_reason: string | null;
+          scores: Json | null;
           viewed_at: string | null;
         }>;
         Relationships: [];

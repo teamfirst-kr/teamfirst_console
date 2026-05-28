@@ -13,3 +13,26 @@ export const CANDIDATE_STATUS_LABEL: Record<
 };
 
 export const MAX_CANDIDATES = 3;
+
+// 대행사 매칭 점수표 (각 0~10, 총 60점)
+export const RUBRIC = [
+  { key: "scale", label: "규모" },
+  { key: "performance", label: "퍼포먼스" },
+  { key: "tech", label: "기술/분석" },
+  { key: "communication", label: "커뮤니케이션" },
+  { key: "reference", label: "레퍼런스" },
+  { key: "fit", label: "적합도" },
+] as const;
+
+export type RubricKey = (typeof RUBRIC)[number]["key"];
+export type CandidateScores = Record<RubricKey, number>;
+export const RUBRIC_MAX = RUBRIC.length * 10;
+
+export function emptyScores(): CandidateScores {
+  return { scale: 0, performance: 0, tech: 0, communication: 0, reference: 0, fit: 0 };
+}
+
+export function totalScore(scores: Partial<CandidateScores> | null | undefined): number {
+  if (!scores) return 0;
+  return RUBRIC.reduce((sum, r) => sum + (Number(scores[r.key]) || 0), 0);
+}

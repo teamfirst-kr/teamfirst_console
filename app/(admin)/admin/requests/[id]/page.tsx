@@ -89,10 +89,13 @@ export default async function AdminRequestDetailPage({
   // 기존 후보(candidates) — 재선정 시 초기값 + 대행 결정
   const { data: candidates } = await supabase
     .from("candidates")
-    .select("id, application_id, partner_id, rank, status, recommendation_reason")
+    .select("id, application_id, partner_id, rank, status, recommendation_reason, scores")
     .eq("request_id", id);
   const candidateMap = new Map(
-    (candidates ?? []).map((c) => [c.application_id, c.recommendation_reason]),
+    (candidates ?? []).map((c) => [
+      c.application_id,
+      { reason: c.recommendation_reason, scores: c.scores },
+    ]),
   );
 
   const decisionCandidates: DecisionCandidate[] = (candidates ?? []).map((c) => ({
@@ -124,7 +127,8 @@ export default async function AdminRequestDetailPage({
       differentiation: proposal.differentiation ?? null,
       startAvailable: a.start_available,
       isCandidate: candidateMap.has(a.id),
-      reason: candidateMap.get(a.id) ?? "",
+      reason: candidateMap.get(a.id)?.reason ?? "",
+      scores: (candidateMap.get(a.id)?.scores ?? null) as ApplicantCard["scores"],
     };
   });
 

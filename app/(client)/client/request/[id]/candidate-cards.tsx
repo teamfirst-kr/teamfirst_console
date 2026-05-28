@@ -41,6 +41,7 @@ export type CandidateView = {
   startAvailable: string | null;
   grantedPlatforms: string[];
   meeting: CandidateMeeting | null;
+  scores: Record<string, number> | null;
 };
 
 function fmtKst(iso: string): string {
