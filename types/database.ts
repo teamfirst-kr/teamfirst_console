@@ -27,6 +27,16 @@ export type ApplicationStatus =
   | "rejected"
   | "withdrawn";
 
+export type CandidateStatus =
+  | "proposed"
+  | "viewed"
+  | "interested"
+  | "declined_by_client"
+  | "declined_by_partner"
+  | "meeting_set"
+  | "won"
+  | "lost";
+
 export type RequestStatus =
   | "draft"
   | "submitted"
@@ -334,6 +344,37 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      candidates: {
+        Row: {
+          id: string;
+          request_id: string;
+          application_id: string;
+          partner_id: string;
+          rank: number;
+          status: CandidateStatus;
+          recommendation_reason: string | null;
+          proposed_at: string;
+          viewed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          request_id: string;
+          application_id: string;
+          partner_id: string;
+          rank: number;
+          status?: CandidateStatus;
+          recommendation_reason?: string | null;
+          proposed_at?: string;
+          viewed_at?: string | null;
+        };
+        Update: Partial<{
+          rank: number;
+          status: CandidateStatus;
+          recommendation_reason: string | null;
+          viewed_at: string | null;
+        }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -343,6 +384,7 @@ export type Database = {
       contract_status: ContractStatus;
       request_status: RequestStatus;
       application_status: ApplicationStatus;
+      candidate_status: CandidateStatus;
     };
   };
 };

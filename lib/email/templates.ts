@@ -64,6 +64,41 @@ export function partnerApprovedEmail(params: {
   };
 }
 
+export function applicationNotShortlistedEmail(params: {
+  companyName: string;
+  requestTitle: string;
+}): { subject: string; html: string } {
+  return {
+    subject: "[TeamFirst] RFP 지원 결과 안내",
+    html: layout(
+      "RFP 지원 결과 안내",
+      `<p>${params.companyName} 담당자님, 안녕하세요.</p>
+       <p>「${params.requestTitle}」 건에 지원해주셔서 감사합니다.
+       아쉽게도 이번 매칭에서는 상위 후보로 선정되지 못했습니다.</p>
+       <p>광고주의 요구사항과 우선순위에 따른 결정이며, 귀사의 역량과 무관합니다.
+       앞으로도 적합한 RFP가 도착하면 계속 안내드리겠습니다. 감사합니다.</p>`,
+    ),
+  };
+}
+
+export function candidateProposedEmail(params: {
+  companyName: string;
+  requestTitle: string;
+  dashboardUrl: string;
+}): { subject: string; html: string } {
+  return {
+    subject: "[TeamFirst] 후보 대행사로 선정되었습니다",
+    html: layout(
+      "후보 선정 안내",
+      `<p>${params.companyName} 담당자님, 축하드립니다!</p>
+       <p>「${params.requestTitle}」 건의 상위 후보 대행사로 선정되어 광고주에게
+       제안이 전달되었습니다. 광고주가 관심을 표시하면 미팅 일정 조율이
+       시작됩니다.</p>
+       <p>${button(params.dashboardUrl, "대시보드에서 확인")}</p>`,
+    ),
+  };
+}
+
 export function partnerRejectedEmail(params: {
   companyName: string;
   reason?: string;

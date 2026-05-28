@@ -17,6 +17,8 @@ import {
 } from "@/lib/schemas/matching-request";
 import type { RequestStatus } from "@/types/database";
 
+import { CandidateCards, type CandidateView } from "./candidate-cards";
+
 const MEDIA_LABEL = Object.fromEntries(REQUEST_MEDIA.map((m) => [m.value, m.label]));
 
 export const dynamic = "force-dynamic";
@@ -39,6 +41,59 @@ export default async function ClientRequestDetailPage({
     .single();
 
   if (!request) notFound();
+
+  // 후보 대행사 (candidates_sent 이후 노출)
+  const { data: candidateRows } = await supabase
+    .from("candidates")
+    .select(
+      "id, rank, partner_id, application_id, status, recommendation_reason",
+    )
+    .eq("request_id", id)
+    .order("rank", { ascending: true });
+
+  const candAppIds = (candidateRows ?? []).map((c) => c.application_id);
+  const candPartnerIds = (candidateRows ?? []).map((c) => c.partner_id);
+  const [{ data: candApps }, { data: candPartners }] = await Promise.all([
+    candAppIds.length
+      ? supabase
+          .from("applications")
+          .select("id, proposal, quote_monthly, start_available")
+          .in("id", candAppIds)
+      : Promise.resolve({ data: [] as { id: string; proposal: unknown; quote_monthly: number | null; start_available: string | null }[] }),
+    candPartnerIds.length
+      ? supabase
+          .from("partners")
+          .select("id, company_name, specialty")
+          .in("id", candPartnerIds)
+      : Promise.resolve({ data: [] as { id: string; company_name: string; specialty: string | null }[] }),
+  ]);
+  const appById = new Map((candApps ?? []).map((a) => [a.id, a]));
+  const partnerById = new Map((candPartners ?? []).map((p) => [p.id, p]));
+
+  const candidates: CandidateView[] = (candidateRows ?? []).map((c) => {
+    const app = appById.get(c.application_id);
+    const proposal = (app?.proposal ?? {}) as {
+      approach?: string;
+      team_composition?: string | null;
+      similar_cases?: string | null;
+      differentiation?: string | null;
+    };
+    const partner = partnerById.get(c.partner_id);
+    return {
+      id: c.id,
+      rank: c.rank,
+      partnerName: partner?.company_name ?? "대행사",
+      specialty: partner?.specialty ?? null,
+      status: c.status,
+      recommendationReason: c.recommendation_reason,
+      approach: proposal.approach ?? "",
+      teamComposition: proposal.team_composition ?? null,
+      similarCases: proposal.similar_cases ?? null,
+      differentiation: proposal.differentiation ?? null,
+      quote: app?.quote_monthly ?? null,
+      startAvailable: app?.start_available ?? null,
+    };
+  });
 
   const brief = (request.brief ?? {}) as MatchingBrief;
   const status = request.status as RequestStatus;
@@ -76,6 +131,8 @@ export default async function ClientRequestDetailPage({
         </div>
         <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
       </div>
+
+      <CandidateCards requestId={request.id} candidates={candidates} />
 
       <Card>
         <CardHeader>

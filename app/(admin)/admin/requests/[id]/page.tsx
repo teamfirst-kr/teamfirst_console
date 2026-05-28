@@ -20,6 +20,7 @@ import {
 import type { RequestStatus } from "@/types/database";
 
 import { RfpPanel } from "./rfp-panel";
+import { CandidateSelector, type ApplicantCard } from "./candidate-selector";
 
 const MEDIA_LABEL = Object.fromEntries(REQUEST_MEDIA.map((m) => [m.value, m.label]));
 
@@ -80,6 +81,34 @@ export default async function AdminRequestDetailPage({
     (appPartners ?? []).map((p) => [p.id, p.company_name]),
   );
 
+  // 기존 후보(candidates) — 재선정 시 초기값
+  const { data: candidates } = await supabase
+    .from("candidates")
+    .select("application_id, recommendation_reason")
+    .eq("request_id", id);
+  const candidateMap = new Map(
+    (candidates ?? []).map((c) => [c.application_id, c.recommendation_reason]),
+  );
+
+  const applicants: ApplicantCard[] = (applications ?? []).map((a) => {
+    const proposal = (a.proposal ?? {}) as {
+      approach?: string;
+      team_composition?: string | null;
+      differentiation?: string | null;
+    };
+    return {
+      applicationId: a.id,
+      partnerName: partnerNameMap.get(a.partner_id) ?? "대행사",
+      quote: a.quote_monthly,
+      approach: proposal.approach ?? "",
+      teamComposition: proposal.team_composition ?? null,
+      differentiation: proposal.differentiation ?? null,
+      startAvailable: a.start_available,
+      isCandidate: candidateMap.has(a.id),
+      reason: candidateMap.get(a.id) ?? "",
+    };
+  });
+
   // 증빙 파일 signed URL
   let proofUrl: string | null = null;
   if (brief.ad_spend_proof?.path) {
@@ -126,66 +155,11 @@ export default async function AdminRequestDetailPage({
         alreadySent={Boolean(sentCount && sentCount > 0)}
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>지원 대행사 ({applications?.length ?? 0})</CardTitle>
-          <CardDescription>
-            지원서를 비교하고 상위 후보를 선정하세요. (선정 UI는 5주차)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!applications || applications.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              아직 지원한 대행사가 없습니다.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {applications.map((a) => {
-                const proposal = (a.proposal ?? {}) as {
-                  approach?: string;
-                  team_composition?: string | null;
-                  similar_cases?: string | null;
-                  differentiation?: string | null;
-                };
-                return (
-                  <div key={a.id} className="rounded-lg border p-4 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-foreground">
-                        {partnerNameMap.get(a.partner_id) ?? "대행사"}
-                      </span>
-                      <span className="text-primary font-medium">
-                        {a.quote_monthly
-                          ? `${a.quote_monthly.toLocaleString()}원/월`
-                          : "견적 미기재"}
-                      </span>
-                    </div>
-                    {a.start_available ? (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        시작 가능: {a.start_available}
-                      </p>
-                    ) : null}
-                    <p className="mt-2 whitespace-pre-wrap text-foreground">
-                      {proposal.approach}
-                    </p>
-                    {proposal.team_composition ? (
-                      <p className="mt-2 text-muted-foreground">
-                        <span className="text-xs">팀 구성</span> ·{" "}
-                        {proposal.team_composition}
-                      </p>
-                    ) : null}
-                    {proposal.differentiation ? (
-                      <p className="mt-1 text-muted-foreground">
-                        <span className="text-xs">차별점</span> ·{" "}
-                        {proposal.differentiation}
-                      </p>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <CandidateSelector
+        requestId={request.id}
+        applicants={applicants}
+        locked={false}
+      />
 
       <Card>
         <CardHeader>
