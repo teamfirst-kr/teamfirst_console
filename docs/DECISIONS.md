@@ -176,4 +176,20 @@
 - **근거**: MVP 단계에서 파일 메타가 단순. 스키마 변경 없이 기존 jsonb 컬럼 활용.
 - **영향**: 파일당 최대 10MB, 포트폴리오 최대 5개, PDF·이미지만. 업로드 실패는 신청을 무효화하지 않고 운영자가 수동 요청.
 
+## 2026-05-26 — 3주차: 매칭 요청서 (실제 Tally 3yBY1W 반영)
+
+### D-029. 매칭 요청 데이터는 brief(JSONB)에 통합 저장
+- **결정**: 실제 매칭 요청 폼의 풍부한 필드(브랜드정보·목표·매체·KPI·주기·계약방식·대행사 기준)는 `matching_requests.brief` JSONB에 통합 저장. 핵심 정렬/필터용으로 `budget_monthly`만 별도 컬럼에 복제. `title`은 브랜드명으로 자동 설정.
+- **근거**: 폼 필드가 많고 가변적. preferred_channels(ad_platform[] enum)는 실제 매체 목록(네트워크/언론/옥외/바이럴/숏폼 등)을 다 못 담아 사용하지 않음. 매체는 brief.channels에 저장.
+- **영향**: RFP 발송은 MVP에서 contracted 전원 대상이라 채널 필터 불필요. 추후 필요 시 컬럼 승격.
+
+### D-030. 광고비 증빙 파일 = client-files 버킷
+- **결정**: 매칭 요청 4번 "지난 3개월 소진액 증빙"은 `client-files`(private) 버킷에 service_role로 업로드, 경로를 brief.ad_spend_proof에 저장. `db/migrations/006_client_storage.sql`.
+- **근거**: 분석권한(ad_spend_history) 본격 구현은 5주차. 지금은 증빙 파일 보관만. 운영자 상세에서 signed URL로 열람.
+- **영향**: 5주차에 이 증빙을 ad_spend_history 구조화 입력으로 확장.
+
+### D-031. 옵션 목록은 파트너/요청 폼이 공유
+- **결정**: 매체·마케팅목표·KPI·주기·툴·계약방식 옵션은 `lib/schemas/partner-application.ts`에 정의하고 매칭 요청 스키마가 재사용. (KPI만 광고주용 "콘텐츠 마케팅 활성화" 추가)
+- **근거**: 파트너가 "가능한 매체"와 광고주가 "요청하는 매체"가 같은 분류여야 향후 매칭 가능.
+
 <!-- 새 결정은 아래에 추가 -->
