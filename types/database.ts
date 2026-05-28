@@ -21,6 +21,18 @@ export type PartnerStatus =
 
 export type ContractStatus = "sent" | "signed" | "expired" | "cancelled";
 
+export type RequestStatus =
+  | "draft"
+  | "submitted"
+  | "rfp_sent"
+  | "collecting"
+  | "curating"
+  | "candidates_sent"
+  | "meeting_scheduled"
+  | "closed_won"
+  | "closed_lost"
+  | "cancelled";
+
 export type StaffSize = "20명 미만" | "20-50명" | "51-100명" | "100명 이상";
 
 type PartnerRow = {
@@ -165,6 +177,87 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      clients: {
+        Row: {
+          id: string;
+          user_id: string;
+          company_name: string;
+          industry: string | null;
+          biz_reg_no: string | null;
+          website: string | null;
+          contact_person: string | null;
+          contact_phone: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          company_name: string;
+          industry?: string | null;
+          biz_reg_no?: string | null;
+          website?: string | null;
+          contact_person?: string | null;
+          contact_phone?: string | null;
+          notes?: string | null;
+        };
+        Update: Partial<{
+          company_name: string;
+          industry: string | null;
+          biz_reg_no: string | null;
+          website: string | null;
+          contact_person: string | null;
+          contact_phone: string | null;
+          notes: string | null;
+        }>;
+        Relationships: [];
+      };
+      matching_requests: {
+        Row: {
+          id: string;
+          client_id: string;
+          title: string;
+          brief: Json;
+          budget_monthly: number | null;
+          duration_months: number | null;
+          preferred_channels: string[] | null;
+          status: RequestStatus;
+          submitted_at: string | null;
+          rfp_sent_at: string | null;
+          closed_at: string | null;
+          admin_memo: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          title: string;
+          brief: Json;
+          budget_monthly?: number | null;
+          duration_months?: number | null;
+          preferred_channels?: string[] | null;
+          status?: RequestStatus;
+          submitted_at?: string | null;
+          rfp_sent_at?: string | null;
+          closed_at?: string | null;
+          admin_memo?: string | null;
+        };
+        Update: Partial<{
+          title: string;
+          brief: Json;
+          budget_monthly: number | null;
+          duration_months: number | null;
+          preferred_channels: string[] | null;
+          status: RequestStatus;
+          submitted_at: string | null;
+          rfp_sent_at: string | null;
+          closed_at: string | null;
+          admin_memo: string | null;
+        }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -172,6 +265,7 @@ export type Database = {
       user_role: UserRole;
       partner_status: PartnerStatus;
       contract_status: ContractStatus;
+      request_status: RequestStatus;
     };
   };
 };
