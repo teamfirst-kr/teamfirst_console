@@ -17,6 +17,14 @@ export default async function PublicLayout({
           <Link href="/" className="text-lg font-bold tracking-tight">
             TeamFirst
           </Link>
+          <nav className="ml-6 mr-auto hidden md:flex items-center gap-4 text-sm text-primary-foreground/80">
+            <Link href="/partners" className="hover:text-primary-foreground">
+              파트너 대행사
+            </Link>
+            <Link href="/partner/apply" className="hover:text-primary-foreground">
+              파트너 입점
+            </Link>
+          </nav>
           <div className="flex items-center gap-2">
             {role ? (
               <Button

@@ -44,7 +44,7 @@ export default async function Home() {
                   variant="outline"
                   className="border-white text-primary-foreground hover:bg-white/10 hover:text-primary-foreground"
                 >
-                  <Link href="/partner/apply">파트너 입점 신청</Link>
+                  <Link href="/partners">파트너 대행사 보기</Link>
                 </Button>
               </>
             )}
