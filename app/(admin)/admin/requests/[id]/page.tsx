@@ -244,6 +244,10 @@ export default async function AdminRequestDetailPage({
             }
           />
           <Field label="희망 대행 기간" value={brief.duration} />
+          <Field
+            label="성과조회 권한 부여 의향"
+            value={brief.analysis_access_intent ? "있음" : "없음/미선택"}
+          />
         </CardContent>
       </Card>
 
@@ -252,6 +256,26 @@ export default async function AdminRequestDetailPage({
           <CardTitle>브리프</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
+          {brief.planned_budgets &&
+          Object.keys(brief.planned_budgets).length > 0 ? (
+            <div>
+              <div className="text-xs text-muted-foreground mb-1.5">
+                집행 예정 월평균 광고예산 (매체별)
+              </div>
+              <div className="space-y-1">
+                {Object.entries(brief.planned_budgets).map(([k, v]) => (
+                  <div key={k} className="flex justify-between max-w-xs">
+                    <span className="text-muted-foreground">
+                      {MEDIA_LABEL[k] ?? k}
+                    </span>
+                    <span className="text-foreground">
+                      {Number(v).toLocaleString()}원
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <Block label="주력 제품 / 서비스" value={brief.product_intro} />
           <Block label="신규 대행사 모집 이유" value={brief.reason} />
           <TagRow label="마케팅 목표" values={brief.marketing_goals} />

@@ -43,8 +43,6 @@ export async function submitMatchingRequest(
     reason: formData.get("reason"),
     marketing_goals: getAll(formData, "marketing_goals"),
     channels: getAll(formData, "channels"),
-    // 천단위 쉼표·공백 제거 후 숫자화
-    budget_monthly: String(formData.get("budget_monthly") ?? "").replace(/[^\d]/g, ""),
     duration: formData.get("duration"),
     kpis: getAll(formData, "kpis"),
     report_cycles: getAll(formData, "report_cycles"),
@@ -53,6 +51,7 @@ export async function submitMatchingRequest(
     preferred_agency: formData.get("preferred_agency"),
     avoided_agency: formData.get("avoided_agency") || undefined,
     payment_methods: getAll(formData, "payment_methods"),
+    analysis_access_intent: formData.get("analysis_access_intent") === "on",
   };
 
   const parsed = matchingRequestSchema.safeParse(raw);
@@ -92,6 +91,17 @@ export async function submitMatchingRequest(
   }
 
   const data = parsed.data;
+
+  // 협업 후 집행 예정 월평균 광고예산 (요청 매체별, 선택). planned_budget_<value>
+  const plannedBudgets: Record<string, number> = {};
+  for (const ch of data.channels) {
+    const n = Number(
+      String(formData.get(`planned_budget_${ch}`) ?? "").replace(/[^\d]/g, ""),
+    );
+    if (n > 0) plannedBudgets[ch] = n;
+  }
+  const budgetTotal = Object.values(plannedBudgets).reduce((s, v) => s + v, 0);
+
   const brief: MatchingBrief = {
     company_name: data.company_name,
     biz_reg_no: normalizeBizRegNo(data.biz_reg_no),
@@ -115,6 +125,8 @@ export async function submitMatchingRequest(
     preferred_agency: data.preferred_agency,
     avoided_agency: data.avoided_agency ?? null,
     payment_methods: data.payment_methods,
+    analysis_access_intent: data.analysis_access_intent ?? false,
+    planned_budgets: plannedBudgets,
     ad_spend_proof: null,
   };
 
@@ -124,7 +136,7 @@ export async function submitMatchingRequest(
       client_id: client.id,
       title: data.brand_name,
       brief: brief as unknown as Json,
-      budget_monthly: data.budget_monthly,
+      budget_monthly: budgetTotal || null,
       status: "submitted",
       submitted_at: new Date().toISOString(),
     })

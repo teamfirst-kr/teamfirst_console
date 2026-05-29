@@ -65,11 +65,7 @@ export const matchingRequestSchema = z.object({
     .array(z.enum(REQUEST_MEDIA.map((m) => m.value) as [string, ...string[]]))
     .min(1, "광고대행을 요청할 매체를 한 개 이상 선택해주세요."),
 
-  // 4. 월 예산
-  budget_monthly: z.coerce
-    .number({ message: "월 예산을 숫자로 입력해주세요." })
-    .int()
-    .min(0, "0 이상 숫자를 입력해주세요."),
+  // 4. 예산은 매체별 집행 예정 광고예산(planned_budgets)으로 별도 처리 (action에서)
 
   // 5. 희망 대행 기간
   duration: z.string().min(1, "희망 대행 기간을 입력해주세요.").max(100),
@@ -99,6 +95,9 @@ export const matchingRequestSchema = z.object({
   payment_methods: z
     .array(z.enum(PAYMENT_METHOD_OPTIONS))
     .min(1, "희망 계약 방식을 선택해주세요."),
+
+  // 성과조회(분석) 권한 부여 의향
+  analysis_access_intent: z.boolean().optional(),
 });
 
 export type MatchingRequestInput = z.input<typeof matchingRequestSchema>;
@@ -133,6 +132,9 @@ export type MatchingBrief = {
   preferred_agency: string;
   avoided_agency: string | null;
   payment_methods: string[];
+  analysis_access_intent: boolean;
+  // 협업 후 집행 예정 월평균 광고예산 (요청 매체별, 원)
+  planned_budgets: Record<string, number>;
   ad_spend_proof: { name: string; path: string } | null;
 };
 

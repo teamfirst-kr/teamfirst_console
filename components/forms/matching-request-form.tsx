@@ -34,25 +34,32 @@ function FieldError({ messages }: { messages?: string[] }) {
   return <p className="text-sm text-destructive">{messages[0]}</p>;
 }
 
-// 천단위 쉼표로 표시하는 예산 입력. 제출 시 값은 쉼표 포함 문자열이며 서버에서 숫자만 추출.
-function BudgetInput({ error }: { error?: string[] }) {
+// 매체별 집행 예정 월평균 광고예산 입력 (천단위 쉼표 표시, 서버에서 숫자만 추출)
+function PlannedBudgetInput({
+  channel,
+  label,
+}: {
+  channel: string;
+  label: string;
+}) {
   const [display, setDisplay] = useState("");
   return (
-    <>
+    <div className="space-y-1">
+      <Label htmlFor={`planned_budget_${channel}`} className="text-xs">
+        {label} (원/월)
+      </Label>
       <Input
-        id="budget_monthly"
-        name="budget_monthly"
+        id={`planned_budget_${channel}`}
+        name={`planned_budget_${channel}`}
         inputMode="numeric"
-        placeholder="예: 30,000,000"
-        required
+        placeholder="예: 3,000,000"
         value={display}
         onChange={(e) => {
           const digits = e.target.value.replace(/[^\d]/g, "");
           setDisplay(digits ? Number(digits).toLocaleString("ko-KR") : "");
         }}
       />
-      <FieldError messages={error} />
-    </>
+    </div>
   );
 }
 
@@ -97,6 +104,7 @@ export function MatchingRequestForm() {
     null,
   );
   const errors = state?.fieldErrors ?? {};
+  const [channels, setChannels] = useState<string[]>([]);
 
   return (
     <form action={formAction} className="space-y-6">
@@ -192,35 +200,71 @@ export function MatchingRequestForm() {
         </CardContent>
       </Card>
 
-      {/* 3. 요청 매체 */}
+      {/* 3. 요청 매체 (선택값을 4번 예산과 연동) */}
       <Card>
         <CardHeader>
           <CardTitle>3. 광고대행을 요청할 매체 / 영역 *</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <CheckboxGroup name="channels" options={REQUEST_MEDIA} columns={2} />
+          <div className="grid gap-2 md:grid-cols-2">
+            {REQUEST_MEDIA.map((m) => (
+              <label
+                key={m.value}
+                className="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm cursor-pointer hover:bg-accent"
+              >
+                <input
+                  type="checkbox"
+                  name="channels"
+                  value={m.value}
+                  checked={channels.includes(m.value)}
+                  onChange={() =>
+                    setChannels((prev) =>
+                      prev.includes(m.value)
+                        ? prev.filter((x) => x !== m.value)
+                        : [...prev, m.value],
+                    )
+                  }
+                  className="h-4 w-4 shrink-0"
+                />
+                <span>{m.label}</span>
+              </label>
+            ))}
+          </div>
           <FieldError messages={errors.channels} />
         </CardContent>
       </Card>
 
-      {/* 4. 예산 + 증빙 */}
+      {/* 4. 집행 예정 광고예산 + 증빙 */}
       <Card>
         <CardHeader>
-          <CardTitle>4. 월 마케팅 예산 *</CardTitle>
+          <CardTitle>4. 집행 예정 광고예산 / 증빙</CardTitle>
           <CardDescription>
-            10만원 단위로 입력해주세요. 지난 3개월 소진액 증빙을 함께 올리시면
-            후보 대행사의 분석 정확도가 높아집니다.
+            협업 후 집행 예정인 매체별 월평균 광고예산을 입력해주세요. (선택) 증빙
+            자료는 필수입니다.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="budget_monthly">월 예산 (원) *</Label>
-            <BudgetInput error={errors.budget_monthly} />
+            <Label>협업 후 집행 예정 월평균 광고예산 (매체별, 선택)</Label>
+            {channels.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                위 3번에서 요청 매체를 선택하면 매체별 예산 입력란이 나타납니다.
+              </p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {channels.map((ch) => {
+                  const label =
+                    REQUEST_MEDIA.find((m) => m.value === ch)?.label ?? ch;
+                  return (
+                    <PlannedBudgetInput key={ch} channel={ch} label={label} />
+                  );
+                })}
+              </div>
+            )}
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="ad_spend_proof">
-              지난 3개월 소진액 증빙 * (필수)
-            </Label>
+            <Label htmlFor="ad_spend_proof">광고비 증빙 자료 * (필수)</Label>
             <Input
               id="ad_spend_proof"
               name="ad_spend_proof"
@@ -230,10 +274,24 @@ export function MatchingRequestForm() {
               className="cursor-pointer file:mr-3 file:rounded file:border-0 file:bg-muted file:px-3 file:py-1 file:text-sm"
             />
             <p className="text-xs text-muted-foreground">
-              광고 소진 내역 캡처, 광고비 결제 카드 명세서 등 (PDF·이미지, 10MB
-              이하). 정확한 광고 예산 검증을 위해 필수로 제출해주세요.
+              광고 소진 내역 캡처, 광고비 결제 카드 명세서, 사업자 증빙 등
+              (PDF·이미지, 10MB 이하).
             </p>
           </div>
+
+          {/* 성과조회(분석) 권한 부여 의향 */}
+          <label className="flex items-start gap-2 rounded-md border border-input p-3 text-sm cursor-pointer hover:bg-accent">
+            <input
+              type="checkbox"
+              name="analysis_access_intent"
+              className="mt-0.5 h-4 w-4"
+            />
+            <span>
+              미팅 전, 후보 대행사가 매체 이관 없이 <strong>데이터만 조회</strong>할
+              수 있는 <strong>성과조회 권한</strong>을 부여할 의향이 있습니다.
+              (분석 정확도가 높아집니다)
+            </span>
+          </label>
         </CardContent>
       </Card>
 

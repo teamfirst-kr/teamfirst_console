@@ -21,8 +21,6 @@ import type { RequestStatus } from "@/types/database";
 
 import { CandidateCards, type CandidateView } from "./candidate-cards";
 import { CandidateScoreboard } from "./candidate-scoreboard";
-import { SpendSection, type SpendRow } from "./spend-section";
-
 const MEDIA_LABEL = Object.fromEntries(REQUEST_MEDIA.map((m) => [m.value, m.label]));
 
 export const dynamic = "force-dynamic";
@@ -139,16 +137,6 @@ export default async function ClientRequestDetailPage({
     };
   });
 
-  // 광고비 신고 이력
-  const { data: spendRows } = await supabase
-    .from("ad_spend_history")
-    .select("period_yearmonth, platform_amounts")
-    .eq("request_id", id);
-  const spend: SpendRow[] = (spendRows ?? []).map((s) => ({
-    period: s.period_yearmonth,
-    amounts: (s.platform_amounts ?? {}) as Record<string, number>,
-  }));
-
   const timeline = await buildRequestTimeline(id);
 
   const brief = (request.brief ?? {}) as MatchingBrief;
@@ -201,8 +189,6 @@ export default async function ClientRequestDetailPage({
 
       <CandidateCards requestId={request.id} candidates={candidates} />
 
-      <SpendSection requestId={request.id} existing={spend} />
-
       <Card>
         <CardHeader>
           <CardTitle>요청 개요</CardTitle>
@@ -239,6 +225,10 @@ export default async function ClientRequestDetailPage({
             }
           />
           <Field label="희망 대행 기간" value={brief.duration} />
+          <Field
+            label="성과조회 권한 부여 의향"
+            value={brief.analysis_access_intent ? "있음" : "없음/미선택"}
+          />
         </CardContent>
       </Card>
 
@@ -247,6 +237,26 @@ export default async function ClientRequestDetailPage({
           <CardTitle>브리프</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
+          {brief.planned_budgets &&
+          Object.keys(brief.planned_budgets).length > 0 ? (
+            <div>
+              <div className="text-xs text-muted-foreground mb-1.5">
+                집행 예정 월평균 광고예산 (매체별)
+              </div>
+              <div className="space-y-1">
+                {Object.entries(brief.planned_budgets).map(([k, v]) => (
+                  <div key={k} className="flex justify-between max-w-xs">
+                    <span className="text-muted-foreground">
+                      {MEDIA_LABEL[k] ?? k}
+                    </span>
+                    <span className="text-foreground">
+                      {Number(v).toLocaleString()}원
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <Block label="주력 제품 / 서비스" value={brief.product_intro} />
           <Block label="신규 대행사 모집 이유" value={brief.reason} />
           <TagRow label="마케팅 목표" values={brief.marketing_goals} />
