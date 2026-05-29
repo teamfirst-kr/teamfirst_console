@@ -60,6 +60,14 @@ export default async function PublicLayout({
       </header>
       <main className="flex-1">{children}</main>
       <footer className="border-t bg-background py-6 text-center text-xs text-muted-foreground">
+        <div className="mb-2 flex justify-center gap-4">
+          <Link href="/terms" className="hover:text-foreground">
+            이용약관
+          </Link>
+          <Link href="/privacy" className="hover:text-foreground">
+            개인정보처리방침
+          </Link>
+        </div>
         © {new Date().getFullYear()} TeamFirst. All rights reserved.
       </footer>
     </div>
