@@ -75,16 +75,20 @@ export async function selectCandidates(
   if (insertError) return { ok: false, error: insertError.message };
 
   // 지원서 상태 갱신: 선정=shortlisted, 그 외=rejected
+  const selectedList = Array.from(selectedIds);
+  const rejectedList = applications
+    .map((a) => a.id)
+    .filter((id) => !selectedIds.has(id));
   await supabase
     .from("applications")
     .update({ status: "shortlisted" })
-    .eq("request_id", requestId)
-    .in("id", Array.from(selectedIds));
-  await supabase
-    .from("applications")
-    .update({ status: "rejected" })
-    .eq("request_id", requestId)
-    .not("id", "in", `(${Array.from(selectedIds).join(",")})`);
+    .in("id", selectedList);
+  if (rejectedList.length > 0) {
+    await supabase
+      .from("applications")
+      .update({ status: "rejected" })
+      .in("id", rejectedList);
+  }
 
   // 요청 상태: candidates_sent
   await supabase
