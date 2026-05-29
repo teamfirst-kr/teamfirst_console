@@ -53,7 +53,7 @@ export default async function PartnerRfpDetailPage({
 
   const { data: request } = await supabase
     .from("matching_requests")
-    .select("id, title, brief, budget_monthly, status")
+    .select("id, title, brief, budget_monthly, status, submitted_at, created_at")
     .eq("id", id)
     .single();
 
@@ -82,30 +82,17 @@ export default async function PartnerRfpDetailPage({
     : { data: null };
 
   const brief = (request.brief ?? {}) as MatchingBrief;
+  const plannedBudgets = brief.planned_budgets ?? {};
+  const hasPlanned = Object.keys(plannedBudgets).length > 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <Link
-            href="/partner/dashboard"
-            className="text-sm text-muted-foreground hover:underline"
-          >
-            ← RFP 목록
-          </Link>
-          <h1 className="mt-2 text-2xl font-bold text-secondary">
-            {request.title}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{brief.category}</p>
-        </div>
-        {myApp ? (
-          <Badge variant="success">지원 완료</Badge>
-        ) : (
-          <Button asChild>
-            <Link href={`/partner/rfp/${id}/apply`}>지원하기</Link>
-          </Button>
-        )}
-      </div>
+    <div className="mx-auto max-w-3xl space-y-5">
+      <Link
+        href="/partner/dashboard"
+        className="text-sm text-muted-foreground hover:underline"
+      >
+        ← RFP 목록
+      </Link>
 
       {meeting ? (
         <MeetingResponse
@@ -118,57 +105,174 @@ export default async function PartnerRfpDetailPage({
         />
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>요청 개요</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2 text-sm">
-          <Field
-            label="월 예산"
-            value={
-              request.budget_monthly
-                ? `${request.budget_monthly.toLocaleString()}원`
-                : null
-            }
-          />
-          <Field label="희망 대행 기간" value={brief.duration} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>브리프</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm">
-          <Block label="주력 제품 / 서비스" value={brief.product_intro} />
-          <Block label="신규 대행사 모집 이유" value={brief.reason} />
-          <TagRow label="마케팅 목표" values={brief.marketing_goals} />
-          <TagRow
-            label="요청 매체"
-            values={brief.channels?.map((c) => MEDIA_LABEL[c] ?? c)}
-          />
-          <TagRow label="중요 KPI" values={brief.kpis} />
-          <TagRow label="리포트 주기" values={brief.report_cycles} />
-          <TagRow label="미팅 주기" values={brief.meeting_cycles} />
-          <TagRow label="운영 툴" values={brief.tools} />
-          <TagRow label="희망 계약 방식" values={brief.payment_methods} />
-          <Block label="희망 대행사 기준" value={brief.preferred_agency} />
-          <Block label="비희망 대행사 특징" value={brief.avoided_agency} />
-        </CardContent>
-      </Card>
-
-      {!myApp ? (
-        <div className="flex justify-end">
-          <Button asChild size="lg">
-            <Link href={`/partner/rfp/${id}/apply`}>이 RFP에 지원하기</Link>
-          </Button>
+      {/* 1. 표지 */}
+      <div className="rounded-xl bg-secondary p-8 text-secondary-foreground">
+        <div className="text-xs font-bold tracking-widest text-white/50">
+          TEAM FIRST · AGENCY MATCHING RFP
         </div>
-      ) : (
-        <p className="text-sm text-muted-foreground text-right">
-          이미 지원한 RFP입니다. (제출 {format(new Date(), "yyyy.MM.dd")})
-        </p>
-      )}
+        <p className="mt-6 text-sm text-white/70">{brief.brand_name}</p>
+        <h1 className="mt-1 text-3xl font-bold leading-tight">
+          광고대행 제안요청서
+        </h1>
+        <div className="mt-6 flex items-center gap-2">
+          <Badge variant="muted">{brief.category}</Badge>
+          <span className="text-xs text-white/50">
+            발행일자{" "}
+            {format(
+              new Date(request.submitted_at ?? request.created_at ?? Date.now()),
+              "yyyy.MM.dd",
+            )}
+          </span>
+        </div>
+      </div>
+
+      {/* 2. 브랜드 & 서비스 소개 */}
+      <Section title="브랜드 및 서비스 소개">
+        <Field label="브랜드" value={brief.brand_name} />
+        <Field label="카테고리" value={brief.category} />
+        <Field
+          label="Website"
+          value={
+            brief.website ? (
+              <a
+                href={brief.website}
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary hover:underline break-all"
+              >
+                {brief.website}
+              </a>
+            ) : null
+          }
+        />
+        <Block label="브랜드 소개" value={brief.product_intro} />
+      </Section>
+
+      {/* 3. 프로젝트 배경 및 예산 */}
+      <Section title="프로젝트 배경 및 예산">
+        <Block label="모집 배경" value={brief.reason} />
+        <Field label="계약 기간" value={brief.duration} />
+        <div>
+          <div className="text-xs text-muted-foreground mb-1.5">
+            집행 예정 월평균 광고예산
+          </div>
+          {hasPlanned ? (
+            <div className="space-y-1">
+              {Object.entries(plannedBudgets).map(([k, v]) => (
+                <div key={k} className="flex justify-between max-w-xs">
+                  <span className="text-muted-foreground">
+                    {MEDIA_LABEL[k] ?? k}
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {Number(v).toLocaleString()}원
+                  </span>
+                </div>
+              ))}
+              {request.budget_monthly ? (
+                <div className="flex justify-between max-w-xs border-t pt-1 mt-1">
+                  <span className="font-medium">합계</span>
+                  <span className="font-bold text-primary">
+                    {request.budget_monthly.toLocaleString()}원
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-foreground">
+              {request.budget_monthly
+                ? `${request.budget_monthly.toLocaleString()}원`
+                : "협의"}
+            </p>
+          )}
+        </div>
+      </Section>
+
+      {/* 4. 마케팅 목표 및 KPI */}
+      <Section title="마케팅 목표 및 KPI">
+        <TagRow label="최우선 마케팅 목표" values={brief.marketing_goals} />
+        <TagRow label="핵심 성과 지표 (KPI)" values={brief.kpis} />
+      </Section>
+
+      {/* 5. 대행 범위 및 필수 운영 툴 */}
+      <Section title="대행 범위 및 필수 운영 툴">
+        <TagRow
+          label="요청 매체 & 마케팅 영역"
+          values={brief.channels?.map((c) => MEDIA_LABEL[c] ?? c)}
+        />
+        <Field
+          label="성과조회 권한"
+          value={
+            brief.analysis_access_intent
+              ? "미팅 전 데이터 분석을 위한 성과조회 권한 부여 가능"
+              : "미정 (협의)"
+          }
+        />
+        <TagRow label="필수 운영 툴" values={brief.tools} />
+      </Section>
+
+      {/* 6. 커뮤니케이션 요청 */}
+      <Section title="커뮤니케이션 요청">
+        <TagRow label="리포트 주기" values={brief.report_cycles} />
+        <TagRow label="미팅 주기" values={brief.meeting_cycles} />
+      </Section>
+
+      {/* 7. 파트너사 요건 및 계약 */}
+      <Section title="파트너사 요건 및 계약">
+        <Block label="매칭 희망 파트너" value={brief.preferred_agency} />
+        <Block
+          label="매칭 지양 파트너"
+          value={brief.avoided_agency || "해당 없음"}
+        />
+        <TagRow label="계약 방식" values={brief.payment_methods} />
+      </Section>
+
+      {/* 8. 지원 CTA */}
+      <div className="rounded-xl border bg-card p-8 text-center shadow-sm">
+        {myApp ? (
+          <>
+            <p className="text-lg font-bold text-secondary">지원 완료</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              이미 이 RFP에 지원하셨습니다. 운영팀의 검토 결과를 기다려주세요.
+            </p>
+            <Badge variant="success" className="mt-3">
+              제출됨
+            </Badge>
+          </>
+        ) : (
+          <>
+            <p className="text-lg font-bold text-secondary">
+              이 프로젝트에 제안하시겠습니까?
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              제안 의사가 있으시면 아래 버튼으로 지원서를 제출해주세요.
+            </p>
+            <Button asChild size="lg" className="mt-4">
+              <Link href={`/partner/rfp/${id}/apply`}>이 RFP에 지원하기</Link>
+            </Button>
+          </>
+        )}
+      </div>
     </div>
+  );
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <span className="inline-block h-4 w-1 rounded bg-primary" />
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">{children}</CardContent>
+    </Card>
   );
 }
 

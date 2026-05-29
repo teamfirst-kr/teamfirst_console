@@ -4,9 +4,14 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentRole } from "@/lib/auth";
-import { triggerN8n } from "@/lib/webhooks/n8n";
+import { sendEmail } from "@/lib/email/resend";
+import { rfpArrivedEmail } from "@/lib/email/templates";
 import type { MatchingBrief } from "@/lib/schemas/matching-request";
 import type { RequestStatus } from "@/types/database";
+
+function appUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+}
 
 async function assertAdmin() {
   const role = await getCurrentRole();
@@ -70,51 +75,33 @@ export async function sendRfp(requestId: string): Promise<RfpResult> {
     })
     .eq("id", requestId);
 
-  // n8n 트리거 (슬라이드 생성·메일 발송은 n8n 워크플로우가 담당)
-  // 기존 Google Sheet 대신 이 payload로 수신 대상·브리프를 모두 전달한다.
+  // 대행사 전원에게 RFP 도착 알림 메일 발송 (앱 내 RFP로 연결).
+  // n8n/슬라이드 없이 플랫폼에서 RFP를 열람한다.
   const brief = (request.brief ?? {}) as MatchingBrief;
-  await triggerN8n("rfp.sent", {
-    request_id: requestId,
-    title: request.title,
-    // 광고주(브랜드) 정보
-    brand: {
-      name: brief.brand_name,
-      contact_email: brief.email,
-      contact_title: brief.contact_title,
-      phone: brief.phone,
-      website: brief.website,
-      category: brief.category,
-    },
-    // RFP 본문 생성용 브리프
-    brief: {
-      product_intro: brief.product_intro,
-      reason: brief.reason,
-      marketing_goals: brief.marketing_goals,
-      channels: brief.channels,
-      budget_monthly: request.budget_monthly,
-      duration: brief.duration,
-      kpis: brief.kpis,
-      report_cycles: brief.report_cycles,
-      meeting_cycles: brief.meeting_cycles,
-      tools: brief.tools,
-      preferred_agency: brief.preferred_agency,
-      avoided_agency: brief.avoided_agency,
-      payment_methods: brief.payment_methods,
-    },
-    // 수신 대행사 목록 (Google Sheet 대체)
-    recipients: partners.map((p) => ({
-      partner_id: p.id,
-      company_name: p.company_name,
-      email: p.contact_email,
-    })),
-    partner_count: partners.length,
-  });
+  const rfpUrl = `${appUrl()}/partner/rfp/${requestId}`;
+  let mailed = 0;
+  for (const p of partners) {
+    const mail = rfpArrivedEmail({
+      companyName: p.company_name,
+      brandName: brief.brand_name ?? request.title,
+      category: brief.category ?? "-",
+      rfpUrl,
+    });
+    const r = await sendEmail({ to: p.contact_email, ...mail });
+    if (r.ok) mailed++;
+  }
+  if (mailed > 0) {
+    await supabase
+      .from("rfp_notifications")
+      .update({ email_sent: true })
+      .eq("request_id", requestId);
+  }
 
   revalidatePath(`/admin/requests/${requestId}`);
   revalidatePath("/admin/requests");
   return {
     ok: true,
-    message: `RFP를 ${partners.length}개 대행사에 발송 처리했습니다.`,
+    message: `RFP를 ${partners.length}개 대행사에 발송했습니다. (메일 ${mailed}건)`,
     count: partners.length,
   };
 }

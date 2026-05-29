@@ -8,7 +8,6 @@ import { getCurrentPartnerId } from "@/lib/auth";
 import { sendEmail } from "@/lib/email/resend";
 import { meetingConfirmedEmail } from "@/lib/email/templates";
 import { buildIcs } from "@/lib/email/ics";
-import { triggerN8n } from "@/lib/webhooks/n8n";
 import type { MatchingBrief } from "@/lib/schemas/matching-request";
 
 export type MeetingRespondResult = { ok: true } | { ok: false; error: string };
@@ -110,14 +109,6 @@ export async function acceptMeetingSlot(
         scheduledAt: fmtKst(slotIso),
       });
       await sendEmail({ to: partner.contact_email, ...pmail, attachments });
-
-      await triggerN8n("meeting.confirmed", {
-        request_id: candidate.request_id,
-        title: request.title,
-        scheduled_at: slotIso,
-        brand_email: brief.email,
-        partner_email: partner.contact_email,
-      });
     }
   }
 

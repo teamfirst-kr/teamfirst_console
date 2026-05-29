@@ -142,6 +142,49 @@ export function meetingConfirmedEmail(params: {
   };
 }
 
+export function rfpArrivedEmail(params: {
+  companyName: string;
+  brandName: string;
+  category: string;
+  budget?: number | null;
+  duration?: string | null;
+  preferredAgency?: string | null;
+  rfpUrl: string;
+}): { subject: string; html: string } {
+  const row = (label: string, value: string) =>
+    `<tr>
+       <td style="padding:9px 0;color:#6b7280;width:88px;vertical-align:top;">${label}</td>
+       <td style="padding:9px 0;font-weight:600;color:#111827;">${value}</td>
+     </tr>`;
+  const budgetText = params.budget
+    ? `${params.budget.toLocaleString()}원/월`
+    : "협의";
+  return {
+    subject: "[TeamFirst] 신규 대행사 매칭 공고(RFP)가 도착했습니다",
+    html: layout(
+      "신규 매칭 공고 알림",
+      `<p>${params.companyName} 담당자님, 안녕하세요. 팀퍼스트입니다.</p>
+       <p>신규 브랜드사의 대행사 매칭 공고가 접수되어 공유드립니다. 아래 상세
+       내용을 확인하시고, 제안 의사가 있으시면 플랫폼에서 지원해주세요.</p>
+       <div style="margin:16px 0;padding:16px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;">
+         <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;border-collapse:collapse;">
+           ${row("브랜드", params.brandName)}
+           ${row("카테고리", params.category)}
+           ${row("예산", budgetText)}
+           ${params.duration ? row("대행기간", params.duration) : ""}
+         </table>
+         ${
+           params.preferredAgency
+             ? `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #e5e7eb;font-size:13px;color:#4b5563;line-height:1.6;"><strong>선정 주요 기준</strong><br/>${params.preferredAgency}</div>`
+             : ""
+         }
+       </div>
+       <p style="text-align:center;">${button(params.rfpUrl, "RFP 확인하고 지원하기")}</p>
+       <p style="font-size:12px;color:#9ca3af;text-align:center;">버튼을 누르면 팀퍼스트 콘솔에서 상세 RFP를 확인할 수 있습니다.</p>`,
+    ),
+  };
+}
+
 export function partnerWonEmail(params: {
   companyName: string;
   requestTitle: string;
