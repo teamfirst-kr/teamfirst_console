@@ -8,6 +8,7 @@ import { getCurrentPartnerId } from "@/lib/auth";
 import { sendEmail } from "@/lib/email/resend";
 import { meetingConfirmedEmail } from "@/lib/email/templates";
 import { buildIcs } from "@/lib/email/ics";
+import { triggerN8n } from "@/lib/webhooks/n8n";
 import type { MatchingBrief } from "@/lib/schemas/matching-request";
 
 export type MeetingRespondResult = { ok: true } | { ok: false; error: string };
@@ -109,6 +110,23 @@ export async function acceptMeetingSlot(
         scheduledAt: fmtKst(slotIso),
       });
       await sendEmail({ to: partner.contact_email, ...pmail, attachments });
+
+      // n8n: 구글 캘린더 이벤트 + 구글미트 링크 생성·안내 (구글 워크스페이스 연동)
+      const end = new Date(
+        new Date(slotIso).getTime() + 60 * 60000,
+      ).toISOString();
+      await triggerN8n("meeting.confirmed", {
+        request_id: candidate.request_id,
+        meeting_id: meetingId,
+        title: request.title,
+        brand_name: brief.brand_name,
+        partner_name: partner.company_name,
+        start: slotIso,
+        end,
+        attendees: [brief.email, partner.contact_email].filter(Boolean),
+        brand_email: brief.email,
+        partner_email: partner.contact_email,
+      });
     }
   }
 
