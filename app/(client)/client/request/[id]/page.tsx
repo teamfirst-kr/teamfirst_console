@@ -208,6 +208,10 @@ export default async function ClientRequestDetailPage({
           <CardTitle>요청 개요</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 text-sm">
+          <Field label="상호 (사업자명)" value={brief.company_name} />
+          <Field label="사업자등록번호" value={brief.biz_reg_no} />
+          <Field label="대표자명" value={brief.representative} />
+          <Field label="담당자" value={brief.contact_name} />
           <Field label="담당자 직책" value={brief.contact_title} />
           <Field label="연락처" value={brief.phone} />
           <Field label="이메일" value={brief.email} />

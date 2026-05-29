@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   matchingRequestSchema,
+  normalizeBizRegNo,
   type MatchingBrief,
 } from "@/lib/schemas/matching-request";
 import {
@@ -28,7 +29,11 @@ export async function submitMatchingRequest(
   formData: FormData,
 ): Promise<RequestState> {
   const raw = {
+    company_name: formData.get("company_name"),
+    biz_reg_no: formData.get("biz_reg_no"),
+    representative: formData.get("representative"),
     brand_name: formData.get("brand_name"),
+    contact_name: formData.get("contact_name"),
     contact_title: formData.get("contact_title"),
     email: formData.get("email"),
     phone: formData.get("phone"),
@@ -38,7 +43,8 @@ export async function submitMatchingRequest(
     reason: formData.get("reason"),
     marketing_goals: getAll(formData, "marketing_goals"),
     channels: getAll(formData, "channels"),
-    budget_monthly: formData.get("budget_monthly"),
+    // 천단위 쉼표·공백 제거 후 숫자화
+    budget_monthly: String(formData.get("budget_monthly") ?? "").replace(/[^\d]/g, ""),
     duration: formData.get("duration"),
     kpis: getAll(formData, "kpis"),
     report_cycles: getAll(formData, "report_cycles"),
@@ -59,15 +65,18 @@ export async function submitMatchingRequest(
     return { error: "입력값을 다시 확인해주세요.", fieldErrors };
   }
 
-  // 증빙 파일 검증
+  // 증빙 파일 검증 (필수)
   const proofFile = formData.get("ad_spend_proof");
-  if (proofFile instanceof File && proofFile.size > 0) {
-    if (proofFile.size > MAX_FILE_SIZE) {
-      return { error: "증빙 파일은 10MB 이하여야 합니다." };
-    }
-    const fileError = validateUploadFile(proofFile);
-    if (fileError) return { error: fileError };
+  if (!(proofFile instanceof File) || proofFile.size === 0) {
+    return {
+      error: "지난 3개월 광고비 소진액 증빙 파일을 첨부해주세요. (필수)",
+    };
   }
+  if (proofFile.size > MAX_FILE_SIZE) {
+    return { error: "증빙 파일은 10MB 이하여야 합니다." };
+  }
+  const fileError = validateUploadFile(proofFile);
+  if (fileError) return { error: fileError };
 
   const supabase = await createClient();
 
@@ -84,7 +93,11 @@ export async function submitMatchingRequest(
 
   const data = parsed.data;
   const brief: MatchingBrief = {
+    company_name: data.company_name,
+    biz_reg_no: normalizeBizRegNo(data.biz_reg_no),
+    representative: data.representative,
     brand_name: data.brand_name,
+    contact_name: data.contact_name,
     contact_title: data.contact_title,
     email: data.email,
     phone: data.phone,

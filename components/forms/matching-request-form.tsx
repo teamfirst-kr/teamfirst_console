@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +32,28 @@ import {
 function FieldError({ messages }: { messages?: string[] }) {
   if (!messages || messages.length === 0) return null;
   return <p className="text-sm text-destructive">{messages[0]}</p>;
+}
+
+// 천단위 쉼표로 표시하는 예산 입력. 제출 시 값은 쉼표 포함 문자열이며 서버에서 숫자만 추출.
+function BudgetInput({ error }: { error?: string[] }) {
+  const [display, setDisplay] = useState("");
+  return (
+    <>
+      <Input
+        id="budget_monthly"
+        name="budget_monthly"
+        inputMode="numeric"
+        placeholder="예: 30,000,000"
+        required
+        value={display}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/[^\d]/g, "");
+          setDisplay(digits ? Number(digits).toLocaleString("ko-KR") : "");
+        }}
+      />
+      <FieldError messages={error} />
+    </>
+  );
 }
 
 function CheckboxGroup({
@@ -85,9 +107,29 @@ export function MatchingRequestForm() {
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
+            <Label htmlFor="company_name">상호 (사업자명) *</Label>
+            <Input id="company_name" name="company_name" placeholder="예: 원앤코 주식회사" required />
+            <FieldError messages={errors.company_name} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="biz_reg_no">사업자등록번호 *</Label>
+            <Input id="biz_reg_no" name="biz_reg_no" placeholder="000-00-00000" required />
+            <FieldError messages={errors.biz_reg_no} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="representative">대표자명 *</Label>
+            <Input id="representative" name="representative" required />
+            <FieldError messages={errors.representative} />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="brand_name">브랜드명 *</Label>
             <Input id="brand_name" name="brand_name" required />
             <FieldError messages={errors.brand_name} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="contact_name">담당자명 *</Label>
+            <Input id="contact_name" name="contact_name" required />
+            <FieldError messages={errors.contact_name} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="contact_title">담당자 직책 *</Label>
@@ -101,7 +143,13 @@ export function MatchingRequestForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone">직통 연락처 *</Label>
-            <Input id="phone" name="phone" required />
+            <Input
+              id="phone"
+              name="phone"
+              inputMode="numeric"
+              placeholder="010-1234-5678"
+              required
+            />
             <FieldError messages={errors.phone} />
           </div>
           <div className="space-y-2 md:col-span-2">
@@ -167,31 +215,23 @@ export function MatchingRequestForm() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="budget_monthly">월 예산 (원) *</Label>
-            <Input
-              id="budget_monthly"
-              name="budget_monthly"
-              type="number"
-              min={0}
-              step={100000}
-              placeholder="예: 30000000"
-              required
-            />
-            <FieldError messages={errors.budget_monthly} />
+            <BudgetInput error={errors.budget_monthly} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="ad_spend_proof">
-              지난 3개월 소진액 증빙 (선택)
+              지난 3개월 소진액 증빙 * (필수)
             </Label>
             <Input
               id="ad_spend_proof"
               name="ad_spend_proof"
               type="file"
               accept=".pdf,image/png,image/jpeg,image/webp"
+              required
               className="cursor-pointer file:mr-3 file:rounded file:border-0 file:bg-muted file:px-3 file:py-1 file:text-sm"
             />
             <p className="text-xs text-muted-foreground">
               광고 소진 내역 캡처, 광고비 결제 카드 명세서 등 (PDF·이미지, 10MB
-              이하)
+              이하). 정확한 광고 예산 검증을 위해 필수로 제출해주세요.
             </p>
           </div>
         </CardContent>

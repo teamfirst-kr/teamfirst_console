@@ -30,12 +30,23 @@ export {
 const optionalText = (max: number) =>
   z.string().max(max).optional().or(z.literal("").transform(() => undefined));
 
+const PHONE_REGEX = /^0\d{1,2}-?\d{3,4}-?\d{4}$/;
+const BIZ_REG_REGEX = /^\d{3}-?\d{2}-?\d{5}$/;
+
 export const matchingRequestSchema = z.object({
-  // 1. 매칭 기본정보
+  // 1. 매칭 기본정보 (브랜드사 정보)
+  company_name: z.string().min(1, "상호(사업자명)를 입력해주세요.").max(200),
+  biz_reg_no: z
+    .string()
+    .regex(BIZ_REG_REGEX, "사업자등록번호 형식이 올바르지 않습니다. (000-00-00000)"),
+  representative: z.string().min(1, "대표자명을 입력해주세요.").max(50),
   brand_name: z.string().min(1, "브랜드명을 입력해주세요.").max(200),
+  contact_name: z.string().min(1, "담당자명을 입력해주세요.").max(50),
   contact_title: z.string().min(1, "담당자 직책을 입력해주세요.").max(100),
   email: z.string().email("올바른 이메일을 입력해주세요."),
-  phone: z.string().min(1, "직통 연락처를 입력해주세요.").max(30),
+  phone: z
+    .string()
+    .regex(PHONE_REGEX, "올바른 연락처 형식이 아닙니다. (예: 010-1234-5678)"),
   website: z
     .union([z.string().url("올바른 URL을 입력해주세요."), z.literal("")])
     .optional(),
@@ -93,9 +104,18 @@ export const matchingRequestSchema = z.object({
 export type MatchingRequestInput = z.input<typeof matchingRequestSchema>;
 export type MatchingRequestOutput = z.output<typeof matchingRequestSchema>;
 
+export function normalizeBizRegNo(value: string): string {
+  const d = value.replace(/\D/g, "");
+  return d.length === 10 ? `${d.slice(0, 3)}-${d.slice(3, 5)}-${d.slice(5)}` : value;
+}
+
 // matching_requests.brief(JSONB)에 저장되는 구조
 export type MatchingBrief = {
+  company_name: string;
+  biz_reg_no: string;
+  representative: string;
   brand_name: string;
+  contact_name: string;
   contact_title: string;
   email: string;
   phone: string;
