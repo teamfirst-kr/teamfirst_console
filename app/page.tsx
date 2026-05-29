@@ -42,7 +42,7 @@ export default async function Home() {
                   asChild
                   size="lg"
                   variant="outline"
-                  className="border-white text-primary-foreground hover:bg-white/10 hover:text-primary-foreground"
+                  className="border-white bg-transparent text-white hover:bg-white hover:text-primary"
                 >
                   <Link href="/partners">파트너 대행사 보기</Link>
                 </Button>
