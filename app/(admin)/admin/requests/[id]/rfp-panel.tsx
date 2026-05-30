@@ -82,7 +82,7 @@ export function RfpPanel({
         ) : null}
 
         <p className="text-xs text-muted-foreground">
-          발송 시 n8n 워크플로우(슬라이드 생성·메일)가 트리거됩니다.
+          발송 시 입점 완료 대행사 전원에게 안내 메일이 발송됩니다.
         </p>
       </CardContent>
     </Card>
