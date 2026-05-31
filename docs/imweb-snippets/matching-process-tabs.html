@@ -5,7 +5,9 @@
 -->
 <style>
   /* ───── 공통 ───── */
-  .tf-root{font-family:'Pretendard Variable',Pretendard,'Apple SD Gothic Neo',system-ui,sans-serif;color:#0f172a;max-width:1120px;margin:0 auto;padding:72px 20px 72px;line-height:1.6;text-align:center;}
+  /* 사이트에 정의된 폰트 변수(--tf-font)를 우선 사용. 없으면 Pretendard 폴백. */
+  .tf-root{font-family:var(--tf-font,'Pretendard Variable',Pretendard,'Apple SD Gothic Neo',system-ui,sans-serif);color:#0f172a;max-width:1120px;margin:0 auto;padding:72px 20px 72px;line-height:1.6;text-align:center;}
+  .tf-root :where(h1,h2,h3,p,span,a,div){font-family:inherit;}
   .tf-tabs{display:flex;justify-content:center;margin-bottom:40px;}
   .tf-tabs-inner{display:inline-flex;padding:6px;background:#f1f5f9;border-radius:999px;gap:4px;}
   .tf-tab-radio{position:absolute;opacity:0;pointer-events:none;}
