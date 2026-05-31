@@ -146,41 +146,67 @@ export function rfpArrivedEmail(params: {
   companyName: string;
   brandName: string;
   category: string;
+  website?: string | null;
+  productIntro?: string | null;
+  reason?: string | null;
   budget?: number | null;
   duration?: string | null;
+  channels?: string[];
+  marketingGoals?: string[];
+  kpis?: string[];
   preferredAgency?: string | null;
   rfpUrl: string;
 }): { subject: string; html: string } {
   const row = (label: string, value: string) =>
     `<tr>
-       <td style="padding:9px 0;color:#6b7280;width:88px;vertical-align:top;">${label}</td>
+       <td style="padding:9px 0;color:#6b7280;width:96px;vertical-align:top;">${label}</td>
        <td style="padding:9px 0;font-weight:600;color:#111827;">${value}</td>
      </tr>`;
   const budgetText = params.budget
     ? `${params.budget.toLocaleString()}원/월`
     : "협의";
+  const tags = (items?: string[]) =>
+    items && items.length > 0
+      ? items
+          .map(
+            (v) =>
+              `<span style="display:inline-block;margin:2px 4px 2px 0;padding:3px 9px;background:#eef2ff;color:${BRAND_BLUE};border-radius:999px;font-size:12px;font-weight:600;">${v}</span>`,
+          )
+          .join("")
+      : "";
+  const briefBlock = (label: string, value?: string | null) =>
+    value
+      ? `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #e5e7eb;font-size:13px;color:#4b5563;line-height:1.7;"><strong style="color:#374151;">${label}</strong><br/>${value.replace(/\n/g, "<br/>")}</div>`
+      : "";
+  const tagBlock = (label: string, items?: string[]) =>
+    items && items.length > 0
+      ? `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #e5e7eb;font-size:13px;color:#4b5563;"><strong style="color:#374151;">${label}</strong><br/><div style="margin-top:6px;">${tags(items)}</div></div>`
+      : "";
   return {
-    subject: "[TeamFirst] 신규 대행사 매칭 공고(RFP)가 도착했습니다",
+    subject: `[TeamFirst] 신규 RFP: ${params.brandName} (${params.category})`,
     html: layout(
       "신규 매칭 공고 알림",
       `<p>${params.companyName} 담당자님, 안녕하세요. 팀퍼스트입니다.</p>
-       <p>신규 브랜드사의 대행사 매칭 공고가 접수되어 공유드립니다. 아래 상세
-       내용을 확인하시고, 제안 의사가 있으시면 플랫폼에서 지원해주세요.</p>
-       <div style="margin:16px 0;padding:16px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;">
+       <p>신규 브랜드사의 대행사 매칭 공고가 접수되어 공유드립니다. 아래 요약을
+       확인하시고, 제안 의사가 있으시면 플랫폼에서 상세 RFP를 열람한 뒤
+       지원서를 제출해주세요.</p>
+       <div style="margin:16px 0;padding:18px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;">
          <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;border-collapse:collapse;">
            ${row("브랜드", params.brandName)}
            ${row("카테고리", params.category)}
-           ${row("예산", budgetText)}
-           ${params.duration ? row("대행기간", params.duration) : ""}
+           ${params.website ? row("Website", `<a href="${params.website}" style="color:${BRAND_BLUE};text-decoration:none;word-break:break-all;">${params.website}</a>`) : ""}
+           ${row("월 예산", budgetText)}
+           ${params.duration ? row("계약 기간", params.duration) : ""}
          </table>
-         ${
-           params.preferredAgency
-             ? `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #e5e7eb;font-size:13px;color:#4b5563;line-height:1.6;"><strong>선정 주요 기준</strong><br/>${params.preferredAgency}</div>`
-             : ""
-         }
+         ${tagBlock("요청 매체", params.channels)}
+         ${tagBlock("마케팅 목표", params.marketingGoals)}
+         ${tagBlock("핵심 성과 지표(KPI)", params.kpis)}
+         ${briefBlock("브랜드 소개", params.productIntro)}
+         ${briefBlock("모집 배경", params.reason)}
+         ${briefBlock("매칭 희망 파트너 / 선정 기준", params.preferredAgency)}
        </div>
        <p style="text-align:center;">${button(params.rfpUrl, "RFP 확인하고 지원하기")}</p>
-       <p style="font-size:12px;color:#9ca3af;text-align:center;">버튼을 누르면 팀퍼스트 콘솔에서 상세 RFP를 확인할 수 있습니다.</p>`,
+       <p style="font-size:12px;color:#9ca3af;text-align:center;">버튼을 누르면 팀퍼스트 콘솔에서 전체 RFP(브리프·예산 분배·필수 운영 툴 등)를 확인할 수 있습니다.</p>`,
     ),
   };
 }

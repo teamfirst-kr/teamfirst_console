@@ -6,8 +6,15 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentRole } from "@/lib/auth";
 import { sendEmail } from "@/lib/email/resend";
 import { rfpArrivedEmail } from "@/lib/email/templates";
-import type { MatchingBrief } from "@/lib/schemas/matching-request";
+import {
+  REQUEST_MEDIA,
+  type MatchingBrief,
+} from "@/lib/schemas/matching-request";
 import type { RequestStatus } from "@/types/database";
+
+const MEDIA_LABEL = Object.fromEntries(
+  REQUEST_MEDIA.map((m) => [m.value, m.label]),
+);
 
 function appUrl(): string {
   return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -85,6 +92,15 @@ export async function sendRfp(requestId: string): Promise<RfpResult> {
       companyName: p.company_name,
       brandName: brief.brand_name ?? request.title,
       category: brief.category ?? "-",
+      website: brief.website,
+      productIntro: brief.product_intro,
+      reason: brief.reason,
+      budget: request.budget_monthly,
+      duration: brief.duration,
+      channels: brief.channels?.map((c) => MEDIA_LABEL[c] ?? c),
+      marketingGoals: brief.marketing_goals,
+      kpis: brief.kpis,
+      preferredAgency: brief.preferred_agency,
       rfpUrl,
     });
     const r = await sendEmail({ to: p.contact_email, ...mail });
