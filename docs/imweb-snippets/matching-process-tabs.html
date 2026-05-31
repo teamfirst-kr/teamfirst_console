@@ -1,20 +1,19 @@
 <!--
-  TeamFirst 매칭 프로세스 — 통합 (브랜드사 + 대행사 탭)
+  TeamFirst 매칭 프로세스 — 통합 (브랜드사 + 대행사 탭) · 가운데 정렬
   사용법: 아임웹 페이지 편집 → 위젯 추가 → "HTML/스크립트" → 본 코드 전체 붙여넣기.
-  JS 없이 라디오 + :checked CSS만 사용 — 아임웹 스크립트 제약 환경에서도 동작.
+  JS 없이 라디오 + :checked CSS만 사용.
 -->
 <style>
   /* ───── 공통 ───── */
-  .tf-root{font-family:'Pretendard Variable',Pretendard,'Apple SD Gothic Neo',system-ui,sans-serif;color:#0f172a;max-width:1120px;margin:0 auto;padding:48px 20px 64px;line-height:1.6;}
-  .tf-tabs{display:flex;justify-content:center;margin-bottom:32px;}
+  .tf-root{font-family:'Pretendard Variable',Pretendard,'Apple SD Gothic Neo',system-ui,sans-serif;color:#0f172a;max-width:1120px;margin:0 auto;padding:72px 20px 72px;line-height:1.6;text-align:center;}
+  .tf-tabs{display:flex;justify-content:center;margin-bottom:40px;}
   .tf-tabs-inner{display:inline-flex;padding:6px;background:#f1f5f9;border-radius:999px;gap:4px;}
   .tf-tab-radio{position:absolute;opacity:0;pointer-events:none;}
-  .tf-tab-label{display:inline-block;padding:10px 22px;border-radius:999px;font-size:14px;font-weight:700;color:#64748b;cursor:pointer;transition:all .18s ease;user-select:none;}
+  .tf-tab-label{display:inline-block;padding:11px 28px;border-radius:999px;font-size:15px;font-weight:700;color:#64748b;cursor:pointer;transition:all .18s ease;user-select:none;white-space:nowrap;}
   .tf-tab-label:hover{color:#0f172a;}
   #tf-tab-brand:checked ~ .tf-tabs .tf-label-brand{background:#004AAD;color:#fff;box-shadow:0 4px 14px rgba(0,74,173,.25);}
   #tf-tab-partner:checked ~ .tf-tabs .tf-label-partner{background:#166534;color:#fff;box-shadow:0 4px 14px rgba(22,101,52,.25);}
 
-  /* 기본 상태: 브랜드 보이고 파트너 숨김 */
   .tf-pane{display:none;}
   #tf-tab-brand:checked ~ .tf-pane-brand{display:block;}
   #tf-tab-partner:checked ~ .tf-pane-partner{display:block;}
@@ -23,32 +22,33 @@
   .tf-wrap{max-width:1120px;margin:0 auto;}
   .tf-eyebrow{display:inline-block;padding:6px 14px;border-radius:999px;background:#eef2ff;color:#004AAD;font-size:13px;font-weight:700;letter-spacing:.04em;}
   .tf-h1{margin:18px 0 14px;font-size:40px;line-height:1.2;font-weight:800;color:#111E38;}
-  .tf-lead{font-size:17px;color:#475569;max-width:720px;}
-  .tf-cta-row{margin-top:28px;display:flex;flex-wrap:wrap;gap:10px;}
+  .tf-lead{font-size:17px;color:#475569;max-width:680px;margin:0 auto;}
+  .tf-cta-row{margin-top:28px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
   .tf-btn{display:inline-block;padding:14px 26px;border-radius:10px;font-weight:700;text-decoration:none;font-size:15px;}
   .tf-btn.primary{background:#004AAD;color:#fff;}
   .tf-btn.ghost{background:#f1f5f9;color:#0f172a;}
   .tf-section{margin-top:80px;}
   .tf-section h2{font-size:30px;font-weight:800;color:#111E38;margin:0 0 10px;}
   .tf-section .sub{color:#64748b;font-size:15px;margin-bottom:36px;}
-  .tf-steps{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));}
-  .tf-step{position:relative;border:1px solid #e2e8f0;border-radius:16px;padding:24px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04);}
-  .tf-step .num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#111E38;color:#fff;font-weight:700;font-size:14px;}
+  .tf-steps{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));}
+  .tf-step{position:relative;border:1px solid #e2e8f0;border-radius:16px;padding:26px 22px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04);text-align:center;}
+  .tf-step .num{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#111E38;color:#fff;font-weight:700;font-size:14px;}
   .tf-step h3{margin:14px 0 8px;font-size:18px;font-weight:700;color:#111E38;}
   .tf-step p{color:#475569;font-size:14px;margin:0;}
   .tf-step .tag{display:inline-block;margin-top:14px;padding:4px 10px;border-radius:6px;background:#eef2ff;color:#004AAD;font-size:12px;font-weight:600;}
-  .tf-mock{margin-top:28px;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 6px 20px rgba(15,23,42,.06);}
+  .tf-mock{margin:28px auto 0;max-width:760px;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 6px 20px rgba(15,23,42,.06);text-align:left;}
   .tf-mock-bar{display:flex;gap:6px;padding:10px 14px;background:#f8fafc;border-bottom:1px solid #e2e8f0;}
   .tf-mock-bar span{width:10px;height:10px;border-radius:50%;background:#cbd5e1;}
   .tf-mock-body{padding:24px;}
   .tf-mock-card{display:grid;gap:6px;padding:18px;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:12px;}
-  .tf-mock-row{display:flex;justify-content:space-between;font-size:13px;}
+  .tf-mock-card:last-child{margin-bottom:0;}
+  .tf-mock-row{display:flex;justify-content:space-between;gap:12px;font-size:13px;}
   .tf-mock-row .k{color:#64748b;}
-  .tf-mock-row .v{font-weight:600;color:#111E38;}
+  .tf-mock-row .v{font-weight:600;color:#111E38;text-align:right;}
   .tf-mock-badge{display:inline-block;padding:3px 8px;border-radius:6px;background:#dcfce7;color:#166534;font-size:11px;font-weight:600;}
-  .tf-feature{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin-top:28px;}
-  .tf-feature .item{border-left:3px solid #004AAD;padding:6px 0 6px 16px;}
-  .tf-feature .item b{display:block;color:#111E38;font-size:15px;margin-bottom:4px;}
+  .tf-feature{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin-top:28px;}
+  .tf-feature .item{border-top:3px solid #004AAD;border-radius:0 0 12px 12px;padding:18px 14px 6px;text-align:center;}
+  .tf-feature .item b{display:block;color:#111E38;font-size:15px;margin-bottom:6px;}
   .tf-feature .item span{color:#64748b;font-size:14px;}
   .tf-cta-band{margin-top:80px;background:linear-gradient(135deg,#111E38 0%,#004AAD 100%);color:#fff;border-radius:24px;padding:54px 40px;text-align:center;}
   .tf-cta-band h3{font-size:28px;font-weight:800;margin:0 0 10px;}
@@ -59,34 +59,34 @@
   .tfp-wrap{max-width:1120px;margin:0 auto;}
   .tfp-eyebrow{display:inline-block;padding:6px 14px;border-radius:999px;background:#dcfce7;color:#166534;font-size:13px;font-weight:700;letter-spacing:.04em;}
   .tfp-h1{margin:18px 0 14px;font-size:40px;line-height:1.2;font-weight:800;color:#111E38;}
-  .tfp-lead{font-size:17px;color:#475569;max-width:720px;}
-  .tfp-cta-row{margin-top:28px;display:flex;flex-wrap:wrap;gap:10px;}
+  .tfp-lead{font-size:17px;color:#475569;max-width:680px;margin:0 auto;}
+  .tfp-cta-row{margin-top:28px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
   .tfp-btn{display:inline-block;padding:14px 26px;border-radius:10px;font-weight:700;text-decoration:none;font-size:15px;}
   .tfp-btn.primary{background:#166534;color:#fff;}
   .tfp-btn.ghost{background:#f1f5f9;color:#0f172a;}
   .tfp-section{margin-top:80px;}
   .tfp-section h2{font-size:30px;font-weight:800;color:#111E38;margin:0 0 10px;}
   .tfp-section .sub{color:#64748b;font-size:15px;margin-bottom:36px;}
-  .tfp-steps{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));}
-  .tfp-step{border:1px solid #e2e8f0;border-radius:16px;padding:24px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04);}
-  .tfp-step .num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#166534;color:#fff;font-weight:700;font-size:14px;}
+  .tfp-steps{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));}
+  .tfp-step{border:1px solid #e2e8f0;border-radius:16px;padding:26px 22px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04);text-align:center;}
+  .tfp-step .num{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#166534;color:#fff;font-weight:700;font-size:14px;}
   .tfp-step h3{margin:14px 0 8px;font-size:18px;font-weight:700;color:#111E38;}
   .tfp-step p{color:#475569;font-size:14px;margin:0;}
   .tfp-step .tag{display:inline-block;margin-top:14px;padding:4px 10px;border-radius:6px;background:#dcfce7;color:#166534;font-size:12px;font-weight:600;}
-  .tfp-screens{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-top:28px;}
-  .tfp-screen{border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 4px 16px rgba(15,23,42,.05);}
+  .tfp-screens{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-top:28px;}
+  .tfp-screen{border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 4px 16px rgba(15,23,42,.05);text-align:left;}
   .tfp-screen .hd{padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:700;color:#111E38;}
   .tfp-screen .bd{padding:16px;font-size:13px;}
-  .tfp-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #e2e8f0;}
+  .tfp-row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed #e2e8f0;}
   .tfp-row:last-child{border-bottom:none;}
   .tfp-row .k{color:#64748b;}
-  .tfp-row .v{font-weight:600;color:#111E38;}
+  .tfp-row .v{font-weight:600;color:#111E38;text-align:right;}
   .tfp-badge{display:inline-block;padding:3px 8px;border-radius:6px;background:#dbeafe;color:#1e40af;font-size:11px;font-weight:600;}
   .tfp-badge.green{background:#dcfce7;color:#166534;}
   .tfp-badge.amber{background:#fef3c7;color:#92400e;}
-  .tfp-feature{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin-top:28px;}
-  .tfp-feature .item{border-left:3px solid #166534;padding:6px 0 6px 16px;}
-  .tfp-feature .item b{display:block;color:#111E38;font-size:15px;margin-bottom:4px;}
+  .tfp-feature{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin-top:28px;}
+  .tfp-feature .item{border-top:3px solid #166534;border-radius:0 0 12px 12px;padding:18px 14px 6px;text-align:center;}
+  .tfp-feature .item b{display:block;color:#111E38;font-size:15px;margin-bottom:6px;}
   .tfp-feature .item span{color:#64748b;font-size:14px;}
   .tfp-cta-band{margin-top:80px;background:linear-gradient(135deg,#111E38 0%,#166534 100%);color:#fff;border-radius:24px;padding:54px 40px;text-align:center;}
   .tfp-cta-band h3{font-size:28px;font-weight:800;margin:0 0 10px;}
@@ -94,10 +94,11 @@
   .tfp-cta-band .tfp-btn.primary{background:#fff;color:#166534;}
 
   @media (max-width:640px){
+    .tf-root{padding-top:56px;}
     .tf-h1,.tfp-h1{font-size:30px;}
     .tf-section h2,.tfp-section h2{font-size:24px;}
     .tf-cta-band,.tfp-cta-band{padding:40px 22px;}
-    .tf-tab-label{padding:9px 16px;font-size:13px;}
+    .tf-tab-label{padding:10px 20px;font-size:14px;}
   }
 </style>
 
@@ -108,8 +109,8 @@
 
   <div class="tf-tabs">
     <div class="tf-tabs-inner">
-      <label class="tf-tab-label tf-label-brand" for="tf-tab-brand">광고주 (브랜드사)</label>
-      <label class="tf-tab-label tf-label-partner" for="tf-tab-partner">대행사 (파트너)</label>
+      <label class="tf-tab-label tf-label-brand" for="tf-tab-brand">브랜드사</label>
+      <label class="tf-tab-label tf-label-partner" for="tf-tab-partner">대행사</label>
     </div>
   </div>
 
@@ -119,12 +120,12 @@
       <span class="tf-eyebrow">FOR BRAND · 광고주</span>
       <h1 class="tf-h1">검증된 대행사 매칭,<br/>이제 한 화면에서 끝.</h1>
       <p class="tf-lead">
-        팀퍼스트 콘솔은 광고 대행사 매칭의 전 과정 — RFP 발송, 후보 선정, 미팅 조율,
-        계약, 운영까지 — 을 메일이 아닌 하나의 작업 화면에서 진행하는 운영 플랫폼입니다.
-        엑셀과 메일함을 뒤지지 않아도 모든 이력이 자동 정리됩니다.
+        RFP 발송부터 후보 선정, 미팅 조율, 계약까지. 광고 대행사 매칭의 모든
+        과정을 메일과 엑셀이 아닌 하나의 콘솔에서 진행합니다. 흩어진 이력을 찾아
+        헤맬 필요 없이 모든 단계가 자동으로 기록됩니다.
       </p>
       <div class="tf-cta-row">
-        <a class="tf-btn primary" href="https://console.teamfirst.kr/signup">광고주 회원가입</a>
+        <a class="tf-btn primary" href="https://www.teamfirst.kr/site_join_agree?back_url=Lw%3D%3D&type_code=t20250423f7071ac58fc2d">광고주 회원가입</a>
         <a class="tf-btn ghost" href="https://console.teamfirst.kr/login">로그인</a>
       </div>
 
@@ -136,31 +137,29 @@
             <span class="num">1</span>
             <h3>매칭 요청서 작성</h3>
             <p>브랜드·예산·매체·KPI 등 필요한 정보를 폼으로 작성합니다. 매월 광고비 분배도 매체별로 입력합니다.</p>
-            <span class="tag">/client/request/new</span>
           </div>
           <div class="tf-step">
             <span class="num">2</span>
             <h3>입점 대행사 전원에게 RFP 자동 발송</h3>
             <p>검증 입점을 통과한 대행사 전원에게 동일한 RFP가 도착합니다. 카테고리 편향 없이 공정하게 노출됩니다.</p>
-            <span class="tag">자동 이메일 + 콘솔 RFP 열람</span>
+            <span class="tag">자동 이메일 + 콘솔 알림</span>
           </div>
           <div class="tf-step">
             <span class="num">3</span>
             <h3>상위 3개사 후보 선정</h3>
             <p>운영팀이 6개 항목(규모·퍼포먼스·기술·커뮤니케이션·레퍼런스·적합도)으로 점수화해 상위 3개사를 추천합니다.</p>
-            <span class="tag">/admin/requests/[id]</span>
           </div>
           <div class="tf-step">
             <span class="num">4</span>
             <h3>미팅 일정 자체 조율</h3>
             <p>광고주가 가능한 시간 후보를 제안 → 대행사가 콘솔에서 응답 → Google Meet 링크 자동 발송.</p>
-            <span class="tag">미팅 자동화 (n8n + Google Calendar)</span>
+            <span class="tag">Google Calendar 연동</span>
           </div>
           <div class="tf-step">
             <span class="num">5</span>
             <h3>계약 · 매체 이관 · 운영</h3>
             <p>대행 결정 후 7일 내에 계약. 매체 이관까지 콘솔에서 안내받고, 모든 이력은 타임라인에 남습니다.</p>
-            <span class="tag">/admin/requests/[id] 타임라인</span>
+            <span class="tag">타임라인 자동 기록</span>
           </div>
         </div>
       </div>
@@ -172,14 +171,15 @@
           <div class="tf-mock-bar"><span></span><span></span><span></span></div>
           <div class="tf-mock-body">
             <div class="tf-mock-card">
-              <div class="tf-mock-row"><span class="k">매칭 요청</span><span class="v">라브아 · 뷰티 카테고리</span></div>
-              <div class="tf-mock-row"><span class="k">월 예산</span><span class="v">5,000,000원</span></div>
+              <div class="tf-mock-row"><span class="k">매칭 요청</span><span class="v">○○ 브랜드 · 뷰티 카테고리</span></div>
+              <div class="tf-mock-row"><span class="k">월 예산</span><span class="v">50,000,000원</span></div>
+              <div class="tf-mock-row"><span class="k">대행 기간</span><span class="v">1년 (연간 대행)</span></div>
               <div class="tf-mock-row"><span class="k">상태</span><span class="v"><span class="tf-mock-badge">후보 3개사 선정 완료</span></span></div>
             </div>
             <div class="tf-mock-card">
-              <div class="tf-mock-row"><span class="k">1순위</span><span class="v">민플래닝 · 점수 54/60</span></div>
-              <div class="tf-mock-row"><span class="k">2순위</span><span class="v">웨이브에이 · 점수 51/60</span></div>
-              <div class="tf-mock-row"><span class="k">3순위</span><span class="v">스케일업스쿼드 · 점수 49/60</span></div>
+              <div class="tf-mock-row"><span class="k">1순위</span><span class="v">대행사 A · 점수 54/60</span></div>
+              <div class="tf-mock-row"><span class="k">2순위</span><span class="v">대행사 B · 점수 51/60</span></div>
+              <div class="tf-mock-row"><span class="k">3순위</span><span class="v">대행사 C · 점수 49/60</span></div>
             </div>
             <div class="tf-mock-card">
               <div class="tf-mock-row"><span class="k">미팅 일정</span><span class="v">2026.06.05 (금) 14:00 — Google Meet 자동 생성</span></div>
@@ -192,17 +192,16 @@
         <h2>왜 팀퍼스트인가</h2>
         <p class="sub">메일·카톡·엑셀로 진행하던 매칭을 시스템화했습니다.</p>
         <div class="tf-feature">
-          <div class="item"><b>검증된 입점사</b><span>글로싸인 계약을 마친 대행사만 노출됩니다.</span></div>
-          <div class="item"><b>분석권한 워크플로우</b><span>미팅 전 지난 3개월 광고비를 분석권한으로 안전하게 공유합니다.</span></div>
-          <div class="item"><b>자동 이력 보관</b><span>RFP · 지원서 · 미팅 · 계약 모두 타임라인 + 알림 메일로 자동 저장.</span></div>
-          <div class="item"><b>2026년 6월까지 1% 프로모션은 종료</b><span>이제는 시스템 자체의 가치로 판단해 주세요.</span></div>
+          <div class="item"><b>검증된 입점사</b><span>계약을 마친 검증 대행사만 노출됩니다.</span></div>
+          <div class="item"><b>분석권한 워크플로우</b><span>광고주가 동의한 경우에 한해, 미팅 전 지난 3개월 광고비를 분석용으로 안전하게 공유합니다.</span></div>
+          <div class="item"><b>자동 이력 보관</b><span>RFP · 지원서 · 미팅 · 계약 모두 타임라인 + 알림 메일로 자동 저장됩니다.</span></div>
         </div>
       </div>
 
       <div class="tf-cta-band">
         <h3>지금 광고주 계정을 만들어 보세요</h3>
         <p>아이디는 이메일, 초기 비밀번호는 사업자등록번호입니다. 첫 로그인 시 변경하게 됩니다.</p>
-        <a class="tf-btn primary" href="https://console.teamfirst.kr/signup">콘솔에서 시작하기 →</a>
+        <a class="tf-btn primary" href="https://www.teamfirst.kr/site_join_agree?back_url=Lw%3D%3D&type_code=t20250423f7071ac58fc2d">광고주 회원가입 →</a>
       </div>
     </div>
   </section>
@@ -213,12 +212,12 @@
       <span class="tfp-eyebrow">FOR AGENCY · 대행사</span>
       <h1 class="tfp-h1">검증된 광고주 RFP,<br/>한 화면에서 받고 응답하세요.</h1>
       <p class="tfp-lead">
-        팀퍼스트 콘솔은 입점을 마친 대행사에게 RFP 도착 알림 · 지원서 제출 · 미팅 응답
-        · 계약 · 월별 정산까지 한 곳에서 처리하게 해주는 운영 플랫폼입니다.
-        엑셀로 정리하고 메일로 보내던 업무가 모두 콘솔 한 화면에서 자동 기록됩니다.
+        입점을 마친 대행사에게 RFP 도착 알림 · 지원서 제출 · 미팅 응답 · 계약 ·
+        월별 정산까지 한 곳에서 처리하는 운영 플랫폼입니다. 엑셀로 정리하고
+        메일로 보내던 업무가 모두 콘솔 한 화면에서 자동 기록됩니다.
       </p>
       <div class="tfp-cta-row">
-        <a class="tfp-btn primary" href="https://teamfirst.kr/partner/apply">입점 신청하기</a>
+        <a class="tfp-btn primary" href="https://www.teamfirst.kr/site_join_agree?back_url=Lw%3D%3D&type_code=t20250929e49108fd41f7d">대행사 회원가입</a>
         <a class="tfp-btn ghost" href="https://console.teamfirst.kr/login">대행사 로그인</a>
       </div>
 
@@ -230,31 +229,27 @@
             <span class="num">1</span>
             <h3>RFP 도착 알림</h3>
             <p>새 RFP가 도착하면 이메일과 콘솔 양쪽에 알림이 옵니다. RFP는 1페이지로 정리되어 있어 의사결정이 빠릅니다.</p>
-            <span class="tag">/partner/dashboard</span>
           </div>
           <div class="tfp-step">
             <span class="num">2</span>
             <h3>지원서 제출</h3>
-            <p>제안 개요, 진행 광고주 리스트, 강점/약점, 견적, 첨부자료까지 한 폼에서 제출. 이전 입력은 자동 저장됩니다.</p>
-            <span class="tag">/partner/rfp/[id]/apply</span>
+            <p>제안 개요, 진행 광고주 리스트, 강점/약점, 견적, 첨부자료까지 한 폼에서 제출할 수 있습니다.</p>
           </div>
           <div class="tfp-step">
             <span class="num">3</span>
             <h3>후보 선정 결과 확인</h3>
             <p>상위 3개사로 선정되면 콘솔에 표시되고 메일로 안내됩니다. 미선정 시에도 결과를 정중히 안내합니다.</p>
-            <span class="tag">/partner/matchings</span>
           </div>
           <div class="tfp-step">
             <span class="num">4</span>
             <h3>미팅 조율 / 화상미팅</h3>
             <p>광고주가 제안한 시간 중 가능한 슬롯을 클릭하면 자동으로 Google Meet 링크가 만들어지고 캘린더에 등록됩니다.</p>
-            <span class="tag">자동 캘린더 + Google Meet</span>
+            <span class="tag">Google Meet 자동 생성</span>
           </div>
           <div class="tfp-step">
             <span class="num">5</span>
             <h3>계약 · 월별 정산 · 계산서</h3>
             <p>대행 성사 후 월별 정산 내역과 팀퍼스트 입금 계좌가 표시됩니다. 세금계산서 발행정보를 입력하면 팀퍼스트가 발행합니다.</p>
-            <span class="tag">/partner/settlements</span>
           </div>
         </div>
       </div>
@@ -264,23 +259,23 @@
         <p class="sub">실제 콘솔의 구조를 그대로 보여드립니다.</p>
         <div class="tfp-screens">
           <div class="tfp-screen">
-            <div class="hd">RFP 목록 · /partner/dashboard</div>
+            <div class="hd">RFP 목록</div>
             <div class="bd">
-              <div class="tfp-row"><span class="k">라브아 (뷰티)</span><span class="v"><span class="tfp-badge amber">미지원</span></span></div>
-              <div class="tfp-row"><span class="k">보카 (반려동물)</span><span class="v"><span class="tfp-badge green">지원 완료</span></span></div>
-              <div class="tfp-row"><span class="k">로타입 (의류)</span><span class="v"><span class="tfp-badge">RFP 신규</span></span></div>
+              <div class="tfp-row"><span class="k">브랜드 A (뷰티)</span><span class="v"><span class="tfp-badge amber">미지원</span></span></div>
+              <div class="tfp-row"><span class="k">브랜드 B (반려동물)</span><span class="v"><span class="tfp-badge green">지원 완료</span></span></div>
+              <div class="tfp-row"><span class="k">브랜드 C (의류)</span><span class="v"><span class="tfp-badge">RFP 신규</span></span></div>
             </div>
           </div>
           <div class="tfp-screen">
-            <div class="hd">내 매칭 이력 · /partner/matchings</div>
+            <div class="hd">내 매칭 이력</div>
             <div class="bd">
-              <div class="tfp-row"><span class="k">라브아</span><span class="v"><span class="tfp-badge green">1순위 · 미팅 확정</span></span></div>
-              <div class="tfp-row"><span class="k">보카</span><span class="v"><span class="tfp-badge">2순위</span></span></div>
-              <div class="tfp-row"><span class="k">로타입</span><span class="v"><span class="tfp-badge amber">제출 완료</span></span></div>
+              <div class="tfp-row"><span class="k">브랜드 A</span><span class="v"><span class="tfp-badge green">1순위 · 미팅 확정</span></span></div>
+              <div class="tfp-row"><span class="k">브랜드 B</span><span class="v"><span class="tfp-badge">2순위</span></span></div>
+              <div class="tfp-row"><span class="k">브랜드 C</span><span class="v"><span class="tfp-badge amber">제출 완료</span></span></div>
             </div>
           </div>
           <div class="tfp-screen">
-            <div class="hd">정산 / 계산서 · /partner/settlements</div>
+            <div class="hd">정산 / 계산서</div>
             <div class="bd">
               <div class="tfp-row"><span class="k">2026-04 정산액</span><span class="v">450,000원</span></div>
               <div class="tfp-row"><span class="k">2026-05 정산액</span><span class="v">680,000원</span></div>
@@ -304,8 +299,8 @@
 
       <div class="tfp-cta-band">
         <h3>지금 입점 신청하세요</h3>
-        <p>입점 검토 → 글로싸인 계약 → 콘솔 계정 발급 (초기 비번 = 사업자등록번호).</p>
-        <a class="tfp-btn primary" href="https://teamfirst.kr/partner/apply">입점 신청하기 →</a>
+        <p>입점 검토 → 계약 체결 → 콘솔 계정 발급. 매칭 성사 시에만 수수료가 발생합니다.</p>
+        <a class="tfp-btn primary" href="https://www.teamfirst.kr/site_join_agree?back_url=Lw%3D%3D&type_code=t20250929e49108fd41f7d">대행사 회원가입 →</a>
       </div>
     </div>
   </section>
