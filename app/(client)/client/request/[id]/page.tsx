@@ -105,7 +105,8 @@ export default async function ClientRequestDetailPage({
     const proposal = (app?.proposal ?? {}) as {
       approach?: string;
       team_composition?: string | null;
-      similar_cases?: string | null;
+      past_clients?: string | null;
+      strengths_weaknesses?: string | null;
       differentiation?: string | null;
     };
     const partner = partnerById.get(c.partner_id);
@@ -118,7 +119,8 @@ export default async function ClientRequestDetailPage({
       recommendationReason: c.recommendation_reason,
       approach: proposal.approach ?? "",
       teamComposition: proposal.team_composition ?? null,
-      similarCases: proposal.similar_cases ?? null,
+      pastClients: proposal.past_clients ?? null,
+      strengthsWeaknesses: proposal.strengths_weaknesses ?? null,
       differentiation: proposal.differentiation ?? null,
       quote: app?.quote_monthly ?? null,
       startAvailable: app?.start_available ?? null,

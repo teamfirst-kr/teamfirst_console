@@ -6,9 +6,14 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentPartnerId } from "@/lib/auth";
 import {
   rfpApplicationSchema,
+  type ProposalAttachment,
   type ProposalMeta,
 } from "@/lib/schemas/rfp-application";
 import type { Json } from "@/types/database";
+
+const MAX_FILE_BYTES = 20 * 1024 * 1024;
+const MAX_FILES = 5;
+const ATTACHMENT_BUCKET = "partner-files";
 
 export type ApplyRfpState =
   | { error: string; fieldErrors?: Record<string, string[]> }
@@ -21,9 +26,10 @@ export async function submitRfpApplication(
 ): Promise<ApplyRfpState> {
   const raw = {
     approach: formData.get("approach"),
-    team_composition: formData.get("team_composition") || undefined,
-    similar_cases: formData.get("similar_cases") || undefined,
+    past_clients: formData.get("past_clients"),
+    strengths_weaknesses: formData.get("strengths_weaknesses") || undefined,
     differentiation: formData.get("differentiation") || undefined,
+    team_composition: formData.get("team_composition") || undefined,
     quote_monthly: formData.get("quote_monthly"),
     start_available: formData.get("start_available") || undefined,
   };
@@ -45,7 +51,6 @@ export async function submitRfpApplication(
 
   const supabase = await createClient();
 
-  // 본인에게 발송된 RFP인지 확인
   const { data: notification } = await supabase
     .from("rfp_notifications")
     .select("id")
@@ -56,12 +61,44 @@ export async function submitRfpApplication(
     return { error: "이 RFP에 지원할 권한이 없습니다." };
   }
 
+  const files = formData
+    .getAll("attachments")
+    .filter((v): v is File => v instanceof File && v.size > 0);
+  if (files.length > MAX_FILES) {
+    return {
+      error: `첨부 파일은 최대 ${MAX_FILES}개까지 업로드할 수 있습니다.`,
+      fieldErrors: { attachments: [`최대 ${MAX_FILES}개`] },
+    };
+  }
+  for (const f of files) {
+    if (f.size > MAX_FILE_BYTES) {
+      return {
+        error: `파일 한 개는 20MB를 넘을 수 없습니다: ${f.name}`,
+        fieldErrors: { attachments: ["파일 크기 초과"] },
+      };
+    }
+  }
+
+  const attachments: ProposalAttachment[] = [];
+  for (const f of files) {
+    const safeName = f.name.replace(/[^\w.\-가-힣]/g, "_");
+    const path = `applications/${requestId}/${partnerId}/${Date.now()}_${safeName}`;
+    const { error: upErr } = await supabase.storage
+      .from(ATTACHMENT_BUCKET)
+      .upload(path, f, { upsert: false, contentType: f.type || undefined });
+    if (upErr) {
+      return { error: `첨부 업로드 실패: ${upErr.message}` };
+    }
+    attachments.push({ name: f.name, url: path, size: f.size });
+  }
+
   const data = parsed.data;
   const proposal: ProposalMeta = {
     approach: data.approach,
-    team_composition: data.team_composition ?? null,
-    similar_cases: data.similar_cases ?? null,
+    past_clients: data.past_clients,
+    strengths_weaknesses: data.strengths_weaknesses ?? null,
     differentiation: data.differentiation ?? null,
+    team_composition: data.team_composition ?? null,
   };
 
   const { error } = await supabase.from("applications").insert({
@@ -70,6 +107,8 @@ export async function submitRfpApplication(
     proposal: proposal as unknown as Json,
     quote_monthly: data.quote_monthly,
     start_available: data.start_available ?? null,
+    attachments:
+      attachments.length > 0 ? (attachments as unknown as Json) : null,
     status: "submitted",
   });
 

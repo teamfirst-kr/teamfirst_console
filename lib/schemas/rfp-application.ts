@@ -1,10 +1,24 @@
 import { z } from "zod";
 
+const optionalText = (max: number) =>
+  z
+    .string()
+    .max(max)
+    .optional()
+    .or(z.literal("").transform(() => undefined));
+
 export const rfpApplicationSchema = z.object({
-  approach: z.string().min(1, "제안 개요를 작성해주세요.").max(2000),
-  team_composition: z.string().max(1000).optional().or(z.literal("").transform(() => undefined)),
-  similar_cases: z.string().max(2000).optional().or(z.literal("").transform(() => undefined)),
-  differentiation: z.string().max(2000).optional().or(z.literal("").transform(() => undefined)),
+  approach: z
+    .string()
+    .min(1, "이 광고주에 대한 제안 개요를 작성해주세요.")
+    .max(3000),
+  past_clients: z
+    .string()
+    .min(1, "광고대행을 진행한 광고주명을 한 개 이상 적어주세요.")
+    .max(3000),
+  strengths_weaknesses: optionalText(3000),
+  differentiation: optionalText(2000),
+  team_composition: optionalText(1000),
   quote_monthly: z.coerce
     .number({ message: "월 견적을 숫자로 입력해주세요." })
     .int()
@@ -18,11 +32,18 @@ export const rfpApplicationSchema = z.object({
 export type RfpApplicationInput = z.input<typeof rfpApplicationSchema>;
 export type RfpApplicationOutput = z.output<typeof rfpApplicationSchema>;
 
+export type ProposalAttachment = {
+  name: string;
+  url: string;
+  size: number;
+};
+
 export type ProposalMeta = {
   approach: string;
-  team_composition: string | null;
-  similar_cases: string | null;
+  past_clients: string;
+  strengths_weaknesses: string | null;
   differentiation: string | null;
+  team_composition: string | null;
 };
 
 export const APPLICATION_STATUS_LABEL: Record<

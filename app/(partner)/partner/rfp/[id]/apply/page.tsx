@@ -28,6 +28,12 @@ export default async function PartnerRfpApplyPage({
     .maybeSingle();
   if (!notification) notFound();
 
+  const { data: partner } = await supabase
+    .from("partners")
+    .select("contact_email")
+    .eq("id", partnerId)
+    .maybeSingle();
+
   // 이미 지원했으면 상세로
   const { data: existing } = await supabase
     .from("applications")
@@ -64,7 +70,7 @@ export default async function PartnerRfpApplyPage({
         </p>
       </div>
 
-      <RfpApplyForm requestId={id} />
+      <RfpApplyForm requestId={id} contactEmail={partner?.contact_email} />
     </div>
   );
 }

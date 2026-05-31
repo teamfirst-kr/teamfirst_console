@@ -147,7 +147,8 @@ export function CandidateScoreboard({
         <Modal title={`${proposalOf.partnerName} 제안 내용`} onClose={() => setProposalOf(null)}>
           <Field label="제안 개요" value={proposalOf.approach} />
           <Field label="팀 구성" value={proposalOf.teamComposition} />
-          <Field label="유사 사례" value={proposalOf.similarCases} />
+          <Field label="진행 광고주" value={proposalOf.pastClients} />
+          <Field label="강점/약점" value={proposalOf.strengthsWeaknesses} />
           <Field label="차별점" value={proposalOf.differentiation} />
           {proposalOf.quote ? (
             <p className="text-sm font-medium text-primary">

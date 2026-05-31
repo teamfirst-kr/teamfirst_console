@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/server";
 import { PARTNER_CATEGORIES } from "@/lib/schemas/partner-application";
 import type { PartnerStatus } from "@/types/database";
 
+import { BulkAccountPanel } from "./bulk-account-panel";
+
 const STATUS_TABS: { value: PartnerStatus | "all"; label: string }[] = [
   { value: "all", label: "전체" },
   { value: "pending", label: "신청 대기" },
@@ -53,6 +55,12 @@ export default async function AdminPartnersPage({
 
   const { data, error } = await query;
 
+  const { count: noAccountCount } = await supabase
+    .from("partners")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "contracted")
+    .is("user_id", null);
+
   // 카테고리는 별도 쿼리로 가져와 partner_id별 매핑 (supabase-js relational 타입 한계)
   const partnerIds = (data ?? []).map((p) => p.id);
   const { data: categoryRows } = partnerIds.length
@@ -76,6 +84,8 @@ export default async function AdminPartnersPage({
           입점 신청 → 검토 → 계약 → 입점 완료의 흐름을 관리하세요.
         </p>
       </div>
+
+      <BulkAccountPanel pendingCount={noAccountCount ?? 0} />
 
       <div className="flex flex-wrap gap-2">
         {STATUS_TABS.map((tab) => {

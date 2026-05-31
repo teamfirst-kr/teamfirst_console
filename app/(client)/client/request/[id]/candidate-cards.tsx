@@ -35,7 +35,8 @@ export type CandidateView = {
   recommendationReason: string | null;
   approach: string;
   teamComposition: string | null;
-  similarCases: string | null;
+  pastClients: string | null;
+  strengthsWeaknesses: string | null;
   differentiation: string | null;
   quote: number | null;
   startAvailable: string | null;
@@ -136,7 +137,8 @@ function CandidateItem({
       <div className="mt-3 space-y-2 text-sm">
         <Row label="제안 개요" value={candidate.approach} />
         <Row label="팀 구성" value={candidate.teamComposition} />
-        <Row label="유사 사례" value={candidate.similarCases} />
+        <Row label="진행 광고주" value={candidate.pastClients} />
+        <Row label="강점/약점" value={candidate.strengthsWeaknesses} />
         <Row label="차별점" value={candidate.differentiation} />
         <div className="flex gap-6 pt-1">
           <span className="text-primary font-medium">
