@@ -30,7 +30,7 @@ export async function issueAccountsForContracted(): Promise<BulkIssueResult> {
   const admin = createAdminClient();
   const { data: partners, error } = await admin
     .from("partners")
-    .select("id, company_name, contact_email, user_id")
+    .select("id, company_name, contact_email, user_id, biz_reg_no")
     .eq("status", "contracted")
     .is("user_id", null);
 
@@ -49,14 +49,16 @@ export async function issueAccountsForContracted(): Promise<BulkIssueResult> {
       continue;
     }
 
-    const password = randomPassword();
+    // 초기 비밀번호 = 사업자등록번호(숫자만). 없으면 임시 난수.
+    const bizDigits = (p.biz_reg_no ?? "").replace(/\D/g, "");
+    const password = bizDigits.length >= 8 ? bizDigits : randomPassword();
     const { data: created, error: createError } =
       await admin.auth.admin.createUser({
         email: p.contact_email,
         password,
         email_confirm: true,
         user_metadata: { role: "partner", name: p.company_name },
-        app_metadata: { role: "partner" },
+        app_metadata: { role: "partner", must_change_password: true },
       });
 
     let userId = created?.user?.id ?? null;

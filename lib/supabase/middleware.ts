@@ -27,7 +27,25 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // 초기 비밀번호 사용 중인 계정은 비밀번호 변경 화면으로 강제 이동.
+  if (user?.app_metadata?.must_change_password) {
+    const { pathname } = request.nextUrl;
+    const allow =
+      pathname.startsWith("/change-password") ||
+      pathname.startsWith("/logout") ||
+      pathname.startsWith("/api") ||
+      pathname.startsWith("/auth");
+    if (!allow) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/change-password";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+  }
 
   return response;
 }

@@ -53,10 +53,12 @@ export function partnerApprovedEmail(params: {
     html: layout(
       "입점 완료 및 계정 발급",
       `<p>${params.companyName} 담당자님, 입점을 축하드립니다!</p>
-       <p>파트너 계정이 발급되었습니다. 아래 정보로 로그인 후 비밀번호를 변경해주세요.</p>
+       <p>파트너 계정이 발급되었습니다. 아래 정보로 로그인해주세요.
+       <strong>초기 비밀번호는 사업자등록번호</strong>이며, 첫 로그인 시 비밀번호
+       변경 화면으로 안내됩니다.</p>
        <div style="margin:16px 0;padding:16px;background:#f1f5f9;border-radius:8px;font-size:14px;">
          <div>아이디(이메일): <strong>${params.email}</strong></div>
-         <div>임시 비밀번호: <strong style="font-family:monospace;">${params.tempPassword}</strong></div>
+         <div>초기 비밀번호: <strong style="font-family:monospace;">${params.tempPassword}</strong> (사업자등록번호)</div>
        </div>
        <p>${button(params.loginUrl, "로그인하기")}</p>
        <p style="color:#64748b;font-size:13px;">보안을 위해 첫 로그인 후 반드시 비밀번호를 변경해주세요.</p>`,

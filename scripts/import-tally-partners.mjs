@@ -90,6 +90,7 @@ function plainCol(substr) {
 }
 const C = {
   company: plainCol("대행사명 / 사업자명"),
+  bizRegNo: plainCol("사업자등록번호"),
   person: plainCol("담당자 성함 / 직책"),
   email: plainCol("이메일주소"),
   phone: plainCol("직통 연락처"),
@@ -130,6 +131,7 @@ const records = rows.slice(1).map((row) => {
   const mediaValues = MEDIA.filter(([l]) => mediaText.includes(l)).map(([, v]) => v);
   return {
     company_name: cell(row, C.company).split("/")[0].trim(),
+    biz_reg_no: cell(row, C.bizRegNo).replace(/\D/g, "") || null,
     contact_person: cell(row, C.person) || null,
     contact_email: cell(row, C.email),
     contact_phone: cell(row, C.phone) || null,
@@ -173,8 +175,8 @@ if (sqlMode) {
     const a = r.application;
     out.push(`WITH new_partner AS (
   INSERT INTO public.partners
-    (company_name, contact_person, contact_email, contact_phone, website, specialty, staff_size, intro, application, status, applied_at, reviewed_at, contracted_at)
-  SELECT ${q(r.company_name)}, ${q(r.contact_person)}, ${q(r.contact_email)}, ${q(r.contact_phone)}, ${q(r.website)}, ${q(r.specialty)}, ${q(r.staff_size)}, ${q(r.intro)}, ${q(JSON.stringify(a))}::jsonb, 'contracted', NOW(), NOW(), NOW()
+    (company_name, biz_reg_no, contact_person, contact_email, contact_phone, website, specialty, staff_size, intro, application, status, applied_at, reviewed_at, contracted_at)
+  SELECT ${q(r.company_name)}, ${q(r.biz_reg_no)}, ${q(r.contact_person)}, ${q(r.contact_email)}, ${q(r.contact_phone)}, ${q(r.website)}, ${q(r.specialty)}, ${q(r.staff_size)}, ${q(r.intro)}, ${q(JSON.stringify(a))}::jsonb, 'contracted', NOW(), NOW(), NOW()
   WHERE NOT EXISTS (SELECT 1 FROM public.partners WHERE contact_email = ${q(r.contact_email)})
   RETURNING id
 )
@@ -207,10 +209,12 @@ for (const rec of records) {
   }
 
   if (createAccounts) {
-    const password = randomPw();
+    // 초기 비밀번호 = 사업자등록번호(숫자만). 없으면 임시 난수. 첫 로그인 시 변경 강제.
+    const bizDigits = String(rec.biz_reg_no ?? "").replace(/\D/g, "");
+    const password = bizDigits.length >= 8 ? bizDigits : randomPw();
     const { data: created, error: aerr } = await supabase.auth.admin.createUser({
       email: rec.contact_email, password, email_confirm: true,
-      user_metadata: { role: "partner", name: rec.company_name }, app_metadata: { role: "partner" },
+      user_metadata: { role: "partner", name: rec.company_name }, app_metadata: { role: "partner", must_change_password: true },
     });
     if (aerr) console.error("계정 발급 실패:", rec.company_name, aerr.message);
     else {
