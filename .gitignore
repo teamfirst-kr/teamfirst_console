@@ -48,3 +48,6 @@ coverage/
 
 # claude code
 .claude/
+
+# DB seeds containing real PII (emails, phone numbers, biz_reg_no)
+db/seeds/

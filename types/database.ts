@@ -500,6 +500,136 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      deals: {
+        Row: {
+          id: string;
+          meeting_id: string | null;
+          request_id: string;
+          partner_id: string;
+          client_id: string;
+          media_type: string;
+          platforms: string[];
+          partner_fee_rate: number | null;
+          teamfirst_share_rate: number | null;
+          status: string;
+          contracted_at: string;
+          activated_at: string | null;
+          ended_at: string | null;
+          contract_url: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<{
+          id: string;
+          meeting_id: string | null;
+          request_id: string;
+          partner_id: string;
+          client_id: string;
+          media_type: string;
+          platforms: string[];
+          partner_fee_rate: number | null;
+          teamfirst_share_rate: number | null;
+          status: string;
+          contracted_at: string;
+          activated_at: string | null;
+          ended_at: string | null;
+          contract_url: string | null;
+          notes: string | null;
+        }>;
+        Update: Partial<{
+          partner_fee_rate: number | null;
+          teamfirst_share_rate: number | null;
+          status: string;
+          activated_at: string | null;
+          ended_at: string | null;
+          contract_url: string | null;
+          notes: string | null;
+        }>;
+        Relationships: [];
+      };
+      settlements: {
+        Row: {
+          id: string;
+          deal_id: string;
+          yearmonth: string;
+          spend_breakdown: Json;
+          total_spend: number;
+          partner_fee: number;
+          teamfirst_share: number;
+          status: string;
+          invoiced_at: string | null;
+          paid_at: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<{
+          id: string;
+          deal_id: string;
+          yearmonth: string;
+          spend_breakdown: Json;
+          total_spend: number;
+          partner_fee: number;
+          teamfirst_share: number;
+          status: string;
+          invoiced_at: string | null;
+          paid_at: string | null;
+          notes: string | null;
+        }>;
+        Update: Partial<{
+          status: string;
+          invoiced_at: string | null;
+          paid_at: string | null;
+          notes: string | null;
+        }>;
+        Relationships: [];
+      };
+      partner_invoice_profiles: {
+        Row: {
+          id: string;
+          partner_id: string;
+          company_name: string;
+          biz_reg_no: string;
+          representative: string | null;
+          address: string | null;
+          business_type: string | null;
+          business_item: string | null;
+          invoice_email: string;
+          contact_name: string | null;
+          contact_phone: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          partner_id: string;
+          company_name: string;
+          biz_reg_no: string;
+          representative?: string | null;
+          address?: string | null;
+          business_type?: string | null;
+          business_item?: string | null;
+          invoice_email: string;
+          contact_name?: string | null;
+          contact_phone?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          company_name: string;
+          biz_reg_no: string;
+          representative: string | null;
+          address: string | null;
+          business_type: string | null;
+          business_item: string | null;
+          invoice_email: string;
+          contact_name: string | null;
+          contact_phone: string | null;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
