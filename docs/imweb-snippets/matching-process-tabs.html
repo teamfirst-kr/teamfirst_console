@@ -116,6 +116,7 @@
     .tf-step,.tfp-step{flex:0 0 100%;}
     .tf-btn,.tfp-btn,.tf-cta-band .tf-btn,.tfp-cta-band .tfp-btn{width:100%;text-align:center;}
     .tf-mock-row,.tfp-row{flex-wrap:wrap;}
+    .tfp-screens{grid-template-columns:1fr !important;}
   }
 </style>
 
@@ -185,7 +186,7 @@
         <h2>흩어지지 않습니다, 한 화면에서 끝</h2>
         <p class="sub">요청 접수부터 후보 확인·미팅·계약까지, 단계마다 메일·엑셀로 옮길 필요 없이 콘솔 한 곳에서 진행되고 자동 기록됩니다. 아래는 단계별 실제 콘솔 화면입니다.</p>
 
-        <div class="tfp-screens">
+        <div class="tfp-screens" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:840px;margin-left:auto;margin-right:auto;">
           <div class="tfp-screen">
             <div class="hd">STEP 1 · 매칭 요청 접수</div>
             <div class="bd">
