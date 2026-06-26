@@ -24,6 +24,86 @@ function getAll(formData: FormData, key: string): string[] {
   return formData.getAll(key).map(String);
 }
 
+// ── 임시저장(DRAFT) ──────────────────────────────────────────────
+// CLAUDE.md: localStorage 금지 → 서버(matching_requests status=draft)에 보관.
+export type DraftPayload = {
+  id: string;
+  brief: Record<string, unknown>;
+};
+
+async function currentClientId(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("clients")
+    .select("id")
+    .single<{ id: string }>();
+  return data?.id ?? null;
+}
+
+// 가장 최근 작성 중(draft) 요청을 불러와 폼을 복원한다.
+export async function loadDraft(): Promise<DraftPayload | null> {
+  const clientId = await currentClientId();
+  if (!clientId) return null;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("matching_requests")
+    .select("id, brief")
+    .eq("client_id", clientId)
+    .eq("status", "draft")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ id: string; brief: Record<string, unknown> | null }>();
+  if (!data) return null;
+  return { id: data.id, brief: data.brief ?? {} };
+}
+
+// 멀티스텝 진행 중 자동 저장. 검증하지 않고 부분 데이터를 그대로 보관.
+export async function saveDraft(
+  draftId: string | null,
+  brief: Record<string, unknown>,
+): Promise<{ id: string } | { error: string }> {
+  const clientId = await currentClientId();
+  if (!clientId) return { error: "광고주 프로필을 찾을 수 없습니다." };
+  const supabase = await createClient();
+
+  const planned = (brief.planned_budgets ?? {}) as Record<string, number>;
+  const budgetTotal = Object.values(planned).reduce(
+    (s, v) => s + (Number(v) || 0),
+    0,
+  );
+  const title =
+    String(brief.brand_name ?? "").trim().slice(0, 200) || "작성 중인 매칭 요청";
+
+  if (draftId) {
+    const { error } = await supabase
+      .from("matching_requests")
+      .update({
+        title,
+        brief: brief as unknown as Json,
+        budget_monthly: budgetTotal || null,
+      })
+      .eq("id", draftId)
+      .eq("client_id", clientId)
+      .eq("status", "draft");
+    if (error) return { error: error.message };
+    return { id: draftId };
+  }
+
+  const { data, error } = await supabase
+    .from("matching_requests")
+    .insert({
+      client_id: clientId,
+      title,
+      brief: brief as unknown as Json,
+      budget_monthly: budgetTotal || null,
+      status: "draft",
+    })
+    .select("id")
+    .single<{ id: string }>();
+  if (error || !data) return { error: error?.message ?? "임시저장 실패" };
+  return { id: data.id };
+}
+
 export async function submitMatchingRequest(
   _prev: RequestState,
   formData: FormData,
@@ -130,30 +210,53 @@ export async function submitMatchingRequest(
     ad_spend_proof: null,
   };
 
-  const { data: inserted, error: insertError } = await supabase
-    .from("matching_requests")
-    .insert({
-      client_id: client.id,
-      title: data.brand_name,
-      brief: brief as unknown as Json,
-      budget_monthly: budgetTotal || null,
-      status: "submitted",
-      submitted_at: new Date().toISOString(),
-    })
-    .select("id")
-    .single<{ id: string }>();
+  // 멀티스텝 임시저장에서 넘어온 경우 해당 draft 행을 제출 처리(중복 생성 방지).
+  const draftId = String(formData.get("draft_id") || "").trim();
+  let requestId: string;
 
-  if (insertError || !inserted) {
-    return {
-      error:
-        insertError?.message ?? "요청 저장 중 오류가 발생했습니다.",
-    };
+  if (draftId) {
+    const { error: updateError } = await supabase
+      .from("matching_requests")
+      .update({
+        title: data.brand_name,
+        brief: brief as unknown as Json,
+        budget_monthly: budgetTotal || null,
+        status: "submitted",
+        submitted_at: new Date().toISOString(),
+      })
+      .eq("id", draftId)
+      .eq("client_id", client.id)
+      .eq("status", "draft");
+    if (updateError) {
+      return { error: updateError.message };
+    }
+    requestId = draftId;
+  } else {
+    const { data: inserted, error: insertError } = await supabase
+      .from("matching_requests")
+      .insert({
+        client_id: client.id,
+        title: data.brand_name,
+        brief: brief as unknown as Json,
+        budget_monthly: budgetTotal || null,
+        status: "submitted",
+        submitted_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single<{ id: string }>();
+
+    if (insertError || !inserted) {
+      return {
+        error: insertError?.message ?? "요청 저장 중 오류가 발생했습니다.",
+      };
+    }
+    requestId = inserted.id;
   }
 
   // 증빙 파일 업로드 (service_role)
   if (proofFile instanceof File && proofFile.size > 0) {
     const admin = createAdminClient();
-    const path = `${client.id}/${inserted.id}/${sanitizeFileName(proofFile.name)}`;
+    const path = `${client.id}/${requestId}/${sanitizeFileName(proofFile.name)}`;
     const { error } = await admin.storage
       .from("client-files")
       .upload(path, proofFile, {
@@ -165,9 +268,9 @@ export async function submitMatchingRequest(
       await admin
         .from("matching_requests")
         .update({ brief: brief as unknown as Json })
-        .eq("id", inserted.id);
+        .eq("id", requestId);
     }
   }
 
-  redirect(`/client/request/${inserted.id}?created=1`);
+  redirect(`/client/request/${requestId}?created=1`);
 }
