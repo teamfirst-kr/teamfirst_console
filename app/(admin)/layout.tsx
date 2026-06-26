@@ -17,6 +17,8 @@ export default async function AdminLayout({
         { href: "/admin/requests", label: "매칭 요청" },
         { href: "/admin/partners", label: "파트너" },
         { href: "/admin/meetings", label: "미팅" },
+        { href: "/admin/marketers", label: "마케터" },
+        { href: "/admin/cases", label: "사례" },
       ]}
     >
       {children}

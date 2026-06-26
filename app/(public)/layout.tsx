@@ -24,6 +24,9 @@ export default async function PublicLayout({
             <Link href="/marketers" className="hover:text-primary-foreground">
               마케터
             </Link>
+            <Link href="/cases" className="hover:text-primary-foreground">
+              매칭 사례
+            </Link>
             <Link href="/partners" className="hover:text-primary-foreground">
               파트너 대행사
             </Link>

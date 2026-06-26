@@ -682,6 +682,52 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      case_studies: {
+        Row: {
+          id: string;
+          slug: string;
+          brand_name: string;
+          industry: string | null;
+          summary: string | null;
+          body: string | null;
+          metrics: Json | null;
+          cover_url: string | null;
+          status: string;
+          sort_order: number;
+          published_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          brand_name: string;
+          industry?: string | null;
+          summary?: string | null;
+          body?: string | null;
+          metrics?: Json | null;
+          cover_url?: string | null;
+          status?: string;
+          sort_order?: number;
+          published_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          slug: string;
+          brand_name: string;
+          industry: string | null;
+          summary: string | null;
+          body: string | null;
+          metrics: Json | null;
+          cover_url: string | null;
+          status: string;
+          sort_order: number;
+          published_at: string | null;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
