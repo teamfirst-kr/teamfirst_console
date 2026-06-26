@@ -728,6 +728,51 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      marketer_requests: {
+        Row: {
+          id: string;
+          client_id: string;
+          brand_name: string;
+          category: string;
+          budget_range: string | null;
+          goal: string | null;
+          message: string | null;
+          status: string;
+          assigned_marketer_id: string | null;
+          interview_at: string | null;
+          admin_notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          brand_name: string;
+          category: string;
+          budget_range?: string | null;
+          goal?: string | null;
+          message?: string | null;
+          status?: string;
+          assigned_marketer_id?: string | null;
+          interview_at?: string | null;
+          admin_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          brand_name: string;
+          category: string;
+          budget_range: string | null;
+          goal: string | null;
+          message: string | null;
+          status: string;
+          assigned_marketer_id: string | null;
+          interview_at: string | null;
+          admin_notes: string | null;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

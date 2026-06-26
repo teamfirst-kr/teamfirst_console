@@ -15,6 +15,7 @@ export default async function ClientLayout({
       nav={[
         { href: "/client/dashboard", label: "대시보드" },
         { href: "/client/request/new", label: "새 매칭 요청" },
+        { href: "/client/marketer-requests", label: "마케터 매칭" },
       ]}
     >
       {children}

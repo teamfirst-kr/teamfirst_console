@@ -61,7 +61,7 @@ export default function MarketerMatchingPage() {
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg" className="bg-white text-secondary hover:bg-white/90">
-              <Link href="/marketers">검증된 마케터 보기</Link>
+              <Link href="/marketer-matching/apply">마케터 매칭 신청</Link>
             </Button>
             <Button
               asChild
@@ -69,7 +69,7 @@ export default function MarketerMatchingPage() {
               variant="outline"
               className="border-white bg-transparent text-white hover:bg-white hover:text-secondary"
             >
-              <Link href="/signup">광고주 회원가입</Link>
+              <Link href="/marketers">검증된 마케터 보기</Link>
             </Button>
           </div>
         </div>
@@ -157,7 +157,7 @@ export default function MarketerMatchingPage() {
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg" className="bg-white text-secondary hover:bg-white/90">
-              <Link href="/marketers">마케터 둘러보기</Link>
+              <Link href="/marketer-matching/apply">마케터 매칭 신청</Link>
             </Button>
           </div>
         </div>
