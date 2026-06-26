@@ -213,6 +213,29 @@ export function rfpArrivedEmail(params: {
   };
 }
 
+export function marketerApprovedEmail(params: {
+  displayName: string;
+  email: string;
+  tempPassword: string;
+  loginUrl: string;
+}): { subject: string; html: string } {
+  return {
+    subject: "[TeamFirst] 마케터 계정이 발급되었습니다",
+    html: layout(
+      "마케터 계정 발급",
+      `<p>${params.displayName} 님, 안녕하세요. 팀퍼스트입니다.</p>
+       <p>마케터 콘솔 계정이 발급되었습니다. 아래 정보로 로그인 후 비밀번호를
+       변경해주세요. 콘솔에서 제안받은 매칭과 인터뷰 일정을 확인할 수 있습니다.</p>
+       <div style="margin:16px 0;padding:16px;background:#f1f5f9;border-radius:8px;font-size:14px;">
+         <div>아이디(이메일): <strong>${params.email}</strong></div>
+         <div>임시 비밀번호: <strong style="font-family:monospace;">${params.tempPassword}</strong></div>
+       </div>
+       <p>${button(params.loginUrl, "로그인하기")}</p>
+       <p style="color:#64748b;font-size:13px;">첫 로그인 후 반드시 비밀번호를 변경해주세요.</p>`,
+    ),
+  };
+}
+
 export function partnerWonEmail(params: {
   companyName: string;
   requestTitle: string;

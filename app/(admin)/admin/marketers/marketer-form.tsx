@@ -47,6 +47,10 @@ export function MarketerForm({
             <Label htmlFor="slug">slug (URL, 비우면 자동)</Label>
             <Input id="slug" name="slug" placeholder="예: hong-gildong" defaultValue={initial?.slug ?? ""} />
           </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="contact_email">이메일 (로그인 계정 발급용)</Label>
+            <Input id="contact_email" name="contact_email" type="email" placeholder="marketer@example.com" defaultValue={initial?.contact_email ?? ""} />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="category">분야 *</Label>
             <select

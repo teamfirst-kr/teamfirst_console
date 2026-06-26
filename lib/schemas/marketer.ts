@@ -66,6 +66,8 @@ export type MarketerRow = {
   avatar_url: string | null;
   status: string;
   sort_order: number | null;
+  user_id: string | null;
+  contact_email: string | null;
   created_at: string;
   updated_at: string;
 };

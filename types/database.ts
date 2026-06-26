@@ -10,7 +10,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export type UserRole = "client" | "partner" | "admin";
+export type UserRole = "client" | "partner" | "admin" | "marketer";
 
 export type PartnerStatus =
   | "pending"
@@ -645,6 +645,8 @@ export type Database = {
           avatar_url: string | null;
           status: string;
           sort_order: number;
+          user_id: string | null;
+          contact_email: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -662,6 +664,8 @@ export type Database = {
           avatar_url?: string | null;
           status?: string;
           sort_order?: number;
+          user_id?: string | null;
+          contact_email?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -678,6 +682,8 @@ export type Database = {
           avatar_url: string | null;
           status: string;
           sort_order: number;
+          user_id: string | null;
+          contact_email: string | null;
           updated_at: string;
         }>;
         Relationships: [];

@@ -7,6 +7,7 @@ import type { MarketerRow } from "@/lib/schemas/marketer";
 import { MarketerForm } from "../marketer-form";
 import { updateMarketer } from "../actions";
 import { DeleteMarketerButton } from "./delete-button";
+import { IssueAccountButton } from "./issue-account";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export default async function EditMarketerPage({
   const { data, error } = await supabase
     .from("marketers")
     .select(
-      "id, slug, display_name, cohort_year, category, career_years, headline, bio, skills, portfolio, avatar_url, status, sort_order, created_at, updated_at",
+      "id, slug, display_name, cohort_year, category, career_years, headline, bio, skills, portfolio, avatar_url, status, sort_order, user_id, contact_email, created_at, updated_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -57,6 +58,12 @@ export default async function EditMarketerPage({
         action={boundUpdate}
         initial={marketer}
         submitLabel="저장"
+      />
+
+      <IssueAccountButton
+        id={id}
+        hasAccount={!!marketer.user_id}
+        email={marketer.contact_email}
       />
 
       <DeleteMarketerButton id={id} />

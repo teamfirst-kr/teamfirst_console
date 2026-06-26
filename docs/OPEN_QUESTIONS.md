@@ -14,3 +14,4 @@
 | Q7 | 운영자 평가표 6항목 vs PRD 4항목(총점/성과/콘텐츠/매칭) 정합 | §7.7 / 현 rubric 6항목 | 현 6항목 유지, PRD 4항목은 표시 그룹으로 매핑 | OPEN |
 | Q8 | 팀퍼스트 정산 입금 계좌(실값) | settlements 화면 placeholder | 운영자에게 실계좌 입력 요청 필요 | OPEN |
 | Q9 | 전자계약 솔루션(글로싸인 유지 vs 모두싸인) | §14 | 글로싸인 수동 유지, Phase 3 재검토 | OPEN |
+| Q10 | 마케터 self_update RLS가 status/slug 변경까지 허용(앱 액션은 제한) | migration 014 | 앱 서버 액션이 허용 컬럼만 수정. 직접 호출 시 self-publish 가능(저低위험). 필요 시 BEFORE UPDATE 트리거로 비운영자 status 변경 차단 | OPEN |

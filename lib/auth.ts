@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 
-export type Role = "client" | "partner" | "admin";
+export type Role = "client" | "partner" | "admin" | "marketer";
 
 export async function getCurrentUser() {
   const supabase = await createClient();
@@ -67,6 +67,20 @@ export async function getCurrentPartnerId(): Promise<string | null> {
   return data?.id ?? null;
 }
 
+export async function getCurrentMarketerId(): Promise<string | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("marketers")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle<{ id: string }>();
+  return data?.id ?? null;
+}
+
 export function roleHome(role: Role | null): string {
   switch (role) {
     case "admin":
@@ -75,6 +89,8 @@ export function roleHome(role: Role | null): string {
       return "/partner/dashboard";
     case "client":
       return "/client/dashboard";
+    case "marketer":
+      return "/marketer-console";
     default:
       return "/login";
   }

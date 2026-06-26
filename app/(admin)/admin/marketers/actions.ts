@@ -4,11 +4,27 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentRole } from "@/lib/auth";
+import { sendEmail } from "@/lib/email/resend";
+import { marketerApprovedEmail } from "@/lib/email/templates";
 import type { Json } from "@/types/database";
 import type { MarketerPortfolioItem } from "@/lib/schemas/marketer";
 
 export type MarketerActionState = { error: string } | null;
+export type IssueAccountResult =
+  | { ok: true; message: string }
+  | { ok: false; error: string };
+
+function appUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+}
+
+function randomPassword(): string {
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  return Buffer.from(bytes).toString("base64url");
+}
 
 async function assertAdmin() {
   const role = await getCurrentRole();
@@ -57,6 +73,7 @@ function readForm(formData: FormData) {
   return {
     display_name,
     slug: slugInput ? slugify(slugInput) : slugify(display_name),
+    contact_email: String(formData.get("contact_email") ?? "").trim() || null,
     category: String(formData.get("category") ?? "performance"),
     cohort_year: Number.isFinite(cohortYear) && cohortYear > 0 ? cohortYear : null,
     career_years: Number.isFinite(careerYears) && careerYears > 0 ? careerYears : null,
@@ -87,6 +104,7 @@ export async function createMarketer(
     headline: f.headline,
     bio: f.bio,
     skills: f.skills,
+    contact_email: f.contact_email,
     portfolio: f.portfolio as unknown as Json,
     status: f.status,
     sort_order: f.sort_order,
@@ -120,6 +138,7 @@ export async function updateMarketer(
       headline: f.headline,
       bio: f.bio,
       skills: f.skills,
+      contact_email: f.contact_email,
       portfolio: f.portfolio as unknown as Json,
       status: f.status,
       sort_order: f.sort_order,
@@ -146,6 +165,87 @@ export async function setMarketerStatus(
     .update({ status, updated_at: new Date().toISOString() })
     .eq("id", id);
   revalidatePath("/admin/marketers");
+}
+
+// 마케터 로그인 계정 발급 (큐레이션 모델: 운영자가 발급). 초기 임시 비번 + 첫
+// 로그인 시 변경 강제. 마케터는 콘솔에서 제안받은 매칭/인터뷰를 확인한다.
+export async function issueMarketerAccount(
+  id: string,
+): Promise<IssueAccountResult> {
+  await assertAdmin();
+  const supabase = await createClient();
+  const { data: marketer } = await supabase
+    .from("marketers")
+    .select("id, display_name, contact_email, user_id")
+    .eq("id", id)
+    .maybeSingle<{
+      id: string;
+      display_name: string;
+      contact_email: string | null;
+      user_id: string | null;
+    }>();
+
+  if (!marketer) return { ok: false, error: "마케터를 찾을 수 없습니다." };
+  if (marketer.user_id) return { ok: false, error: "이미 계정이 발급되었습니다." };
+  if (!marketer.contact_email)
+    return { ok: false, error: "이메일을 먼저 입력·저장해주세요." };
+
+  const admin = createAdminClient();
+  const password = randomPassword();
+  const { data: created, error: createError } =
+    await admin.auth.admin.createUser({
+      email: marketer.contact_email,
+      password,
+      email_confirm: true,
+      user_metadata: { role: "marketer", name: marketer.display_name },
+      app_metadata: { role: "marketer", must_change_password: true },
+    });
+
+  let userId = created?.user?.id ?? null;
+  if (createError || !userId) {
+    const msg = createError?.message ?? "";
+    if (msg.includes("already") || msg.includes("registered")) {
+      const { data: existing } = await admin
+        .from("users")
+        .select("id")
+        .eq("email", marketer.contact_email)
+        .maybeSingle();
+      if (existing?.id) userId = existing.id;
+      else return { ok: false, error: `계정 생성 실패: ${msg}` };
+    } else {
+      return { ok: false, error: `계정 생성 실패: ${msg}` };
+    }
+  }
+
+  await admin
+    .from("users")
+    .update({ role: "marketer", name: marketer.display_name })
+    .eq("id", userId);
+
+  const { error: linkError } = await admin
+    .from("marketers")
+    .update({ user_id: userId })
+    .eq("id", id);
+  if (linkError) return { ok: false, error: linkError.message };
+
+  if (created?.user?.id) {
+    const mail = marketerApprovedEmail({
+      displayName: marketer.display_name,
+      email: marketer.contact_email,
+      tempPassword: password,
+      loginUrl: `${appUrl()}/login`,
+    });
+    await sendEmail({ to: marketer.contact_email, ...mail });
+  }
+
+  revalidatePath(`/admin/marketers/${id}`);
+  revalidatePath("/admin/marketers");
+  return {
+    ok: true,
+    message: created?.user?.id
+      ? "마케터 계정을 발급하고 안내 메일을 보냈습니다."
+      : "기존 계정에 마케터 권한을 연결했습니다.",
+  };
 }
 
 export async function deleteMarketer(id: string): Promise<void> {
