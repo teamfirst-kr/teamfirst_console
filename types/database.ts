@@ -630,6 +630,58 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      marketers: {
+        Row: {
+          id: string;
+          slug: string;
+          display_name: string;
+          cohort_year: number | null;
+          category: string;
+          career_years: number | null;
+          headline: string | null;
+          bio: string | null;
+          skills: string[];
+          portfolio: Json | null;
+          avatar_url: string | null;
+          status: string;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          display_name: string;
+          cohort_year?: number | null;
+          category: string;
+          career_years?: number | null;
+          headline?: string | null;
+          bio?: string | null;
+          skills?: string[];
+          portfolio?: Json | null;
+          avatar_url?: string | null;
+          status?: string;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          slug: string;
+          display_name: string;
+          cohort_year: number | null;
+          category: string;
+          career_years: number | null;
+          headline: string | null;
+          bio: string | null;
+          skills: string[];
+          portfolio: Json | null;
+          avatar_url: string | null;
+          status: string;
+          sort_order: number;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

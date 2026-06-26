@@ -18,6 +18,12 @@ export default async function PublicLayout({
             TeamFirst
           </Link>
           <nav className="ml-6 mr-auto hidden md:flex items-center gap-4 text-sm text-primary-foreground/80">
+            <Link href="/marketer-matching" className="hover:text-primary-foreground">
+              마케터 매칭
+            </Link>
+            <Link href="/marketers" className="hover:text-primary-foreground">
+              마케터
+            </Link>
             <Link href="/partners" className="hover:text-primary-foreground">
               파트너 대행사
             </Link>
