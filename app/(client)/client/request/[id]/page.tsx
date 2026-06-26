@@ -175,7 +175,15 @@ export default async function ClientRequestDetailPage({
               : format(new Date(request.created_at), "yyyy.MM.dd")}
           </p>
         </div>
-        <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
+          <Link
+            href={`/rfp/${request.id}/print`}
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            RFP PDF 보기 →
+          </Link>
+        </div>
       </div>
 
       <Card>

@@ -290,4 +290,20 @@
 - **근거**: 구글미트 링크 자동 발급은 실질 가치. 앱 직접 Google API 연동(OAuth/서비스계정)은 공수 커서 Phase 2.
 - **영향**: `N8N_WEBHOOK_URL`은 이제 미팅 워크플로우 webhook 하나만 가리킴. RFP 워크플로우는 미사용.
 
+## 2026-06-26 — PRD 전환 작업 (Option ① 점진 정비, a→e)
+
+### D-049. PRD 채택 + Option ① (기존 Supabase 코드 유지, 점진 정비)
+- **결정**: `docs/PRD.md`를 제품 SSOT로 채택. 단 실행은 Option ①(기존 Supabase 스택·`(client)/(partner)/(admin)` 라우트 유지, PRD 가치 항목만 점진 추가). PRD §8(Prisma)·§5(라우트 재명명)는 목표 참조용.
+- **근거**: 운영 중 데이터(대행사 13개사·진행 건) 보존, "기존 자산 흡수" 방침, Supabase=Postgres라 추후 Prisma 전환 가능.
+
+### D-050. 디자인 토큰 네이비 #111E38 통일
+- **결정**: `--primary`를 밝은 블루(#004AAD)→네이비 `#111E38`로, secondary→`#000C31`, border→`#E5E7EB`, focus ring→accent blue `#2563EB`. `--brand-blue` 토큰 추가(링크/포커스 절제 사용). 콘솔(데이터 밀집) 버튼은 가독성 위해 pill 대신 rounded 유지.
+
+### D-051. 매칭 신청 멀티스텝 + 서버 임시저장
+- **결정**: 단일 폼 → 5단계 마법사. 자동 임시저장은 localStorage 금지(CLAUDE.md §6.1) 준수 위해 `matching_requests(status=draft)` 서버 행으로 보관(loadDraft/saveDraft). 제출 시 draft 행을 그대로 submitted로 전환(중복 생성 방지). 파일은 제출 시점에만 업로드.
+
+### D-052. RFP PDF는 인쇄(print-CSS) 방식 채택
+- **결정**: `@react-pdf/renderer` 대신 인쇄 최적화 RFP 페이지(`/rfp/[id]/print`) + 브라우저 "PDF로 저장". 권한은 RLS로 보장(client 본인/admin 전체/partner는 발송된 건), 파트너는 PII 마스킹.
+- **근거**: @react-pdf는 한글 전용 TTF 임베딩 필요(글리프/포맷 취약·Vercel 무거움·글리프 깨짐 시각검증 불가). 인쇄 방식은 한글 완벽·기존 8섹션 디자인 재사용·배포 리스크 0. 진짜 서버 생성 .pdf(원클릭 다운로드)가 필요하면 추후 추가(OPEN Q5).
+
 <!-- 새 결정은 아래에 추가 -->

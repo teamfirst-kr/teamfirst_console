@@ -87,12 +87,20 @@ export default async function PartnerRfpDetailPage({
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <Link
-        href="/partner/dashboard"
-        className="text-sm text-muted-foreground hover:underline"
-      >
-        ← RFP 목록
-      </Link>
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href="/partner/dashboard"
+          className="text-sm text-muted-foreground hover:underline"
+        >
+          ← RFP 목록
+        </Link>
+        <Link
+          href={`/rfp/${id}/print`}
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          RFP PDF 보기 →
+        </Link>
+      </div>
 
       {meeting ? (
         <MeetingResponse

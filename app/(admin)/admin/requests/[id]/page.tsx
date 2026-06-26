@@ -162,7 +162,15 @@ export default async function AdminRequestDetailPage({
               : format(new Date(request.created_at), "yyyy.MM.dd")}
           </p>
         </div>
-        <Badge variant={badge.variant}>{badge.label}</Badge>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <Badge variant={badge.variant}>{badge.label}</Badge>
+          <Link
+            href={`/rfp/${request.id}/print`}
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            RFP PDF 보기 →
+          </Link>
+        </div>
       </div>
 
       {sentCount && sentCount > 0 ? (
