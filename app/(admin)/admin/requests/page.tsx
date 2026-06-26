@@ -12,6 +12,8 @@ import {
 } from "@/lib/schemas/matching-request";
 import type { RequestStatus } from "@/types/database";
 
+import { RequestBoard, type BoardRequest } from "./request-board";
+
 const MEDIA_LABEL = Object.fromEntries(REQUEST_MEDIA.map((m) => [m.value, m.label]));
 
 const STATUS_TABS: { value: RequestStatus | "all"; label: string }[] = [
@@ -28,29 +30,79 @@ export const dynamic = "force-dynamic";
 export default async function AdminRequestsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; view?: string }>;
 }) {
-  const { status } = await searchParams;
+  const { status, view } = await searchParams;
   const activeStatus = (status ?? "all") as RequestStatus | "all";
+  const isBoard = view === "board";
 
   const supabase = await createClient();
   let query = supabase
     .from("matching_requests")
     .select("id, title, brief, budget_monthly, status, submitted_at, created_at")
     .order("created_at", { ascending: false });
-  if (activeStatus !== "all") query = query.eq("status", activeStatus);
+  // 보드 뷰는 전체 단계를 한눈에 보여주므로 상태 필터를 적용하지 않는다.
+  if (!isBoard && activeStatus !== "all") query = query.eq("status", activeStatus);
 
   const { data, error } = await query;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-secondary">매칭 요청</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          광고주 요청을 검수하고 RFP 발송을 진행하세요.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-secondary">매칭 요청</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            광고주 요청을 검수하고 RFP 발송을 진행하세요.
+          </p>
+        </div>
+        <div className="inline-flex overflow-hidden rounded-lg border">
+          <Link
+            href="/admin/requests"
+            className={
+              !isBoard
+                ? "bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
+                : "bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
+            }
+          >
+            리스트
+          </Link>
+          <Link
+            href="/admin/requests?view=board"
+            className={
+              isBoard
+                ? "bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
+                : "bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
+            }
+          >
+            보드
+          </Link>
+        </div>
       </div>
 
+      {isBoard ? (
+        <RequestBoard requests={(data ?? []) as unknown as BoardRequest[]} />
+      ) : (
+        <RequestListView
+          data={(data ?? null) as unknown as BoardRequest[] | null}
+          error={error}
+          activeStatus={activeStatus}
+        />
+      )}
+    </div>
+  );
+}
+
+function RequestListView({
+  data,
+  error,
+  activeStatus,
+}: {
+  data: BoardRequest[] | null;
+  error: { message: string } | null;
+  activeStatus: RequestStatus | "all";
+}) {
+  return (
+    <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
         {STATUS_TABS.map((tab) => {
           const isActive = activeStatus === tab.value;

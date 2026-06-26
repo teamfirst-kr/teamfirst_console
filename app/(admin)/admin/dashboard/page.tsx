@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
+import type { RequestStatus } from "@/types/database";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,28 @@ export default async function AdminDashboardPage() {
     .from("matching_requests")
     .select("id", { count: "exact", head: true })
     .eq("status", "meeting_scheduled");
+
+  const { count: settlementPending } = await supabase
+    .from("settlements")
+    .select("id", { count: "exact", head: true })
+    .in("status", ["pending", "invoiced"]);
+
+  // 파이프라인 단계별 카운트 (보드와 동일한 그룹핑)
+  const stageCounts = await Promise.all(
+    [
+      { label: "검수 대기", statuses: ["submitted"] },
+      { label: "RFP·수집", statuses: ["rfp_sent", "collecting"] },
+      { label: "후보 선정", statuses: ["curating", "candidates_sent"] },
+      { label: "미팅", statuses: ["meeting_scheduled"] },
+      { label: "성사", statuses: ["closed_won"] },
+    ].map(async (s) => {
+      const { count } = await supabase
+        .from("matching_requests")
+        .select("id", { count: "exact", head: true })
+        .in("status", s.statuses as RequestStatus[]);
+      return { label: s.label, count: count ?? 0 };
+    }),
+  );
 
   return (
     <div className="space-y-8">
@@ -83,7 +106,7 @@ export default async function AdminDashboardPage() {
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
           매칭 진행
         </h2>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatCard
             label="검수 대기 요청"
             value={String(submittedReq ?? 0)}
@@ -94,7 +117,7 @@ export default async function AdminDashboardPage() {
             label="진행 중 매칭"
             value={String(activeReq ?? 0)}
             hint="RFP~후보 선정"
-            href="/admin/requests"
+            href="/admin/requests?view=board"
           />
           <StatCard
             label="미팅 예정"
@@ -102,7 +125,48 @@ export default async function AdminDashboardPage() {
             hint="일정 확정/조율"
             href="/admin/meetings"
           />
+          <StatCard
+            label="정산 대기"
+            value={String(settlementPending ?? 0)}
+            hint="발행/입금 대기"
+            href="/admin/settlements"
+          />
         </div>
+      </div>
+
+      {/* 파이프라인 퍼널 */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-muted-foreground">
+            매칭 파이프라인
+          </h2>
+          <Link
+            href="/admin/requests?view=board"
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            보드에서 보기 →
+          </Link>
+        </div>
+        <Link
+          href="/admin/requests?view=board"
+          className="flex flex-wrap items-stretch gap-2 rounded-xl border bg-card p-3 shadow-sm"
+        >
+          {stageCounts.map((s, i) => (
+            <div key={s.label} className="flex flex-1 items-center gap-2">
+              <div className="flex-1 rounded-lg bg-muted/60 px-3 py-3 text-center">
+                <div className="text-2xl font-bold text-secondary">
+                  {s.count}
+                </div>
+                <div className="mt-0.5 text-xs text-muted-foreground">
+                  {s.label}
+                </div>
+              </div>
+              {i < stageCounts.length - 1 ? (
+                <span className="text-muted-foreground/50">›</span>
+              ) : null}
+            </div>
+          ))}
+        </Link>
       </div>
 
       <Card>
