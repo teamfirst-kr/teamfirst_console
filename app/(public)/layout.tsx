@@ -68,16 +68,40 @@ export default async function PublicLayout({
         </div>
       </header>
       <main className="flex-1">{children}</main>
-      <footer className="border-t bg-background py-6 text-center text-xs text-muted-foreground">
-        <div className="mb-2 flex justify-center gap-4">
-          <Link href="/terms" className="hover:text-foreground">
-            이용약관
-          </Link>
-          <Link href="/privacy" className="hover:text-foreground">
-            개인정보처리방침
-          </Link>
+      <footer className="border-t bg-background py-8 text-xs text-muted-foreground">
+        <div className="mx-auto max-w-6xl px-6 space-y-3">
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+            <Link href="/" className="hover:text-foreground">
+              대행사 매칭
+            </Link>
+            <Link href="/marketer-matching" className="hover:text-foreground">
+              마케터 매칭
+            </Link>
+            <Link href="/marketers" className="hover:text-foreground">
+              마케터
+            </Link>
+            <Link href="/cases" className="hover:text-foreground">
+              매칭 사례
+            </Link>
+            <Link href="/partners" className="hover:text-foreground">
+              파트너 대행사
+            </Link>
+            <Link href="/partner/apply" className="hover:text-foreground">
+              파트너 입점 신청
+            </Link>
+          </div>
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+            <Link href="/terms" className="hover:text-foreground">
+              이용약관
+            </Link>
+            <Link href="/privacy" className="hover:text-foreground">
+              개인정보처리방침
+            </Link>
+          </div>
+          <p className="text-center">
+            © {new Date().getFullYear()} TeamFirst. All rights reserved.
+          </p>
         </div>
-        © {new Date().getFullYear()} TeamFirst. All rights reserved.
       </footer>
     </div>
   );
