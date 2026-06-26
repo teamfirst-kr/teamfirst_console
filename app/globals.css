@@ -3,25 +3,29 @@
 
 @layer base {
   :root {
+    /* TeamFirst 네이비 아이덴티티 (PRD §9.1) — primary는 #111E38 네이비로 통일 */
     --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    --foreground: 221 39% 11%; /* #111827 ink */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 221 39% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 217 100% 34%;
+    --popover-foreground: 221 39% 11%;
+    --primary: 220 53% 14%; /* #111E38 navy-900 (brand/buttons) */
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 35% 14%;
+    --secondary: 225 100% 10%; /* #000C31 navy-950 (header/sidebar/딥 다크) */
     --secondary-foreground: 0 0% 100%;
-    --muted: 210 40% 96%;
+    --muted: 210 40% 96%; /* slate-50 */
     --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 210 40% 96%; /* subtle hover bg */
+    --accent-foreground: 221 39% 11%;
+    /* 보조 강조(링크/포커스 등 절제 사용) — #2563EB */
+    --brand-blue: 221 83% 53%;
+    --brand-blue-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 100% 34%;
+    --border: 220 13% 91%; /* #E5E7EB */
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%; /* accent blue 포커스 링 (네이비 위에서 가시성) */
     --radius: 0.5rem;
   }
 }
@@ -41,6 +45,8 @@
   --color-muted-foreground: hsl(var(--muted-foreground));
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-brand-blue: hsl(var(--brand-blue));
+  --color-brand-blue-foreground: hsl(var(--brand-blue-foreground));
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-border: hsl(var(--border));
