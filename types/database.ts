@@ -545,6 +545,7 @@ export type Database = {
           ended_at: string | null;
           contract_url: string | null;
           notes: string | null;
+          updated_at: string;
         }>;
         Relationships: [];
       };
@@ -582,6 +583,7 @@ export type Database = {
           invoiced_at: string | null;
           paid_at: string | null;
           notes: string | null;
+          updated_at: string;
         }>;
         Relationships: [];
       };
