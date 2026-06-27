@@ -15,3 +15,7 @@
 | Q8 | 팀퍼스트 정산 입금 계좌(실값) | settlements 화면 placeholder | 운영자에게 실계좌 입력 요청 필요 | OPEN |
 | Q9 | 전자계약 솔루션(글로싸인 유지 vs 모두싸인) | §14 | 글로싸인 수동 유지, Phase 3 재검토 | OPEN |
 | Q10 | 마케터 self_update RLS가 status/slug 변경까지 허용(앱 액션은 제한) | migration 014 | 앱 서버 액션이 허용 컬럼만 수정. 직접 호출 시 self-publish 가능(저低위험). 필요 시 BEFORE UPDATE 트리거로 비운영자 status 변경 차단 | OPEN |
+| Q11 | 글로싸인 API 키 확보 가능? (전자계약 자동 발송) | Phase 3 | 현재 수동 링크 첨부로 동작. API 발급 시 자동화 | OPEN |
+| Q12 | PG/에스크로 가맹(결제) 진행 여부 | Phase 3 | 현재 인보이스/입금 관리 방식. 결제 도입 시 가맹 필요 | OPEN |
+| Q13 | 카카오 알림톡 비즈채널·템플릿 승인 진행 여부 | Phase 3 | 현재 Resend 이메일 + 인앱 알림. 알림톡은 채널/템플릿 승인 후 | OPEN |
+| Q14 | 매체사(메타/구글/네이버) OAuth 앱 등록 가능? (계정 자동 동기화) | Phase 3 | 현재 매체 이관 수동 안내. 자동화는 매체별 OAuth 앱 심사 필요 | OPEN |
