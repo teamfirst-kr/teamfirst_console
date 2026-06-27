@@ -29,7 +29,10 @@ export type RfpResult =
   | { ok: true; message: string; count: number }
   | { ok: false; error: string };
 
-export async function sendRfp(requestId: string): Promise<RfpResult> {
+export async function sendRfp(
+  requestId: string,
+  categoryFilter = false,
+): Promise<RfpResult> {
   await assertAdmin();
   const supabase = await createClient();
 
@@ -43,8 +46,9 @@ export async function sendRfp(requestId: string): Promise<RfpResult> {
     return { ok: false, error: "요청을 찾을 수 없습니다." };
   }
 
-  // 입점 완료(contracted) 대행사 전원 조회 (CLAUDE.md: 카테고리 필터 없음)
-  const { data: partners, error: partnerError } = await supabase
+  // 입점 완료(contracted) 대행사 조회. 기본은 전원, 옵션 시 요청 매체와
+  // 일치하는 카테고리를 가진 대행사로 한정 (입점사 증가 시 스팸화 방지).
+  const { data: allPartners, error: partnerError } = await supabase
     .from("partners")
     .select("id, company_name, contact_email")
     .eq("status", "contracted");
@@ -52,10 +56,33 @@ export async function sendRfp(requestId: string): Promise<RfpResult> {
   if (partnerError) {
     return { ok: false, error: partnerError.message };
   }
+  let partners = allPartners ?? [];
+
+  if (categoryFilter) {
+    const channels = ((request.brief ?? {}) as MatchingBrief).channels ?? [];
+    if (channels.length > 0 && partners.length > 0) {
+      const { data: cats } = await supabase
+        .from("partner_categories")
+        .select("partner_id, category")
+        .in(
+          "partner_id",
+          partners.map((p) => p.id),
+        );
+      const matchSet = new Set(
+        (cats ?? [])
+          .filter((c) => channels.includes(c.category))
+          .map((c) => c.partner_id),
+      );
+      partners = partners.filter((p) => matchSet.has(p.id));
+    }
+  }
+
   if (!partners || partners.length === 0) {
     return {
       ok: false,
-      error: "발송 대상 대행사가 없습니다. 먼저 파트너 입점을 완료해주세요.",
+      error: categoryFilter
+        ? "요청 매체와 일치하는 입점 대행사가 없습니다. 필터를 끄거나 파트너 카테고리를 확인해주세요."
+        : "발송 대상 대행사가 없습니다. 먼저 파트너 입점을 완료해주세요.",
     };
   }
 

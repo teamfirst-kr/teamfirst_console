@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { guidesForPlatforms } from "@/lib/content/media-transfer";
+
 import {
   createSettlement,
   setSettlementStatus,
@@ -157,6 +159,25 @@ export function DealCard({ deal }: { deal: DealView }) {
           ) : null}
         </div>
       </form>
+
+      {/* 매체 이관 안내 */}
+      <details className="mt-4 rounded-lg border bg-muted/30 p-3 text-xs">
+        <summary className="cursor-pointer font-medium text-foreground">
+          매체 이관(권한 위임) 안내
+        </summary>
+        <div className="mt-2 space-y-3">
+          {guidesForPlatforms(deal.platforms).map((g) => (
+            <div key={g.platform}>
+              <p className="font-medium text-foreground">{g.label}</p>
+              <ol className="ml-4 list-decimal text-muted-foreground">
+                {g.steps.map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ol>
+            </div>
+          ))}
+        </div>
+      </details>
 
       {/* 세금계산서 발행정보 */}
       <div className="mt-4 rounded-lg border bg-muted/40 p-3 text-xs">

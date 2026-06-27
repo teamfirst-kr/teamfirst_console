@@ -27,6 +27,7 @@ export function RfpPanel({
 }) {
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<RfpResult | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState(false);
 
   function run(fn: () => Promise<RfpResult>) {
     setResult(null);
@@ -47,12 +48,26 @@ export function RfpPanel({
       <CardContent className="space-y-3">
         <p className="text-sm">
           발송 대상:{" "}
-          <strong className="text-primary">{contractedCount}개사</strong>
+          <strong className="text-primary">
+            {categoryFilter ? "요청 매체 일치 대행사" : `${contractedCount}개사`}
+          </strong>
         </p>
+        <label className="flex items-start gap-2 rounded-md border border-input p-2.5 text-xs cursor-pointer hover:bg-accent">
+          <input
+            type="checkbox"
+            checked={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.checked)}
+            className="mt-0.5 h-4 w-4"
+          />
+          <span>
+            요청 매체와 일치하는 카테고리의 대행사에게만 발송 (입점사가 많아질 때
+            스팸화 방지)
+          </span>
+        </label>
         <Button
           className="w-full"
           disabled={!canSend || pending}
-          onClick={() => run(() => sendRfp(requestId))}
+          onClick={() => run(() => sendRfp(requestId, categoryFilter))}
         >
           {pending ? "처리 중..." : sendLabel}
         </Button>
