@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentRole } from "@/lib/auth";
 import { sendEmail } from "@/lib/email/resend";
 import { partnerWonEmail } from "@/lib/email/templates";
+import { notify } from "@/lib/notifications";
 import type { CandidateStatus, RequestStatus } from "@/types/database";
 
 export type DecisionResult = { ok: true; message: string } | { ok: false; error: string };
@@ -98,13 +99,19 @@ export async function decideWinner(
     }
   }
 
-  // 성사 대행사에 안내 메일
+  // 성사 대행사에 안내 메일 + 인앱 알림
   if (winner) {
     const { data: partner } = await supabase
       .from("partners")
-      .select("company_name, contact_email")
+      .select("company_name, contact_email, user_id")
       .eq("id", winner.partner_id)
       .single();
+    await notify(partner?.user_id, {
+      type: "deal_won",
+      title: "대행이 성사되었습니다",
+      body: "운영팀이 대행계약·매체 이관 절차를 안내드립니다.",
+      link: "/partner/dashboard",
+    });
     const { data: request } = await supabase
       .from("matching_requests")
       .select("title")

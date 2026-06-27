@@ -2,10 +2,12 @@ import Link from "next/link";
 
 import { logoutAction } from "@/app/(auth)/actions";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/notification-bell";
+import { getMyNotifications } from "@/components/notification-actions";
 
 type NavItem = { href: string; label: string };
 
-export function AppShell({
+export async function AppShell({
   title,
   nav,
   email,
@@ -16,6 +18,13 @@ export function AppShell({
   email: string | undefined;
   children: React.ReactNode;
 }) {
+  let unread = 0;
+  try {
+    unread = (await getMyNotifications()).unread;
+  } catch {
+    unread = 0;
+  }
+
   return (
     <div className="min-h-screen flex bg-muted/30">
       {/* 사이드바 */}
@@ -43,11 +52,16 @@ export function AppShell({
           ))}
         </nav>
         <div className="border-t border-white/10 p-3">
-          {email ? (
-            <p className="px-2 pb-2 text-xs text-white/50 truncate" title={email}>
-              {email}
-            </p>
-          ) : null}
+          <div className="mb-2 flex items-center justify-between">
+            {email ? (
+              <p className="px-2 text-xs text-white/50 truncate" title={email}>
+                {email}
+              </p>
+            ) : (
+              <span />
+            )}
+            <NotificationBell initialUnread={unread} />
+          </div>
           <form action={logoutAction}>
             <Button
               variant="ghost"
@@ -66,16 +80,19 @@ export function AppShell({
         <Link href="/" className="text-sm font-bold text-white">
           TeamFirst · {title}
         </Link>
-        <form action={logoutAction}>
-          <Button
-            variant="ghost"
-            size="sm"
-            type="submit"
-            className="text-white/80 hover:bg-white/10 hover:text-white"
-          >
-            로그아웃
-          </Button>
-        </form>
+        <div className="flex items-center gap-1">
+          <NotificationBell initialUnread={unread} />
+          <form action={logoutAction}>
+            <Button
+              variant="ghost"
+              size="sm"
+              type="submit"
+              className="text-white/80 hover:bg-white/10 hover:text-white"
+            >
+              로그아웃
+            </Button>
+          </form>
+        </div>
       </div>
 
       <main className="flex-1 pt-12 md:pt-0">

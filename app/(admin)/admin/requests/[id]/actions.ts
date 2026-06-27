@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentRole } from "@/lib/auth";
 import { sendEmail } from "@/lib/email/resend";
 import { rfpArrivedEmail } from "@/lib/email/templates";
+import { notifyMany } from "@/lib/notifications";
 import {
   REQUEST_MEDIA,
   type MatchingBrief,
@@ -50,7 +51,7 @@ export async function sendRfp(
   // 일치하는 카테고리를 가진 대행사로 한정 (입점사 증가 시 스팸화 방지).
   const { data: allPartners, error: partnerError } = await supabase
     .from("partners")
-    .select("id, company_name, contact_email")
+    .select("id, company_name, contact_email, user_id")
     .eq("status", "contracted");
 
   if (partnerError) {
@@ -139,6 +140,17 @@ export async function sendRfp(
       .update({ email_sent: true })
       .eq("request_id", requestId);
   }
+
+  // 인앱 알림
+  await notifyMany(
+    partners.map((p) => p.user_id),
+    {
+      type: "rfp",
+      title: "새 RFP가 도착했습니다",
+      body: `${brief.brand_name ?? request.title} · ${brief.category ?? ""}`,
+      link: `/partner/rfp/${requestId}`,
+    },
+  );
 
   revalidatePath(`/admin/requests/${requestId}`);
   revalidatePath("/admin/requests");
