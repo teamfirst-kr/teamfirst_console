@@ -12,9 +12,23 @@ function layout(title: string, bodyHtml: string): string {
         <h1 style="margin:0 0 16px;font-size:20px;color:${BRAND_NAVY};">${title}</h1>
         ${bodyHtml}
       </div>
-      <div style="padding:18px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:12px;">
-        본 메일은 발신 전용입니다. 문의는 운영팀에 회신해주세요.<br/>
-        © ${new Date().getFullYear()} TeamFirst
+      <div style="padding:20px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;">
+        <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="vertical-align:top;width:96px;">
+              <div style="display:inline-block;background:${BRAND_NAVY};color:#fff;font-weight:800;font-size:13px;line-height:1.1;padding:14px 12px;border-radius:8px;text-align:center;">TEAM<br/>FIRST</div>
+            </td>
+            <td style="vertical-align:top;color:#64748b;font-size:12px;line-height:1.7;padding-left:8px;">
+              <strong style="color:#0f172a;">팀퍼스트</strong> 신뢰기반 대행사 &amp; 마케터 매칭 플랫폼<br/>
+              TEL. +82 10-2668-2675<br/>
+              SNS. @teamfirst_kr<br/>
+              E-mail. <a href="mailto:team1st2025@gmail.com" style="color:#64748b;">team1st2025@gmail.com</a>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:14px 0 0;color:#94a3b8;font-size:11px;">
+          본 메일은 발신 전용입니다. · © ${new Date().getFullYear()} 팀퍼스트(TeamFirst)
+        </p>
       </div>
     </div>
   </div>`;
@@ -79,6 +93,36 @@ export function applicationNotShortlistedEmail(params: {
        아쉽게도 이번 매칭에서는 상위 후보로 선정되지 못했습니다.</p>
        <p>광고주의 요구사항과 우선순위에 따른 결정이며, 귀사의 역량과 무관합니다.
        앞으로도 적합한 RFP가 도착하면 계속 안내드리겠습니다. 감사합니다.</p>`,
+    ),
+  };
+}
+
+// 광고주에게: 대행사 모집 완료 + 결과 페이지 안내 (스크린샷 "모집 완료 및 결과 안내")
+export function matchingResultEmail(params: {
+  brandName: string;
+  category?: string | null;
+  candidateCount: number;
+  resultUrl: string;
+}): { subject: string; html: string } {
+  return {
+    subject: `[TeamFirst] ${params.brandName} 대행사 모집 완료 및 결과 안내`,
+    html: layout(
+      "대행사 모집 완료 및 결과 안내",
+      `<p>안녕하세요, 팀퍼스트입니다.</p>
+       <p>진행되었던 <strong>${params.brandName}${params.category ? ` ${params.category}` : ""}</strong>
+       대행사 모집이 마감되었으며, 최종 선정이 완료되었습니다.</p>
+       <p>${params.brandName} 브랜드의 핵심 목표에 가장 적합한 파트너를 <strong>상대평가 방식</strong>으로
+       선정하였으며, 총 <strong>${params.candidateCount}개 대행사</strong>가 매칭되었습니다.</p>
+       <p>선정 결과 및 각 대행사의 제안 내용은 아래 버튼을 클릭하여 확인하실 수 있습니다.</p>
+       <p style="text-align:center;">${button(params.resultUrl, "📋 선정 결과 페이지 바로가기")}</p>
+       <p style="font-size:13px;color:#64748b;text-align:center;">
+         결과 페이지에서 각 대행사의 점수 · 레퍼런스 · 제안 상세 내용을 확인하실 수 있습니다.
+       </p>
+       <div style="margin-top:16px;padding:14px 16px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;font-size:13px;color:#92400e;">
+         💡 <strong>다음 단계 안내</strong><br/>
+         선정 결과 확인 후, 결과 페이지의 <strong>‘맞춤제안 화상미팅 일정 선택’</strong> 버튼으로
+         미팅 일정을 등록해주시면 각 대행사와의 화상미팅을 순차적으로 안내드립니다.
+       </div>`,
     ),
   };
 }

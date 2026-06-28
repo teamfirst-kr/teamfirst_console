@@ -8,8 +8,11 @@ import { sendEmail } from "@/lib/email/resend";
 import {
   applicationNotShortlistedEmail,
   candidateProposedEmail,
+  matchingResultEmail,
 } from "@/lib/email/templates";
+import { notify } from "@/lib/notifications";
 import { MAX_CANDIDATES, type CandidateScores } from "@/lib/schemas/candidate";
+import type { MatchingBrief } from "@/lib/schemas/matching-request";
 import type { Json, RequestStatus } from "@/types/database";
 
 async function assertAdmin() {
@@ -44,9 +47,14 @@ export async function selectCandidates(
 
   const { data: request } = await supabase
     .from("matching_requests")
-    .select("id, title")
+    .select("id, title, client_id, brief")
     .eq("id", requestId)
-    .single();
+    .single<{
+      id: string;
+      title: string;
+      client_id: string;
+      brief: MatchingBrief | null;
+    }>();
   if (!request) return { ok: false, error: "요청을 찾을 수 없습니다." };
 
   const { data: applications } = await supabase
@@ -126,10 +134,35 @@ export async function selectCandidates(
     }
   }
 
+  // 광고주에게: 모집 완료 결과 안내 메일 + 인앱 알림
+  const brief = (request.brief ?? {}) as MatchingBrief;
+  const brandName = brief.brand_name ?? request.title;
+  const resultUrl = `${appUrl()}/client/request/${requestId}`;
+  if (brief.email) {
+    const mail = matchingResultEmail({
+      brandName,
+      category: brief.category,
+      candidateCount: selections.length,
+      resultUrl,
+    });
+    await sendEmail({ to: brief.email, ...mail });
+  }
+  const { data: client } = await supabase
+    .from("clients")
+    .select("user_id")
+    .eq("id", request.client_id)
+    .maybeSingle<{ user_id: string | null }>();
+  await notify(client?.user_id, {
+    type: "matching_result",
+    title: "대행사 선정 결과가 도착했습니다",
+    body: `${brandName} · ${selections.length}개사 매칭. 결과 페이지에서 점수·레퍼런스·제안을 확인하세요.`,
+    link: `/client/request/${requestId}`,
+  });
+
   revalidatePath(`/admin/requests/${requestId}`);
   revalidatePath("/admin/requests");
   return {
     ok: true,
-    message: `${selections.length}개사를 후보로 확정하고 통보 메일을 발송했습니다.`,
+    message: `${selections.length}개사를 후보로 확정하고 광고주·대행사에 통보했습니다.`,
   };
 }
