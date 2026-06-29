@@ -2,8 +2,7 @@ import { PARTNERS } from "@/lib/content/site";
 
 // 파트너 로고 무한 자동 슬라이드. 트랙을 2벌 이어붙여 translateX(-50%)로 seamless 루프.
 export function PartnerMarquee() {
-  const withLogo = PARTNERS.filter((p) => p.logo);
-  const loop = [...withLogo, ...withLogo];
+  const loop = [...PARTNERS, ...PARTNERS];
 
   return (
     <div className="tf-marquee relative overflow-hidden">
@@ -16,13 +15,21 @@ export function PartnerMarquee() {
             key={`${p.name}-${i}`}
             className="mx-4 flex h-24 w-44 shrink-0 flex-col items-center justify-center gap-2 rounded-xl border bg-card px-5 shadow-sm"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={p.logo}
-              alt={p.name}
-              className="max-h-9 max-w-[120px] object-contain grayscale transition hover:grayscale-0"
-              loading="lazy"
-            />
+            <div className="flex h-10 items-center justify-center">
+              {p.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={p.logo}
+                  alt={p.name}
+                  className="max-h-9 max-w-[120px] object-contain grayscale transition hover:grayscale-0"
+                  loading="lazy"
+                />
+              ) : (
+                <span className="text-lg font-extrabold tracking-tight text-secondary/80">
+                  {p.en ?? p.name}
+                </span>
+              )}
+            </div>
             <span className="text-[11px] text-muted-foreground">{p.category}</span>
           </div>
         ))}

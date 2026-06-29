@@ -4,17 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/reveal";
 import { SectionHeader } from "@/components/section-header";
 import { PartnerMarquee } from "@/components/partner-marquee";
+import { ProcessShowcase } from "@/components/process-showcase";
+import { FloatingCta } from "@/components/floating-cta";
 import { getCurrentRole, roleHome } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
-
-const PROCESS = [
-  { no: "01", t: "프로젝트 신청", d: "희망대행사 · 예산 · 기간 · 마케팅영역을 간단히 입력합니다." },
-  { no: "02", t: "RFP 제작 & 발행", d: "신청 정보를 바탕으로 제안요청서(RFP)를 자동 제작·발행합니다." },
-  { no: "03", t: "평가표 전달", d: "대행사 매칭 스코어링 결과로 객관적 평가" },
-  { no: "04", t: "화상미팅", d: "브랜드사와 광고대행사의 LIVE 미팅" },
-  { no: "05", t: "대행사 선정 & 계약", d: "광고대행 표준 계약서로 안전한 계약" },
-];
 
 const ENTRY_CONDITIONS = [
   "최소 마케팅 경력 5년 이상의 전문 팀",
@@ -67,6 +61,7 @@ export default async function HomeLanding() {
 
   return (
     <div className="overflow-hidden">
+      <FloatingCta matchHref={startHref} />
       {/* 1. 히어로 */}
       <section className="tf-hero-spotlight bg-secondary text-secondary-foreground">
         <div className="mx-auto max-w-5xl px-6 py-28 text-center md:py-36">
@@ -105,29 +100,16 @@ export default async function HomeLanding() {
         </div>
       </section>
 
-      {/* 2. 매칭 프로세스 (연결 스텝퍼) */}
+      {/* 2. 매칭 프로세스 (인터랙티브 슬라이드) */}
       <section className="mx-auto max-w-6xl px-6 py-24">
         <SectionHeader
           eyebrow="AUTOMATED PROCESS"
           heading="팀퍼스트 대행사 매칭 프로세스"
           sub="RFP 제작부터 대행사 선정까지 A to Z 케어"
         />
-        <div className="relative mt-14">
-          <div className="absolute left-0 right-0 top-7 hidden h-px bg-border lg:block" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {PROCESS.map((p, i) => (
-              <Reveal key={p.no} delay={i * 70} className="relative">
-                <div className="rounded-2xl border bg-card p-5 text-center shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md">
-                  <span className="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-base font-extrabold text-white ring-8 ring-background">
-                    {p.no}
-                  </span>
-                  <h3 className="mt-4 text-sm font-bold text-secondary">{p.t}</h3>
-                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{p.d}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
+        <Reveal className="mt-12">
+          <ProcessShowcase />
+        </Reveal>
       </section>
 
       {/* 3. 입점 기준 */}

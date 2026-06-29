@@ -91,15 +91,15 @@ export function PartnerDirectory({ partners }: { partners: DirectoryPartner[] })
       </div>
 
       {/* 카드 */}
-      <div className="mt-8 grid gap-4 md:grid-cols-2">
+      <div className="mx-auto mt-8 max-w-3xl space-y-4">
         {filtered.length === 0 ? (
-          <p className="py-12 text-center text-sm text-muted-foreground md:col-span-2">
+          <p className="py-12 text-center text-sm text-muted-foreground">
             해당 분야의 파트너가 아직 없습니다.
           </p>
         ) : (
           filtered.map((p, i) => (
-            <Reveal key={p.id} delay={(i % 4) * 60}>
-            <div className="h-full rounded-2xl border bg-card p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md">
+            <Reveal key={p.id} delay={(i % 6) * 50}>
+            <div className="rounded-2xl border bg-card p-6 shadow-sm transition duration-300 hover:border-primary/40 hover:shadow-md">
               <div className="flex items-start gap-4">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-secondary text-lg font-bold text-secondary-foreground">
                   {initial(p.company_name)}

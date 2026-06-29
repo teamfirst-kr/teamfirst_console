@@ -1,6 +1,12 @@
 // 팀퍼스트 마케팅 사이트 공용 콘텐츠 (teamfirst.kr 추출 기준).
 // 파트너 로고는 원본 사이트의 실제 이미지 URL.
-export type Partner = { name: string; category: string; logo?: string };
+export type Partner = {
+  name: string;
+  category: string;
+  logo?: string;
+  // 로고 이미지가 없을 때 표시할 텍스트(영문 권장)
+  en?: string;
+};
 
 export const PARTNERS: Partner[] = [
   {
@@ -21,7 +27,7 @@ export const PARTNERS: Partner[] = [
   {
     name: "테구스미",
     category: "반려동물용품 브랜드",
-    logo: "https://cdn.imweb.me/thumbnail/20251230/1db28f70e19a1.png",
+    en: "TEGUSMI",
   },
   {
     name: "올댓프린팅",
@@ -48,5 +54,5 @@ export const PARTNERS: Partner[] = [
     category: "스포츠 보호대",
     logo: "https://mncommerce.cafe24.com/web/upload/category/logo/v2_5b8214be648d8d1d03a090a094505b87_WiYcX6hVC_top.jpg",
   },
-  { name: "HANBIZA", category: "인사 · 노무 통합 솔루션" },
+  { name: "HANBIZA", category: "인사 · 노무 통합 솔루션", en: "HANBIZA" },
 ];
