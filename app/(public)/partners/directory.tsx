@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { Reveal } from "@/components/reveal";
 import { PARTNER_CATEGORIES } from "@/lib/schemas/partner-application";
 
 const CATEGORY_LABEL = Object.fromEntries(PARTNER_CATEGORIES.map((c) => [c.value, c.label]));
@@ -41,37 +42,39 @@ export function PartnerDirectory({ partners }: { partners: DirectoryPartner[] })
         });
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-12">
-      <div className="text-center space-y-3">
-        <Badge variant="default">VERIFIED PARTNER AGENCIES</Badge>
-        <h1 className="text-3xl font-bold text-secondary">팀퍼스트 파트너 대행사</h1>
-        <p className="text-sm text-muted-foreground">
-          엄격한 입점기준을 통과한 검증된 마케팅 파트너만 소속되어 있습니다.
-        </p>
-      </div>
-
-      {/* 입점기준 배너 */}
-      <div className="mt-8 rounded-xl bg-secondary p-6 text-secondary-foreground flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="font-bold">입점 검증 완료 대행사만 노출됩니다.</p>
-          <p className="mt-1 text-sm text-white/60">
-            전문 카테고리 보유 · 포트폴리오 검증 · 계약서 체결 완료
-          </p>
+    <div className="overflow-hidden">
+      {/* 히어로 */}
+      <section className="tf-hero-spotlight bg-secondary text-secondary-foreground">
+        <div className="mx-auto max-w-5xl px-6 py-20 text-center md:py-24">
+          <Reveal className="text-xs font-bold uppercase tracking-[0.18em] text-white/45">
+            VERIFIED PARTNER AGENCIES
+          </Reveal>
+          <Reveal delay={80}>
+            <h1 className="mt-3 text-3xl font-extrabold tracking-[-0.02em] md:text-4xl">
+              팀퍼스트 파트너 대행사
+            </h1>
+          </Reveal>
+          <Reveal delay={140}>
+            <p className="mx-auto mt-4 max-w-xl text-sm text-white/70">
+              엄격한 입점기준을 통과한 검증된 마케팅 파트너만 소속되어 있습니다.
+            </p>
+          </Reveal>
+          <Reveal delay={200} className="mt-7 flex flex-wrap justify-center gap-2">
+            {["전문 분야 검증", "포트폴리오 검증", "계약서 체결"].map((b) => (
+              <span
+                key={b}
+                className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs"
+              >
+                ✓ {b}
+              </span>
+            ))}
+          </Reveal>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {["전문 분야 검증", "포트폴리오 검증", "계약서 체결"].map((b) => (
-            <span
-              key={b}
-              className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs"
-            >
-              ✓ {b}
-            </span>
-          ))}
-        </div>
-      </div>
+      </section>
 
+      <div className="mx-auto max-w-5xl px-6 py-14">
       {/* 필터 */}
-      <div className="mt-8 flex flex-wrap gap-2">
+      <div className="flex flex-wrap justify-center gap-2">
         {GROUPS.map((g) => (
           <button
             key={g.key}
@@ -88,14 +91,15 @@ export function PartnerDirectory({ partners }: { partners: DirectoryPartner[] })
       </div>
 
       {/* 카드 */}
-      <div className="mt-6 space-y-4">
+      <div className="mt-8 grid gap-4 md:grid-cols-2">
         {filtered.length === 0 ? (
-          <p className="py-12 text-center text-sm text-muted-foreground">
+          <p className="py-12 text-center text-sm text-muted-foreground md:col-span-2">
             해당 분야의 파트너가 아직 없습니다.
           </p>
         ) : (
-          filtered.map((p) => (
-            <div key={p.id} className="rounded-xl border bg-card p-6 shadow-sm">
+          filtered.map((p, i) => (
+            <Reveal key={p.id} delay={(i % 4) * 60}>
+            <div className="h-full rounded-2xl border bg-card p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md">
               <div className="flex items-start gap-4">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-secondary text-lg font-bold text-secondary-foreground">
                   {initial(p.company_name)}
@@ -138,8 +142,10 @@ export function PartnerDirectory({ partners }: { partners: DirectoryPartner[] })
                 </p>
               ) : null}
             </div>
+            </Reveal>
           ))
         )}
+      </div>
       </div>
     </div>
   );
