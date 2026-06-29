@@ -1,8 +1,10 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { getCurrentRole, roleHome } from "@/lib/auth";
+import { Reveal } from "@/components/reveal";
+import { SectionHeader } from "@/components/section-header";
 import { PartnerMarquee } from "@/components/partner-marquee";
+import { getCurrentRole, roleHome } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -53,26 +55,10 @@ const VERIFICATION_STEPS = [
 ];
 
 const BENEFITS = [
-  {
-    icon: "📄",
-    title: "단 1분, PPT RFP 제작",
-    body: "매칭신청서만 작성하면 PPT RFP 제작완료. 기획서 제작부담 ZERO.",
-  },
-  {
-    icon: "🎯",
-    title: "미스매치 대행사 컷오프",
-    body: "Opt-in 조건 불일치 대행사는 필터링, 적합 대행사만 제안.",
-  },
-  {
-    icon: "📊",
-    title: "대행사 비교표로 빠른결정",
-    body: "업무적합도·성공사례·안정성·역량 등을 점수화, 대행사 비교표 제공.",
-  },
-  {
-    icon: "💸",
-    title: "브랜드사 전액 무료",
-    body: "모든 수수료는 대행사측에서 매칭 성사 시, 계약 연장 시 부담.",
-  },
+  { icon: "📄", title: "단 1분, PPT RFP 제작", body: "매칭신청서만 작성하면 PPT RFP 제작완료. 기획서 제작부담 ZERO." },
+  { icon: "🎯", title: "미스매치 대행사 컷오프", body: "Opt-in 조건 불일치 대행사는 필터링, 적합 대행사만 제안." },
+  { icon: "📊", title: "대행사 비교표로 빠른결정", body: "업무적합도·성공사례·안정성·역량 등을 점수화, 대행사 비교표 제공." },
+  { icon: "💸", title: "브랜드사 전액 무료", body: "모든 수수료는 대행사측에서 매칭 성사 시, 계약 연장 시 부담." },
 ];
 
 export default async function HomeLanding() {
@@ -80,168 +66,181 @@ export default async function HomeLanding() {
   const startHref = role ? roleHome(role) : "/signup";
 
   return (
-    <div>
+    <div className="overflow-hidden">
       {/* 1. 히어로 */}
-      <section className="bg-secondary text-secondary-foreground">
-        <div className="mx-auto max-w-5xl px-6 py-24 text-center">
-          <h1 className="text-3xl font-extrabold leading-tight md:text-5xl">
-            신뢰할 수 있는 광고대행사
-            <br />
-            <span className="text-white">무료</span>로 맞춤제안 받고 결정하세요
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-base text-white/75 md:text-lg">
-            RFP 작성부터 제안서 검토, 니즈에 맞는 대행사 검증까지{" "}
-            <strong className="text-white">팀퍼스트</strong>가 전부 지원합니다.
-          </p>
-          <div className="mt-9 flex flex-wrap justify-center gap-3">
-            <Button asChild size="lg" className="bg-white text-secondary hover:bg-white/90">
+      <section className="tf-hero-spotlight bg-secondary text-secondary-foreground">
+        <div className="mx-auto max-w-5xl px-6 py-28 text-center md:py-36">
+          <Reveal className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/70">
+            검증 4기준 · 전액 무료 · 한 화면 완결
+          </Reveal>
+          <Reveal delay={60}>
+            <h1 className="text-4xl font-extrabold leading-[1.18] tracking-[-0.03em] md:text-6xl">
+              신뢰할 수 있는 광고대행사
+              <br />
+              <span className="bg-gradient-to-r from-white to-sky-200 bg-clip-text text-transparent">
+                무료
+              </span>
+              로 맞춤제안 받고 결정하세요
+            </h1>
+          </Reveal>
+          <Reveal delay={140}>
+            <p className="mx-auto mt-6 max-w-2xl text-base text-white/75 md:text-lg">
+              RFP 작성부터 제안서 검토, 니즈에 맞는 대행사 검증까지{" "}
+              <strong className="text-white">팀퍼스트</strong>가 전부 지원합니다.
+            </p>
+          </Reveal>
+          <Reveal delay={220} className="mt-10 flex flex-wrap justify-center gap-3">
+            <Button asChild size="lg" className="bg-white text-secondary shadow-lg shadow-black/20 hover:bg-white/90">
               <Link href={startHref}>🚀 최적의 대행사 매칭 시작</Link>
             </Button>
             <Button
               asChild
               size="lg"
               variant="outline"
-              className="border-white bg-transparent text-white hover:bg-white hover:text-secondary"
+              className="border-white/40 bg-transparent text-white hover:bg-white hover:text-secondary"
             >
               <Link href="/agency">대행사 등록 신청</Link>
             </Button>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* 2. 매칭 프로세스 (연결 스텝퍼) */}
+      <section className="mx-auto max-w-6xl px-6 py-24">
+        <SectionHeader
+          eyebrow="AUTOMATED PROCESS"
+          heading="팀퍼스트 대행사 매칭 프로세스"
+          sub="RFP 제작부터 대행사 선정까지 A to Z 케어"
+        />
+        <div className="relative mt-14">
+          <div className="absolute left-0 right-0 top-7 hidden h-px bg-border lg:block" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {PROCESS.map((p, i) => (
+              <Reveal key={p.no} delay={i * 70} className="relative">
+                <div className="rounded-2xl border bg-card p-5 text-center shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md">
+                  <span className="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-base font-extrabold text-white ring-8 ring-background">
+                    {p.no}
+                  </span>
+                  <h3 className="mt-4 text-sm font-bold text-secondary">{p.t}</h3>
+                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{p.d}</p>
+                </div>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 2. 매칭 프로세스 */}
-      <section className="mx-auto max-w-6xl px-6 py-20">
-        <p className="text-center text-xs font-bold tracking-widest text-primary">
-          AUTOMATED PROCESS
-        </p>
-        <h2 className="mt-2 text-center text-2xl font-extrabold text-secondary md:text-3xl">
-          팀퍼스트 대행사 매칭 프로세스
-        </h2>
-        <p className="mt-2 text-center text-sm text-muted-foreground">
-          RFP 제작부터 대행사 선정까지 A to Z 케어
-        </p>
-        <div className="mt-10 grid gap-4 md:grid-cols-3 lg:grid-cols-5">
-          {PROCESS.map((p) => (
-            <div key={p.no} className="rounded-xl border bg-card p-5 text-center shadow-sm">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-sm font-bold text-white">
-                {p.no}
-              </span>
-              <h3 className="mt-3 text-sm font-bold text-secondary">{p.t}</h3>
-              <p className="mt-1.5 text-xs text-muted-foreground">{p.d}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* 3. 입점 기준 */}
-      <section className="bg-muted/40 py-20">
+      <section className="bg-muted/40 py-24">
         <div className="mx-auto max-w-5xl px-6">
-          <p className="text-center text-xs font-bold tracking-widest text-primary">
-            AGENCY ENTRY STANDARDS
-          </p>
-          <h2 className="mt-2 text-center text-2xl font-extrabold text-secondary md:text-3xl">
-            검증된 대행사만 입점합니다.
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-center text-sm leading-relaxed text-muted-foreground">
-            팀퍼스트에는 아무 대행사나 입점할 수 없습니다. 각 마케팅 역량을 철저히
-            파악한 뒤에만 파트너로 등록됩니다.
-          </p>
-          <div className="mt-10 grid gap-5 md:grid-cols-2">
-            <ChecklistCard title="파트너 대행사 선정 조건" items={ENTRY_CONDITIONS} />
-            <ChecklistCard title="역량 검증 항목" items={CAPABILITY_CHECKS} />
+          <SectionHeader
+            eyebrow="AGENCY ENTRY STANDARDS"
+            heading="검증된 대행사만 입점합니다."
+            sub="팀퍼스트에는 아무 대행사나 입점할 수 없습니다. 각 마케팅 역량을 철저히 파악한 뒤에만 파트너로 등록됩니다."
+          />
+          <div className="mt-12 grid gap-5 md:grid-cols-2">
+            <Reveal>
+              <ChecklistCard title="파트너 대행사 선정 조건" items={ENTRY_CONDITIONS} />
+            </Reveal>
+            <Reveal delay={100}>
+              <ChecklistCard title="역량 검증 항목" items={CAPABILITY_CHECKS} />
+            </Reveal>
           </div>
         </div>
       </section>
 
       {/* 4. 검증 시스템 */}
-      <section className="mx-auto max-w-4xl px-6 py-20">
-        <p className="text-center text-xs font-bold tracking-widest text-primary">
-          PARTNER VERIFICATION SYSTEM
-        </p>
-        <h2 className="mt-2 text-center text-2xl font-extrabold leading-snug text-secondary md:text-3xl">
-          팀퍼스트는 아무 대행사나
-          <br />
-          매칭하지 않습니다.
-        </h2>
-        <p className="mt-3 text-center text-sm text-muted-foreground">
-          팀퍼스트 파트너 대행사는 4가지 핵심 기준을 검증받아야 합니다.
-        </p>
-        <div className="mt-10 space-y-3">
-          {VERIFICATION_STEPS.map((s) => (
-            <div key={s.no} className="flex gap-4 rounded-xl border bg-card p-5 shadow-sm">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-secondary text-lg font-extrabold text-white">
-                {s.no}
-              </span>
-              <div>
-                <h3 className="font-bold text-secondary">{s.title}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{s.body}</p>
+      <section className="mx-auto max-w-4xl px-6 py-24">
+        <SectionHeader
+          eyebrow="PARTNER VERIFICATION SYSTEM"
+          heading={
+            <>
+              팀퍼스트는 아무 대행사나
+              <br />
+              매칭하지 않습니다.
+            </>
+          }
+          sub="팀퍼스트 파트너 대행사는 4가지 핵심 기준을 검증받아야 합니다."
+        />
+        <div className="mt-12 space-y-3">
+          {VERIFICATION_STEPS.map((s, i) => (
+            <Reveal key={s.no} delay={i * 80}>
+              <div className="group flex gap-5 rounded-2xl border bg-card p-6 shadow-sm transition duration-300 hover:border-primary/40 hover:shadow-md">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-secondary text-lg font-extrabold text-white transition group-hover:scale-105">
+                  {s.no}
+                </span>
+                <div>
+                  <h3 className="font-bold text-secondary">{s.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                    {s.body}
+                  </p>
+                </div>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
 
       {/* 5. 혜택 */}
-      <section className="bg-muted/40 py-20">
+      <section className="bg-muted/40 py-24">
         <div className="mx-auto max-w-6xl px-6">
-          <p className="text-center text-xs font-bold tracking-widest text-primary">
-            TEAMFIRST BENEFITS
-          </p>
-          <h2 className="mt-2 text-center text-2xl font-extrabold text-secondary md:text-3xl">
-            왜 브랜드사에게 최적일까?
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-center text-sm leading-relaxed text-muted-foreground">
-            입력은 간단하게, 비교는 객관적으로, 결정은 더 빠르게. 팀퍼스트가 전
-            과정을 자동화·표준화했습니다.
-          </p>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {BENEFITS.map((b) => (
-              <div key={b.title} className="rounded-xl border bg-card p-5 shadow-sm">
-                <span className="text-2xl">{b.icon}</span>
-                <h3 className="mt-3 text-sm font-bold text-secondary">{b.title}</h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                  {b.body}
-                </p>
-              </div>
+          <SectionHeader
+            eyebrow="TEAMFIRST BENEFITS"
+            heading="왜 브랜드사에게 최적일까?"
+            sub="입력은 간단하게, 비교는 객관적으로, 결정은 더 빠르게. 팀퍼스트가 전 과정을 자동화·표준화했습니다."
+          />
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {BENEFITS.map((b, i) => (
+              <Reveal key={b.title} delay={i * 70}>
+                <div className="h-full rounded-2xl border bg-card p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-2xl">
+                    {b.icon}
+                  </span>
+                  <h3 className="mt-4 text-[15px] font-bold text-secondary">{b.title}</h3>
+                  <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+                    {b.body}
+                  </p>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
       {/* 6. 파트너 */}
-      <section className="mx-auto max-w-6xl px-6 py-20">
-        <p className="text-center text-xs font-bold tracking-widest text-primary">
-          TEAMFIRST PARTNERS
-        </p>
-        <h2 className="mt-2 text-center text-2xl font-extrabold leading-snug text-secondary md:text-3xl">
-          수많은 브랜드가
-          <br />
-          팀퍼스트를 이용하고 있습니다.
-        </h2>
-        <p className="mt-2 text-center text-sm text-muted-foreground">
-          성공적인 파트너십을 통해 더 큰 성장을 만들어갑니다.
-        </p>
-        <div className="mt-10">
+      <section className="mx-auto max-w-6xl px-6 py-24">
+        <SectionHeader
+          eyebrow="TEAMFIRST PARTNERS"
+          heading={
+            <>
+              수많은 브랜드가
+              <br />
+              팀퍼스트를 이용하고 있습니다.
+            </>
+          }
+          sub="성공적인 파트너십을 통해 더 큰 성장을 만들어갑니다."
+        />
+        <div className="mt-12">
           <PartnerMarquee />
         </div>
       </section>
 
       {/* 7. 최종 CTA */}
-      <section className="mx-auto max-w-4xl px-6 pb-24">
-        <div className="rounded-2xl border bg-card p-10 text-center shadow-sm">
-          <h2 className="text-2xl font-extrabold text-secondary">
-            최적의 광고대행사 매칭신청
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            완벽한 프로세스로 최적의 대행사를 무료로 매칭해드립니다.
-          </p>
-          <Button asChild size="lg" className="mt-6">
-            <Link href={startHref}>1분만에 매칭 신청하기 →</Link>
-          </Button>
-          <p className="mt-3 text-xs text-muted-foreground">
-            모든 매칭과정은 무료입니다.
-          </p>
-        </div>
+      <section className="mx-auto max-w-5xl px-6 pb-28">
+        <Reveal>
+          <div className="tf-hero-spotlight overflow-hidden rounded-3xl bg-secondary px-8 py-16 text-center text-white">
+            <h2 className="text-2xl font-extrabold md:text-3xl">
+              최적의 광고대행사 매칭신청
+            </h2>
+            <p className="mt-3 text-sm text-white/75 md:text-base">
+              완벽한 프로세스로 최적의 대행사를 무료로 매칭해드립니다.
+            </p>
+            <Button asChild size="lg" className="mt-7 bg-white text-secondary hover:bg-white/90">
+              <Link href={startHref}>1분만에 매칭 신청하기 →</Link>
+            </Button>
+            <p className="mt-3 text-xs text-white/55">모든 매칭과정은 무료입니다.</p>
+          </div>
+        </Reveal>
       </section>
     </div>
   );
@@ -249,12 +248,12 @@ export default async function HomeLanding() {
 
 function ChecklistCard({ title, items }: { title: string; items: string[] }) {
   return (
-    <div className="rounded-2xl border bg-card p-6 shadow-sm">
-      <h3 className="mb-4 text-base font-bold text-secondary">{title}</h3>
-      <ul className="space-y-2.5">
+    <div className="h-full rounded-2xl border bg-card p-7 shadow-sm">
+      <h3 className="mb-5 text-base font-bold text-secondary">{title}</h3>
+      <ul className="space-y-3">
         {items.map((it) => (
-          <li key={it} className="flex items-start gap-2 text-sm text-foreground">
-            <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+          <li key={it} className="flex items-start gap-2.5 text-sm text-foreground">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
               ✓
             </span>
             {it}

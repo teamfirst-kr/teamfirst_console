@@ -66,6 +66,55 @@ body {
   font-family: var(--font-sans);
 }
 
+/* 스크롤 리빌: 뷰포트 진입 시 페이드+슬라이드업 (Reveal 컴포넌트가 is-visible 토글) */
+.tf-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+.tf-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tf-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* 히어로 스포트라이트 배경 (네이비 위 은은한 방사형 광원) */
+.tf-hero-spotlight {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.tf-hero-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(60% 55% at 50% 0%, rgba(37, 99, 235, 0.28), transparent 70%),
+    radial-gradient(40% 40% at 85% 20%, rgba(2, 132, 199, 0.18), transparent 70%);
+}
+.tf-hero-spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(70% 70% at 50% 30%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(70% 70% at 50% 30%, #000 30%, transparent 75%);
+}
+
 /* 파트너 로고 무한 자동 슬라이드 (원본 teamfirst.kr Swiper 대체, JS 불필요) */
 @keyframes tf-marquee {
   from {
