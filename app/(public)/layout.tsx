@@ -29,6 +29,12 @@ export default async function PublicLayout({
             <Link href="/" className="hover:text-white">
               대행사 매칭
             </Link>
+            <Link href="/partners" className="hover:text-white">
+              소속 대행사
+            </Link>
+            <Link href="/agency" className="hover:text-white">
+              대행사 등록
+            </Link>
             {SHOW_MARKETER ? (
               <Link href="/marketer-matching" className="hover:text-white">
                 마케터 매칭

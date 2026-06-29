@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { PARTNERS } from "@/lib/content/site";
+import { PartnerMarquee } from "@/components/partner-marquee";
 
 export const metadata = {
   title: "대행사 등록 | 팀퍼스트 — 최저 수수료 대행사 매칭",
@@ -201,20 +201,8 @@ export default function AgencyRegisterPage() {
         <p className="mt-2 text-center text-sm text-muted-foreground">
           성공적인 파트너십을 통해 더 큰 성장을 만들어갑니다.
         </p>
-        <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          {PARTNERS.map((p) => (
-            <div
-              key={p.name}
-              className="rounded-xl border bg-card p-5 text-center shadow-sm"
-            >
-              <div className="text-base font-extrabold text-secondary">
-                {p.name}
-              </div>
-              <div className="mt-1 text-[11px] text-muted-foreground">
-                {p.category}
-              </div>
-            </div>
-          ))}
+        <div className="mt-10">
+          <PartnerMarquee />
         </div>
       </section>
 

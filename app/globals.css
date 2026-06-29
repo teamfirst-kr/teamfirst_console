@@ -65,3 +65,21 @@ body {
   color: hsl(var(--foreground));
   font-family: var(--font-sans);
 }
+
+/* 파트너 로고 무한 자동 슬라이드 (원본 teamfirst.kr Swiper 대체, JS 불필요) */
+@keyframes tf-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.tf-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: tf-marquee 32s linear infinite;
+}
+.tf-marquee:hover .tf-marquee-track {
+  animation-play-state: paused;
+}
