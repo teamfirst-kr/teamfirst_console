@@ -97,7 +97,7 @@ export default async function PublicLayout({
                 <Link href="/partners" className="block hover:text-white">
                   파트너 대행사
                 </Link>
-                <Link href="/partner/apply" className="block hover:text-white">
+                <Link href="/agency" className="block hover:text-white">
                   대행사 등록 신청
                 </Link>
                 <Link href="/console" className="block hover:text-white">
