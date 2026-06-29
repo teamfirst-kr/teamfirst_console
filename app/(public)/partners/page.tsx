@@ -32,7 +32,12 @@ export default async function PartnersDirectoryPage() {
   }
 
   const list: DirectoryPartner[] = (partners ?? []).map((p) => {
-    const app = (p.application ?? {}) as { kpis?: string[] };
+    const app = (p.application ?? {}) as {
+      kpis?: string[];
+      report_cycles?: string[];
+      tools?: string[];
+      performance_based?: boolean;
+    };
     return {
       id: p.id,
       company_name: p.company_name,
@@ -41,6 +46,9 @@ export default async function PartnersDirectoryPage() {
       intro: p.intro,
       categories: catsByPartner.get(p.id) ?? [],
       kpis: app.kpis ?? [],
+      reportCycles: app.report_cycles ?? [],
+      tools: app.tools ?? [],
+      performanceBased: !!app.performance_based,
     };
   });
 
