@@ -30,6 +30,10 @@ export function BulkAccountPanel({
   }
 
   function run() {
+    const ok = window.confirm(
+      `로그인 계정이 없는 입점 완료 대행사 ${pendingCount}곳에 임시 계정을 발급하고 안내 메일을 일괄 발송합니다. 진행할까요?`,
+    );
+    if (!ok) return;
     setResult(null);
     startTransition(async () => setResult(await issueAccountsForContracted()));
   }

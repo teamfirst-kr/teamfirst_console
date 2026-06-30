@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { Suspense, useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,10 +19,19 @@ import { Label } from "@/components/ui/label";
 import { loginAction, type AuthState } from "../actions";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const [state, formAction, pending] = useActionState<AuthState, FormData>(
     loginAction,
     null,
   );
+  const nextPath = useSearchParams().get("next") ?? "";
 
   return (
     <Card className="w-full max-w-md">
@@ -32,6 +42,7 @@ export default function LoginPage() {
         </CardDescription>
       </CardHeader>
       <form action={formAction}>
+        {nextPath ? <input type="hidden" name="next" value={nextPath} /> : null}
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">이메일</Label>

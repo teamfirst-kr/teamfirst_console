@@ -67,6 +67,23 @@ export default async function AdminPartnersPage({
     .eq("status", "contracted")
     .not("user_id", "is", null);
 
+  // 동일 담당자 이메일이 둘 이상의 파트너에 매핑된 경우 경고 (로그인 ID 충돌 주의)
+  const { data: allEmails } = await supabase
+    .from("partners")
+    .select("contact_email");
+  const emailCounts = new Map<string, number>();
+  for (const r of allEmails ?? []) {
+    if (r.contact_email) {
+      emailCounts.set(
+        r.contact_email,
+        (emailCounts.get(r.contact_email) ?? 0) + 1,
+      );
+    }
+  }
+  const dupEmails = new Set(
+    [...emailCounts].filter(([, n]) => n > 1).map(([e]) => e),
+  );
+
   // 카테고리는 별도 쿼리로 가져와 partner_id별 매핑 (supabase-js relational 타입 한계)
   const partnerIds = (data ?? []).map((p) => p.id);
   const { data: categoryRows } = partnerIds.length
@@ -169,7 +186,12 @@ export default async function AdminPartnersPage({
                       </div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {p.contact_email}
+                      <span className="inline-flex flex-wrap items-center gap-1.5">
+                        {p.contact_email}
+                        {dupEmails.has(p.contact_email) ? (
+                          <Badge variant="warning">이메일 중복</Badge>
+                        ) : null}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {formatDistanceToNow(new Date(p.applied_at), {
