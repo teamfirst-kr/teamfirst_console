@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentPartnerId } from "@/lib/auth";
 import {
   REQUEST_MEDIA,
+  requestDisplayTitle,
   type MatchingBrief,
 } from "@/lib/schemas/matching-request";
 
@@ -46,7 +47,22 @@ export default async function PartnerDashboardPage() {
     : { data: [] };
   const appliedSet = new Set((myApps ?? []).map((a) => a.request_id));
 
+  // 내가 후보로 선정된 건수
+  const { count: candidateCount } = partnerId
+    ? await supabase
+        .from("candidates")
+        .select("id", { count: "exact", head: true })
+        .eq("partner_id", partnerId)
+    : { count: 0 };
+
   const list = notifications ?? [];
+  const appliedInList = list.filter((n) => appliedSet.has(n.request_id)).length;
+  const summary = {
+    rfp: list.length,
+    applied: appliedSet.size,
+    unapplied: list.length - appliedInList,
+    candidate: candidateCount ?? 0,
+  };
 
   return (
     <div className="space-y-6">
@@ -56,6 +72,15 @@ export default async function PartnerDashboardPage() {
           광고주 매칭 요청을 확인하고 지원하세요.
         </p>
       </div>
+
+      {list.length > 0 ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <SummaryCard label="도착한 RFP" value={summary.rfp} />
+          <SummaryCard label="지원 완료" value={summary.applied} />
+          <SummaryCard label="미지원" value={summary.unapplied} />
+          <SummaryCard label="후보 선정" value={summary.candidate} />
+        </div>
+      ) : null}
 
       {list.length === 0 ? (
         <EmptyState
@@ -92,7 +117,7 @@ export default async function PartnerDashboardPage() {
                         ) : null}
                         <div>
                           <div className="font-medium text-foreground">
-                            {r.title}
+                            {requestDisplayTitle(r.title, brief)}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {brief.category}
@@ -142,6 +167,15 @@ export default async function PartnerDashboardPage() {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+function SummaryCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl border bg-card p-4 shadow-sm">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="mt-1 text-2xl font-bold text-secondary">{value}</div>
     </div>
   );
 }

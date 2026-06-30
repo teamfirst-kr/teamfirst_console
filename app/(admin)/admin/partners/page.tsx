@@ -177,11 +177,18 @@ export default async function AdminPartnersPage({
                         {categories.length === 0 ? (
                           <span className="text-xs text-muted-foreground">-</span>
                         ) : (
-                          categories.map((cat) => (
-                            <Badge key={cat} variant="muted">
-                              {CATEGORY_LABEL[cat] ?? cat}
-                            </Badge>
-                          ))
+                          <>
+                            {categories.slice(0, 4).map((cat) => (
+                              <Badge key={cat} variant="muted">
+                                {CATEGORY_LABEL[cat] ?? cat}
+                              </Badge>
+                            ))}
+                            {categories.length > 4 ? (
+                              <Badge variant="muted">
+                                +{categories.length - 4}
+                              </Badge>
+                            ) : null}
+                          </>
                         )}
                       </div>
                     </td>

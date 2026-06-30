@@ -36,24 +36,33 @@ export default function SignupPage() {
       <form action={formAction}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">담당자명</Label>
+            <Label htmlFor="name">담당자명 *</Label>
             <Input id="name" name="name" required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="company">회사명(상호)</Label>
+            <Label htmlFor="company">회사명(상호) *</Label>
             <Input id="company" name="company" required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">이메일 (로그인 아이디)</Label>
-            <Input id="email" name="email" type="email" required />
+            <Label htmlFor="email">이메일 (로그인 아이디) *</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="name@company.com"
+              required
+            />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="biz_reg_no">사업자등록번호</Label>
+            <Label htmlFor="biz_reg_no">사업자등록번호 *</Label>
             <Input
               id="biz_reg_no"
               name="biz_reg_no"
               inputMode="numeric"
               placeholder="숫자 10자리 (예: 1234567890)"
+              pattern="\d{3}-?\d{2}-?\d{5}"
+              title="사업자등록번호 10자리를 입력해주세요. (하이픈 선택)"
               required
             />
             <p className="text-xs text-muted-foreground">
