@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -54,17 +53,38 @@ export default async function AdminRequestDetailPage({
     variant: "muted" as const,
   };
 
-  // 계약 완료 파트너 수 (RFP 발송 대상)
-  const { count: contractedCount } = await supabase
+  // RFP 발송 대상: 입점 완료 대행사 목록 (선택/제외용) + 카테고리
+  const { data: contractedPartners } = await supabase
     .from("partners")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "contracted");
+    .select("id, company_name")
+    .eq("status", "contracted")
+    .order("company_name", { ascending: true });
+  const contractedIds = (contractedPartners ?? []).map((p) => p.id);
+  const { data: partnerCats } = contractedIds.length
+    ? await supabase
+        .from("partner_categories")
+        .select("partner_id, category")
+        .in("partner_id", contractedIds)
+    : { data: [] as { partner_id: string; category: string }[] };
+  const catsByPartner = new Map<string, string[]>();
+  for (const c of partnerCats ?? []) {
+    const list = catsByPartner.get(c.partner_id) ?? [];
+    list.push(c.category);
+    catsByPartner.set(c.partner_id, list);
+  }
+  const rfpPartners = (contractedPartners ?? []).map((p) => ({
+    id: p.id,
+    name: p.company_name,
+    categories: catsByPartner.get(p.id) ?? [],
+  }));
 
-  // 이미 발송된 RFP 수
-  const { count: sentCount } = await supabase
+  // 이미 RFP가 발송된 대행사
+  const { data: notifiedRows } = await supabase
     .from("rfp_notifications")
-    .select("id", { count: "exact", head: true })
+    .select("partner_id")
     .eq("request_id", id);
+  const notifiedIds = (notifiedRows ?? []).map((r) => r.partner_id);
+  const sentCount = notifiedIds.length;
 
   // 지원자 목록 (비교 뷰)
   const { data: applications } = await supabase
@@ -173,7 +193,7 @@ export default async function AdminRequestDetailPage({
         </div>
       </div>
 
-      {sentCount && sentCount > 0 ? (
+      {sentCount > 0 ? (
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-primary">
           이 요청에 대해 RFP {sentCount}건이 발송되었습니다.
         </div>
@@ -182,8 +202,10 @@ export default async function AdminRequestDetailPage({
       <RfpPanel
         requestId={request.id}
         status={status}
-        contractedCount={contractedCount ?? 0}
-        alreadySent={Boolean(sentCount && sentCount > 0)}
+        partners={rfpPartners}
+        requestChannels={brief.channels ?? []}
+        notifiedIds={notifiedIds}
+        alreadySent={sentCount > 0}
       />
 
       <Card>
