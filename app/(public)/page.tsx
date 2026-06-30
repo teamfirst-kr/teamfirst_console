@@ -69,10 +69,13 @@ export default async function HomeLanding() {
       {/* 1. 히어로 */}
       <section className="tf-hero-spotlight bg-secondary text-secondary-foreground">
         <div className="mx-auto max-w-5xl px-6 py-28 text-center md:py-36">
-          <Reveal className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/70">
+          <Reveal
+            immediate
+            className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/70"
+          >
             검증 4기준 · 전액 무료 · 한 화면 완결
           </Reveal>
-          <Reveal delay={60}>
+          <Reveal delay={60} immediate>
             <h1 className="text-4xl font-extrabold leading-[1.18] tracking-[-0.03em] md:text-6xl">
               신뢰할 수 있는 광고대행사
               <br />
@@ -82,13 +85,13 @@ export default async function HomeLanding() {
               로 맞춤제안 받고 결정하세요
             </h1>
           </Reveal>
-          <Reveal delay={140}>
+          <Reveal delay={140} immediate>
             <p className="mx-auto mt-6 max-w-2xl text-base text-white/75 md:text-lg">
               RFP 작성부터 제안서 검토, 니즈에 맞는 대행사 검증까지{" "}
               <strong className="text-white">팀퍼스트</strong>가 전부 지원합니다.
             </p>
           </Reveal>
-          <Reveal delay={220} className="mt-10 flex flex-wrap justify-center gap-3">
+          <Reveal delay={220} immediate className="mt-10 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg" className="bg-white text-secondary shadow-lg shadow-black/20 hover:bg-white/90">
               <Link href={startHref}>{startLabel}</Link>
             </Button>
