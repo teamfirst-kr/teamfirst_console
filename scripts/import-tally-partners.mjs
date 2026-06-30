@@ -209,9 +209,8 @@ for (const rec of records) {
   }
 
   if (createAccounts) {
-    // 초기 비밀번호 = 사업자등록번호(숫자만). 없으면 임시 난수. 첫 로그인 시 변경 강제.
-    const bizDigits = String(rec.biz_reg_no ?? "").replace(/\D/g, "");
-    const password = bizDigits.length >= 8 ? bizDigits : randomPw();
+    // 임시 비밀번호는 항상 난수로 발급 (특정 값을 비밀번호로 쓰지 않음). 첫 로그인 시 변경 강제.
+    const password = randomPw();
     const { data: created, error: aerr } = await supabase.auth.admin.createUser({
       email: rec.contact_email, password, email_confirm: true,
       user_metadata: { role: "partner", name: rec.company_name }, app_metadata: { role: "partner", must_change_password: true },

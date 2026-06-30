@@ -31,7 +31,8 @@ export async function changePasswordAction(
     redirect("/login");
   }
 
-  // 초기 비밀번호(사업자등록번호) 그대로 재사용 방지
+  // 광고주는 초기 비밀번호가 사업자등록번호이므로, 동일 값 재사용을 방지.
+  // (대행사 계정은 user_metadata.biz_reg_no가 없어 이 검사는 자동으로 건너뜀)
   const bizRegNo = String(user.user_metadata?.biz_reg_no ?? "").replace(
     /\D/g,
     "",
