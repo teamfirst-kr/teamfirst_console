@@ -32,9 +32,14 @@ export type RfpResult =
 
 export async function sendRfp(
   requestId: string,
-  categoryFilter = false,
+  partnerIds: string[],
 ): Promise<RfpResult> {
   await assertAdmin();
+
+  if (!partnerIds || partnerIds.length === 0) {
+    return { ok: false, error: "발송할 대행사를 1곳 이상 선택해주세요." };
+  }
+
   const supabase = await createClient();
 
   const { data: request, error: reqError } = await supabase
@@ -47,8 +52,9 @@ export async function sendRfp(
     return { ok: false, error: "요청을 찾을 수 없습니다." };
   }
 
-  // 입점 완료(contracted) 대행사 조회. 기본은 전원, 옵션 시 요청 매체와
-  // 일치하는 카테고리를 가진 대행사로 한정 (입점사 증가 시 스팸화 방지).
+  // 입점 완료(contracted) 대행사 중, 운영자가 선택한 대행사에게만 발송.
+  // (기본값은 화면에서 전원 선택. 특정 대행사 선택/제외 가능)
+  const idSet = new Set(partnerIds);
   const { data: allPartners, error: partnerError } = await supabase
     .from("partners")
     .select("id, company_name, contact_email, user_id")
@@ -57,33 +63,12 @@ export async function sendRfp(
   if (partnerError) {
     return { ok: false, error: partnerError.message };
   }
-  let partners = allPartners ?? [];
+  const partners = (allPartners ?? []).filter((p) => idSet.has(p.id));
 
-  if (categoryFilter) {
-    const channels = ((request.brief ?? {}) as MatchingBrief).channels ?? [];
-    if (channels.length > 0 && partners.length > 0) {
-      const { data: cats } = await supabase
-        .from("partner_categories")
-        .select("partner_id, category")
-        .in(
-          "partner_id",
-          partners.map((p) => p.id),
-        );
-      const matchSet = new Set(
-        (cats ?? [])
-          .filter((c) => channels.includes(c.category))
-          .map((c) => c.partner_id),
-      );
-      partners = partners.filter((p) => matchSet.has(p.id));
-    }
-  }
-
-  if (!partners || partners.length === 0) {
+  if (partners.length === 0) {
     return {
       ok: false,
-      error: categoryFilter
-        ? "요청 매체와 일치하는 입점 대행사가 없습니다. 필터를 끄거나 파트너 카테고리를 확인해주세요."
-        : "발송 대상 대행사가 없습니다. 먼저 파트너 입점을 완료해주세요.",
+      error: "선택한 대행사를 찾을 수 없습니다. 목록을 새로고침한 뒤 다시 시도해주세요.",
     };
   }
 
@@ -138,7 +123,11 @@ export async function sendRfp(
     await supabase
       .from("rfp_notifications")
       .update({ email_sent: true })
-      .eq("request_id", requestId);
+      .eq("request_id", requestId)
+      .in(
+        "partner_id",
+        partners.map((p) => p.id),
+      );
   }
 
   // 인앱 알림
