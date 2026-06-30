@@ -27,6 +27,7 @@ export async function submitPartnerApplication(
 ): Promise<ApplyState> {
   const raw = {
     company_name: formData.get("company_name"),
+    biz_reg_no: formData.get("biz_reg_no"),
     contact_person: formData.get("contact_person"),
     contact_email: formData.get("contact_email"),
     contact_phone: formData.get("contact_phone"),
@@ -72,6 +73,19 @@ export async function submitPartnerApplication(
     if (fileError) return { error: fileError };
   }
 
+  // 사업자등록증 (필수)
+  const licenseFile = formData
+    .getAll("business_license")
+    .filter((f): f is File => f instanceof File && f.size > 0)[0];
+  if (!licenseFile) {
+    return {
+      error: "사업자등록증을 첨부해주세요.",
+      fieldErrors: { business_license: ["사업자등록증을 첨부해주세요."] },
+    };
+  }
+  const licenseError = validateUploadFile(licenseFile);
+  if (licenseError) return { error: licenseError };
+
   const data = parsed.data;
   const supabase = await createClient();
 
@@ -95,6 +109,7 @@ export async function submitPartnerApplication(
     .from("partners")
     .insert({
       company_name: data.company_name,
+      biz_reg_no: data.biz_reg_no.replace(/\D/g, ""),
       contact_person: data.contact_person,
       contact_email: data.contact_email,
       contact_phone: data.contact_phone,
@@ -110,6 +125,12 @@ export async function submitPartnerApplication(
     .single<{ id: string }>();
 
   if (insertError || !inserted) {
+    if (insertError?.code === "23505") {
+      return {
+        error: "이미 등록된 사업자등록번호입니다. 운영자에게 문의해주세요.",
+        fieldErrors: { biz_reg_no: ["이미 등록된 사업자등록번호입니다."] },
+      };
+    }
     return {
       error:
         insertError?.message ??
@@ -135,8 +156,29 @@ export async function submitPartnerApplication(
   }
 
   // 파일 업로드: 익명 사용자이므로 service_role로 서버에서 처리.
+  const admin = createAdminClient();
+  const updatePayload: { portfolio?: Json; application?: Json } = {};
+
+  // 사업자등록증 (필수) — 업로드 실패 시 방금 만든 행을 롤백하고 오류 반환.
+  const licensePath = `${inserted.id}/license/${sanitizeFileName(licenseFile.name)}`;
+  const { error: licenseUploadError } = await admin.storage
+    .from("partner-files")
+    .upload(licensePath, licenseFile, {
+      upsert: true,
+      contentType: licenseFile.type,
+    });
+  if (licenseUploadError) {
+    // partner_categories는 ON DELETE CASCADE로 함께 삭제됨.
+    await admin.from("partners").delete().eq("id", inserted.id);
+    return {
+      error: "사업자등록증 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.",
+    };
+  }
+  application.business_license = { name: licenseFile.name, path: licensePath };
+  updatePayload.application = application as unknown as Json;
+
+  // 포트폴리오 (선택)
   if (portfolioFiles.length > 0) {
-    const admin = createAdminClient();
     const portfolioItems: { name: string; path: string }[] = [];
     for (const file of portfolioFiles) {
       const path = `${inserted.id}/portfolio/${sanitizeFileName(file.name)}`;
@@ -145,12 +187,13 @@ export async function submitPartnerApplication(
         .upload(path, file, { upsert: true, contentType: file.type });
       if (!error) portfolioItems.push({ name: file.name, path });
     }
-    await admin
-      .from("partners")
-      .update({
-        portfolio: { items: portfolioItems } as unknown as Json,
-      })
-      .eq("id", inserted.id);
+    if (portfolioItems.length > 0) {
+      updatePayload.portfolio = { items: portfolioItems } as unknown as Json;
+    }
+  }
+
+  if (Object.keys(updatePayload).length > 0) {
+    await admin.from("partners").update(updatePayload).eq("id", inserted.id);
   }
 
   redirect("/partner/apply/success");

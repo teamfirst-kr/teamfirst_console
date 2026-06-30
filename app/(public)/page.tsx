@@ -94,7 +94,7 @@ export default async function HomeLanding() {
               variant="outline"
               className="border-white/40 bg-transparent text-white hover:bg-white hover:text-secondary"
             >
-              <Link href="/agency">대행사 등록 신청</Link>
+              <Link href="/partner/apply">대행사 등록 신청</Link>
             </Button>
           </Reveal>
         </div>

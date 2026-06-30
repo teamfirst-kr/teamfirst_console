@@ -93,6 +93,13 @@ const optionalText = (max: number) =>
 export const partnerApplicationSchema = z.object({
   // 1. 회사 기본정보
   company_name: z.string().min(1, "대행사명을 입력해주세요.").max(200),
+  biz_reg_no: z
+    .string()
+    .min(1, "사업자등록번호를 입력해주세요.")
+    .regex(
+      /^\d{3}-?\d{2}-?\d{5}$/,
+      "사업자등록번호 형식이 올바르지 않습니다. (000-00-00000)",
+    ),
   contact_person: z.string().min(1, "담당자 성함/직책을 입력해주세요.").max(100),
   contact_email: z.string().email("올바른 이메일을 입력해주세요."),
   contact_phone: z.string().min(1, "직통 연락처를 입력해주세요.").max(30),
@@ -149,6 +156,8 @@ export type PartnerApplicationMeta = {
   avoided_client_traits: string | null;
   payment_methods: string[];
   fee_agreement: boolean;
+  // 사업자등록증 첨부 (partner-files 버킷 경로)
+  business_license?: { name: string; path: string } | null;
 };
 
 // 파일 업로드 제약
