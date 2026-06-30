@@ -61,6 +61,12 @@ export default async function AdminPartnersPage({
     .eq("status", "contracted")
     .is("user_id", null);
 
+  const { count: accountCount } = await supabase
+    .from("partners")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "contracted")
+    .not("user_id", "is", null);
+
   // 카테고리는 별도 쿼리로 가져와 partner_id별 매핑 (supabase-js relational 타입 한계)
   const partnerIds = (data ?? []).map((p) => p.id);
   const { data: categoryRows } = partnerIds.length
@@ -85,7 +91,10 @@ export default async function AdminPartnersPage({
         </p>
       </div>
 
-      <BulkAccountPanel pendingCount={noAccountCount ?? 0} />
+      <BulkAccountPanel
+        pendingCount={noAccountCount ?? 0}
+        accountCount={accountCount ?? 0}
+      />
 
       <div className="flex flex-wrap gap-2">
         {STATUS_TABS.map((tab) => {

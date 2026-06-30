@@ -145,7 +145,7 @@ export async function markContractedAndIssueAccount(
   const supabase = await createClient();
   const { data: partner, error: fetchError } = await supabase
     .from("partners")
-    .select("id, company_name, contact_email, status, user_id, biz_reg_no")
+    .select("id, company_name, contact_email, status, user_id")
     .eq("id", partnerId)
     .single();
 
@@ -161,9 +161,8 @@ export async function markContractedAndIssueAccount(
   let tempPassword: string | undefined;
 
   if (!userId) {
-    // 초기 비밀번호 = 사업자등록번호(숫자만). 없으면 임시 난수.
-    const bizDigits = (partner.biz_reg_no ?? "").replace(/\D/g, "");
-    tempPassword = bizDigits.length >= 8 ? bizDigits : generateTempPassword();
+    // 임시 비밀번호는 항상 난수로 발급 (특정 값을 비밀번호로 쓰지 않음).
+    tempPassword = generateTempPassword();
     const { data: created, error: createError } =
       await admin.auth.admin.createUser({
         email: partner.contact_email,
