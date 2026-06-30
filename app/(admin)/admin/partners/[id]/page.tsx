@@ -16,6 +16,7 @@ import { PARTNER_CATEGORIES } from "@/lib/schemas/partner-application";
 import type { ContractStatus, PartnerStatus } from "@/types/database";
 
 import { PartnerActionsPanel } from "./actions-panel";
+import { EditPartnerForm } from "./edit-partner";
 
 const CATEGORY_LABEL = Object.fromEntries(
   PARTNER_CATEGORIES.map((c) => [c.value, c.label]),
@@ -55,6 +56,7 @@ type ApplicationMeta = {
   avoided_client_traits?: string | null;
   payment_methods?: string[];
   fee_agreement?: boolean;
+  business_license?: { name: string; path: string } | null;
 };
 
 export const dynamic = "force-dynamic";
@@ -102,14 +104,21 @@ export default async function AdminPartnerDetailPage({
     items?: { name: string; path: string }[];
   } | null;
   const attachments: { name: string; url: string }[] = [];
-  if (portfolio?.items?.length) {
+  let licenseUrl: string | null = null;
+  if (portfolio?.items?.length || meta.business_license?.path) {
     const admin = createAdminClient();
-    for (const item of portfolio.items) {
+    for (const item of portfolio?.items ?? []) {
       const { data: signed } = await admin.storage
         .from("partner-files")
         .createSignedUrl(item.path, 600);
       if (signed?.signedUrl)
         attachments.push({ name: item.name, url: signed.signedUrl });
+    }
+    if (meta.business_license?.path) {
+      const { data: signed } = await admin.storage
+        .from("partner-files")
+        .createSignedUrl(meta.business_license.path, 600);
+      licenseUrl = signed?.signedUrl ?? null;
     }
   }
 
@@ -136,6 +145,20 @@ export default async function AdminPartnerDetailPage({
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
+          <EditPartnerForm
+            partnerId={partner.id}
+            initial={{
+              company_name: partner.company_name ?? "",
+              biz_reg_no: partner.biz_reg_no ?? "",
+              contact_person: partner.contact_person ?? "",
+              contact_email: partner.contact_email ?? "",
+              contact_phone: partner.contact_phone ?? "",
+              website: partner.website ?? "",
+              specialty: partner.specialty ?? "",
+              staff_size: partner.staff_size ?? "",
+              intro: partner.intro ?? "",
+            }}
+          />
           <Card>
             <CardHeader>
               <CardTitle>회사 / 담당자</CardTitle>
@@ -161,6 +184,21 @@ export default async function AdminPartnerDetailPage({
               <Field label="연락처" value={partner.contact_phone} />
               <Field label="이메일" value={partner.contact_email} />
               <Field label="사업자등록번호" value={partner.biz_reg_no} />
+              <Field
+                label="사업자등록증"
+                value={
+                  licenseUrl ? (
+                    <a
+                      href={licenseUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      {meta.business_license?.name ?? "다운로드"}
+                    </a>
+                  ) : null
+                }
+              />
             </CardContent>
           </Card>
 

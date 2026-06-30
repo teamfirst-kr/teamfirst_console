@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -12,7 +13,8 @@ import {
   partnerContractEmail,
   partnerRejectedEmail,
 } from "@/lib/email/templates";
-import type { PartnerStatus } from "@/types/database";
+import { STAFF_SIZE_OPTIONS } from "@/lib/schemas/partner-application";
+import type { PartnerStatus, StaffSize } from "@/types/database";
 
 function appUrl(): string {
   return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -246,4 +248,89 @@ export async function markContractedAndIssueAccount(
 
 export async function redirectToList() {
   redirect("/admin/partners");
+}
+
+export type EditablePartnerInput = {
+  company_name: string;
+  biz_reg_no: string;
+  contact_person: string;
+  contact_email: string;
+  contact_phone: string;
+  website: string;
+  specialty: string;
+  staff_size: string;
+  intro: string;
+};
+
+// 운영자가 파트너 기본정보를 임의로 수정 (예: 이메일 중복 해소 후 계정 발급).
+export async function updatePartnerInfo(
+  partnerId: string,
+  input: EditablePartnerInput,
+): Promise<ActionResult> {
+  await assertAdmin();
+
+  const company = input.company_name.trim();
+  const email = input.contact_email.trim();
+  if (!company) return { ok: false, error: "대행사명을 입력해주세요." };
+  if (!z.string().email().safeParse(email).success) {
+    return { ok: false, error: "올바른 이메일을 입력해주세요." };
+  }
+
+  const trimmedStaff = input.staff_size.trim();
+  const staffSize: StaffSize | null = (
+    STAFF_SIZE_OPTIONS as readonly string[]
+  ).includes(trimmedStaff)
+    ? (trimmedStaff as StaffSize)
+    : null;
+
+  const supabase = await createClient();
+  const { data: current } = await supabase
+    .from("partners")
+    .select("user_id, contact_email")
+    .eq("id", partnerId)
+    .single();
+
+  const bizDigits = input.biz_reg_no.replace(/\D/g, "");
+  const { error } = await supabase
+    .from("partners")
+    .update({
+      company_name: company,
+      biz_reg_no: bizDigits || null,
+      contact_person: input.contact_person.trim() || null,
+      contact_email: email,
+      contact_phone: input.contact_phone.trim() || null,
+      website: input.website.trim() || null,
+      specialty: input.specialty.trim() || null,
+      staff_size: staffSize,
+      intro: input.intro.trim() || null,
+    })
+    .eq("id", partnerId);
+
+  if (error) {
+    if (error.code === "23505") {
+      return { ok: false, error: "이미 등록된 사업자등록번호입니다." };
+    }
+    return { ok: false, error: error.message };
+  }
+
+  // 이미 계정이 발급된 파트너의 이메일을 바꾼 경우, 로그인 이메일(auth.users)과
+  // public.users 미러도 함께 동기화한다. (없으면 로그인 이메일이 어긋남)
+  if (current?.user_id && current.contact_email !== email) {
+    const admin = createAdminClient();
+    const { error: authErr } = await admin.auth.admin.updateUserById(
+      current.user_id,
+      { email, email_confirm: true },
+    );
+    if (authErr) {
+      return {
+        ok: false,
+        error: `정보는 저장됐지만 로그인 이메일 동기화에 실패했습니다: ${authErr.message}`,
+      };
+    }
+    await admin.from("users").update({ email }).eq("id", current.user_id);
+  }
+
+  revalidatePath(`/admin/partners/${partnerId}`);
+  revalidatePath("/admin/partners");
+  return { ok: true, message: "파트너 정보를 수정했습니다." };
 }

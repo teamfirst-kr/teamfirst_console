@@ -34,7 +34,7 @@ export function FloatingCta({
           대행사 매칭신청
         </Link>
         <Link
-          href="/agency"
+          href="/partner/apply"
           className="rounded-full border-2 border-secondary bg-white px-6 py-3.5 text-center text-sm font-bold text-secondary shadow-md transition hover:bg-secondary hover:text-white"
         >
           대행사 등록신청
@@ -50,7 +50,7 @@ export function FloatingCta({
           대행사 매칭신청
         </Link>
         <Link
-          href="/agency"
+          href="/partner/apply"
           className="flex-1 rounded-full border-2 border-secondary px-4 py-3 text-center text-sm font-bold text-secondary"
         >
           대행사 등록신청

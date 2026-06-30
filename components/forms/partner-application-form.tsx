@@ -93,6 +93,30 @@ export function PartnerApplicationForm() {
             <FieldError messages={errors.company_name} />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="biz_reg_no">사업자등록번호 *</Label>
+            <Input
+              id="biz_reg_no"
+              name="biz_reg_no"
+              inputMode="numeric"
+              placeholder="000-00-00000"
+              required
+            />
+            <FieldError messages={errors.biz_reg_no} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="business_license">사업자등록증 첨부 *</Label>
+            <Input
+              id="business_license"
+              name="business_license"
+              type="file"
+              accept=".pdf,image/png,image/jpeg,image/webp"
+              required
+              className="cursor-pointer file:mr-3 file:rounded file:border-0 file:bg-muted file:px-3 file:py-1 file:text-sm"
+            />
+            <p className="text-xs text-muted-foreground">PDF·이미지, 최대 10MB.</p>
+            <FieldError messages={errors.business_license} />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="contact_person">담당자 성함 / 직책 *</Label>
             <Input id="contact_person" name="contact_person" required />
             <FieldError messages={errors.contact_person} />
