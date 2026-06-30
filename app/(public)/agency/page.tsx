@@ -45,28 +45,28 @@ export default function AgencyRegisterPage() {
       {/* 히어로 */}
       <section className="tf-hero-spotlight bg-[#000C31] text-white">
         <div className="mx-auto max-w-4xl px-6 py-28 text-center md:py-36">
-          <Reveal>
+          <Reveal immediate>
             <h1 className="text-3xl font-extrabold leading-[1.2] tracking-[-0.03em] md:text-5xl">
               최저 수수료
               <br />
               대행사 <span className="text-sky-300">X</span> 광고주 매칭 플랫폼
             </h1>
           </Reveal>
-          <Reveal delay={100}>
+          <Reveal delay={100} immediate>
             <p className="mt-6 text-base font-semibold text-white/85 md:text-lg">
               실력에 자신있는 광고대행사라면
               <br className="hidden sm:block" /> 더 이상 아웃바운드 영업에만
               집중하지 마세요.
             </p>
           </Reveal>
-          <Reveal delay={170}>
+          <Reveal delay={170} immediate>
             <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-white/60">
               협업 전 명확한 실소진 광고예산 규모 파악, 거짓 광고예산으로 인한
               스트레스를 없애겠습니다. 비즈니스의 본질, &lsquo;수익&rsquo;을 위한
               플랫폼
             </p>
           </Reveal>
-          <Reveal delay={240}>
+          <Reveal delay={240} immediate>
             <Button asChild size="lg" className="mt-9 bg-white text-secondary shadow-lg shadow-black/30 hover:bg-white/90">
               <Link href={APPLY}>대행사 등록하러 가기</Link>
             </Button>

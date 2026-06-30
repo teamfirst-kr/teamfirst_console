@@ -23,17 +23,20 @@ export default function AboutPage() {
       {/* 히어로 */}
       <section className="tf-hero-spotlight bg-secondary text-secondary-foreground">
         <div className="mx-auto max-w-4xl px-6 py-28 text-center md:py-32">
-          <Reveal className="text-xs font-bold uppercase tracking-[0.18em] text-white/45">
+          <Reveal
+            immediate
+            className="text-xs font-bold uppercase tracking-[0.18em] text-white/45"
+          >
             ABOUT TEAMFIRST
           </Reveal>
-          <Reveal delay={80}>
+          <Reveal delay={80} immediate>
             <h1 className="mt-4 text-2xl font-extrabold leading-snug tracking-[-0.02em] md:text-4xl">
               팀퍼스트는 브랜드사와 광고대행사·마케터를
               <br className="hidden md:block" /> 합리적인 구조로 연결하는 매칭
               플랫폼입니다.
             </h1>
           </Reveal>
-          <Reveal delay={150}>
+          <Reveal delay={150} immediate>
             <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-white/70">
               팀퍼스트는 대행사 리더 출신의 마케터가 브랜드사의 마케팅 의사결정
               구조를 직접 경험하며 시작되었습니다.

@@ -62,20 +62,23 @@ export function PartnerDirectory({ partners }: { partners: DirectoryPartner[] })
       {/* 히어로 */}
       <section className="tf-hero-spotlight bg-secondary text-secondary-foreground">
         <div className="mx-auto max-w-5xl px-6 py-20 text-center md:py-24">
-          <Reveal className="text-xs font-bold uppercase tracking-[0.18em] text-white/45">
+          <Reveal
+            immediate
+            className="text-xs font-bold uppercase tracking-[0.18em] text-white/45"
+          >
             VERIFIED PARTNER AGENCIES
           </Reveal>
-          <Reveal delay={80}>
+          <Reveal delay={80} immediate>
             <h1 className="mt-3 text-3xl font-extrabold tracking-[-0.02em] md:text-4xl">
               팀퍼스트 파트너 대행사
             </h1>
           </Reveal>
-          <Reveal delay={140}>
+          <Reveal delay={140} immediate>
             <p className="mx-auto mt-4 max-w-xl text-sm text-white/70">
               엄격한 입점기준을 통과한 검증된 마케팅 파트너만 소속되어 있습니다.
             </p>
           </Reveal>
-          <Reveal delay={200} className="mt-7 flex flex-wrap justify-center gap-2">
+          <Reveal delay={200} immediate className="mt-7 flex flex-wrap justify-center gap-2">
             {["전문 분야 검증", "포트폴리오 검증", "계약서 체결"].map((b) => (
               <span
                 key={b}

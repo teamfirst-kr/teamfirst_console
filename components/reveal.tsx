@@ -5,19 +5,23 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 // 뷰포트 진입 시 페이드+슬라이드업. delay로 stagger 연출.
+// immediate=true: 관찰자 없이 첫 페인트에 CSS로 즉시 재생(히어로/접힘 위 콘텐츠용).
 export function Reveal({
   children,
   className,
   delay = 0,
+  immediate = false,
 }: {
   children: React.ReactNode;
   className?: string;
   delay?: number;
+  immediate?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (immediate) return;
     const el = ref.current;
     if (!el) return;
     const io = new IntersectionObserver(
@@ -33,7 +37,18 @@ export function Reveal({
     );
     io.observe(el);
     return () => io.disconnect();
-  }, []);
+  }, [immediate]);
+
+  if (immediate) {
+    return (
+      <div
+        className={cn("tf-hero-in", className)}
+        style={delay ? { animationDelay: `${delay}ms` } : undefined}
+      >
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div

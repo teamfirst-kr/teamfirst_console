@@ -50,22 +50,25 @@ export default async function ConsoleIntroPage() {
     <div className="overflow-hidden">
       <section className="tf-hero-spotlight bg-[#000C31] text-white">
         <div className="mx-auto max-w-4xl px-6 py-28 text-center md:py-32">
-          <Reveal className="text-xs font-bold uppercase tracking-[0.18em] text-white/45">
+          <Reveal
+            immediate
+            className="text-xs font-bold uppercase tracking-[0.18em] text-white/45"
+          >
             TEAMFIRST CONSOLE
           </Reveal>
-          <Reveal delay={80}>
+          <Reveal delay={80} immediate>
             <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-[-0.03em] md:text-5xl">
               매칭의 전 과정을
               <br />한 화면에서 완결합니다
             </h1>
           </Reveal>
-          <Reveal delay={150}>
+          <Reveal delay={150} immediate>
             <p className="mx-auto mt-5 max-w-xl text-white/70">
               팀퍼스트 콘솔은 매칭 요청·RFP·평가표·미팅·계약·정산을 하나의 운영
               화면에서 처리하는 플랫폼입니다.
             </p>
           </Reveal>
-          <Reveal delay={220} className="mt-9 flex flex-wrap justify-center gap-3">
+          <Reveal delay={220} immediate className="mt-9 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg" className="bg-white text-secondary hover:bg-white/90">
               <Link href={cta}>{role ? "내 대시보드로" : "콘솔 로그인"}</Link>
             </Button>
