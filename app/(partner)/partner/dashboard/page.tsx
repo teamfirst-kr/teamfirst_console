@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
-import { ko } from "date-fns/locale";
 import { Inbox } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { DateText } from "@/components/date-text";
 import { EmptyState } from "@/components/ui/empty-state";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentPartnerId } from "@/lib/auth";
@@ -140,10 +139,7 @@ export default async function PartnerDashboardPage() {
                         : "-"}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {formatDistanceToNow(new Date(n.sent_at), {
-                        addSuffix: true,
-                        locale: ko,
-                      })}
+                      <DateText value={n.sent_at} />
                     </td>
                     <td className="px-4 py-3">
                       {applied ? (

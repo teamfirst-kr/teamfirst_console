@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
-import { ko } from "date-fns/locale";
 
 import { Badge } from "@/components/ui/badge";
+import { DateText } from "@/components/date-text";
 import { EmptyState } from "@/components/ui/empty-state";
 import { createClient } from "@/lib/supabase/server";
 import {
   REQUEST_MEDIA,
   REQUEST_STATUS_LABEL,
+  requestDisplayTitle,
   type MatchingBrief,
 } from "@/lib/schemas/matching-request";
 import type { RequestStatus } from "@/types/database";
@@ -160,7 +160,7 @@ function RequestListView({
                   <tr key={r.id} className="hover:bg-muted/30">
                     <td className="px-4 py-3">
                       <div className="font-medium text-foreground">
-                        {r.title}
+                        {requestDisplayTitle(r.title, brief)}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {brief.category}
@@ -185,12 +185,7 @@ function RequestListView({
                         : "-"}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {r.submitted_at
-                        ? formatDistanceToNow(new Date(r.submitted_at), {
-                            addSuffix: true,
-                            locale: ko,
-                          })
-                        : "-"}
+                      <DateText value={r.submitted_at} />
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={badge.variant}>{badge.label}</Badge>
