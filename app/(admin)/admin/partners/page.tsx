@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
-import { ko } from "date-fns/locale";
 
 import { Badge } from "@/components/ui/badge";
+import { DateText } from "@/components/date-text";
 import { EmptyState } from "@/components/ui/empty-state";
 import { createClient } from "@/lib/supabase/server";
 import { PARTNER_CATEGORIES } from "@/lib/schemas/partner-application";
@@ -201,10 +200,7 @@ export default async function AdminPartnersPage({
                       </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {formatDistanceToNow(new Date(p.applied_at), {
-                        addSuffix: true,
-                        locale: ko,
-                      })}
+                      <DateText value={p.applied_at} />
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={badge.variant}>{badge.label}</Badge>

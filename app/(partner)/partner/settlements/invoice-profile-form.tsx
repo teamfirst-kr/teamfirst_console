@@ -59,6 +59,8 @@ export function InvoiceProfileForm({
             name="biz_reg_no"
             inputMode="numeric"
             placeholder="숫자 10자리"
+            pattern="\d{3}-?\d{2}-?\d{5}"
+            title="사업자등록번호 10자리를 입력해주세요. (하이픈 선택)"
             defaultValue={initial?.biz_reg_no ?? ""}
             required
           />

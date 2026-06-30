@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { format } from "date-fns";
 import { FileText, Plus } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { DateText } from "@/components/date-text";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { createClient } from "@/lib/supabase/server";
@@ -109,9 +109,7 @@ export default async function ClientDashboardPage() {
                         : "-"}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {r.submitted_at
-                        ? format(new Date(r.submitted_at), "yyyy.MM.dd")
-                        : format(new Date(r.created_at), "yyyy.MM.dd")}
+                      <DateText value={r.submitted_at ?? r.created_at} />
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={badge.variant}>{badge.label}</Badge>
