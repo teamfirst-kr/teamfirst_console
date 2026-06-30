@@ -156,6 +156,22 @@ export async function setRequestStatus(
 ): Promise<RfpResult> {
   await assertAdmin();
   const supabase = await createClient();
+
+  // 정합성 가드: '지원 수집 중'은 RFP가 실제로 발송된(=rfp_notifications 존재) 뒤에만 가능.
+  // (RFP 미발송인데 수집 단계로 넘어가면 대행사 '도착한 RFP'에 안 보이는 불일치 발생)
+  if (status === "collecting") {
+    const { count } = await supabase
+      .from("rfp_notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("request_id", requestId);
+    if ((count ?? 0) === 0) {
+      return {
+        ok: false,
+        error: "RFP를 먼저 발송한 뒤에 지원 수집 단계로 전환할 수 있습니다.",
+      };
+    }
+  }
+
   const { error } = await supabase
     .from("matching_requests")
     .update({ status })

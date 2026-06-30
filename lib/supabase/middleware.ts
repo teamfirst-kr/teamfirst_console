@@ -4,7 +4,11 @@ import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/types/database";
 
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  // 현재 경로를 서버 컴포넌트(가드)에서 읽을 수 있게 헤더로 전달 → 로그인 후 원래 경로로 복귀.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
+
+  let response = NextResponse.next({ request: { headers: requestHeaders } });
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +22,7 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          response = NextResponse.next({ request });
+          response = NextResponse.next({ request: { headers: requestHeaders } });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
           );

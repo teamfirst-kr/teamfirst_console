@@ -56,7 +56,12 @@ export function RfpDocument({
             <Field label="상호(사업자명)" value={brief.company_name} />
             <Field label="사업자등록번호" value={brief.biz_reg_no} />
             <Field label="대표자명" value={brief.representative} />
-            <Field label="담당자" value={`${brief.contact_name} ${brief.contact_title}`} />
+            <Field
+              label="담당자"
+              value={[brief.contact_name, brief.contact_title]
+                .filter(Boolean)
+                .join(" / ")}
+            />
             <Field label="연락처" value={brief.phone} />
             <Field label="이메일" value={brief.email} />
           </Grid>

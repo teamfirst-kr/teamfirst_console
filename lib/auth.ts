@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
@@ -36,7 +37,9 @@ export async function requireRole(role: Role) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(`/login?next=${encodeURIComponent("/")}`);
+    // 미들웨어가 주입한 현재 경로로 복귀하도록 next 보존.
+    const path = (await headers()).get("x-pathname") || "/";
+    redirect(`/login?next=${encodeURIComponent(path)}`);
   }
 
   const { data } = await supabase

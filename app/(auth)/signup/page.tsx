@@ -28,8 +28,8 @@ export default function SignupPage() {
       <CardHeader>
         <CardTitle>광고주 회원가입</CardTitle>
         <CardDescription>
-          가입하시면 아이디(이메일)와 초기 비밀번호(사업자등록번호)로 로그인할 수
-          있습니다. 첫 로그인 시 비밀번호를 변경하게 됩니다. 파트너 대행사 계정은
+          이메일이 로그인 아이디가 됩니다. 가입 직후 비밀번호 설정 화면으로
+          안내되며, 본인이 직접 비밀번호를 정합니다. 파트너 대행사 계정은
           운영자가 별도로 발급합니다.
         </CardDescription>
       </CardHeader>
@@ -48,7 +48,7 @@ export default function SignupPage() {
             <Input id="email" name="email" type="email" required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="biz_reg_no">사업자등록번호 (초기 비밀번호)</Label>
+            <Label htmlFor="biz_reg_no">사업자등록번호</Label>
             <Input
               id="biz_reg_no"
               name="biz_reg_no"
@@ -57,7 +57,7 @@ export default function SignupPage() {
               required
             />
             <p className="text-xs text-muted-foreground">
-              초기 비밀번호로 사용되며, 첫 로그인 시 변경하게 됩니다.
+              본인 확인 및 세금계산서 발행에 사용됩니다.
             </p>
           </div>
           {state?.error ? (
