@@ -58,6 +58,10 @@ const BENEFITS = [
 export default async function HomeLanding() {
   const role = await getCurrentRole();
   const startHref = role ? roleHome(role) : "/signup";
+  // 비로그인 시 목적지(회원가입)와 라벨을 일치 (L-2)
+  const startLabel = role
+    ? "🚀 최적의 대행사 매칭 시작"
+    : "🚀 무료로 시작하기 (회원가입)";
 
   return (
     <div className="overflow-hidden">
@@ -86,7 +90,7 @@ export default async function HomeLanding() {
           </Reveal>
           <Reveal delay={220} className="mt-10 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg" className="bg-white text-secondary shadow-lg shadow-black/20 hover:bg-white/90">
-              <Link href={startHref}>🚀 최적의 대행사 매칭 시작</Link>
+              <Link href={startHref}>{startLabel}</Link>
             </Button>
             <Button
               asChild

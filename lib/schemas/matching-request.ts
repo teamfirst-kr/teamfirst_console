@@ -153,3 +153,29 @@ export const REQUEST_STATUS_LABEL: Record<
   closed_lost: { label: "종료", variant: "muted" },
   cancelled: { label: "취소", variant: "destructive" },
 };
+
+// 광고주/운영자가 공통으로 보는 단일 파이프라인 단계 정의 (진행바·보드 기준).
+export const REQUEST_STAGES: { key: string; label: string; statuses: string[] }[] = [
+  { key: "submitted", label: "매칭 요청 제출", statuses: ["draft", "submitted"] },
+  { key: "rfp_sent", label: "RFP 발송", statuses: ["rfp_sent"] },
+  { key: "collecting", label: "지원 수집", statuses: ["collecting"] },
+  { key: "curating", label: "후보 선정", statuses: ["curating", "candidates_sent"] },
+  { key: "meeting", label: "미팅", statuses: ["meeting_scheduled"] },
+  { key: "closed", label: "선정 · 계약", statuses: ["closed_won", "closed_lost"] },
+];
+
+export function stageIndexForStatus(status: string): number {
+  const i = REQUEST_STAGES.findIndex((s) => s.statuses.includes(status));
+  return i === -1 ? 0 : i;
+}
+
+// 제목이 비었을 때 브랜드명·카테고리로 대체, 그것도 없으면 "(제목 없음)".
+export function requestDisplayTitle(
+  title: string | null | undefined,
+  brief?: { brand_name?: string | null; category?: string | null } | null,
+): string {
+  const t = (title ?? "").trim();
+  if (t) return t;
+  const parts = [brief?.brand_name, brief?.category].filter(Boolean) as string[];
+  return parts.length ? parts.join(" · ") : "(제목 없음)";
+}

@@ -12,9 +12,11 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { buildRequestTimeline } from "@/lib/timeline";
 import { Timeline } from "@/components/timeline";
+import { RequestProgress } from "@/components/request-progress";
 import {
   REQUEST_MEDIA,
   REQUEST_STATUS_LABEL,
+  requestDisplayTitle,
   type MatchingBrief,
 } from "@/lib/schemas/matching-request";
 import type { RequestStatus } from "@/types/database";
@@ -166,7 +168,7 @@ export default async function ClientRequestDetailPage({
             ← 대시보드
           </Link>
           <h1 className="mt-2 text-2xl font-bold text-secondary">
-            {request.title}
+            {requestDisplayTitle(request.title, brief)}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {brief.category} · 제출{" "}
@@ -185,6 +187,15 @@ export default async function ClientRequestDetailPage({
           </Link>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>진행 단계</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <RequestProgress status={request.status} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
