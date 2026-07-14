@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyAdmins } from "@/lib/email/admin-alert";
 import { roleHome, type Role } from "@/lib/auth";
 
 export type AuthState = { error: string } | null;
@@ -125,6 +126,19 @@ export async function signupClientAction(
     }
     return { error: error.message };
   }
+
+  // 운영자 필수 알림: 새 광고주 가입 (메일 + 인앱)
+  await notifyAdmins({
+    type: "signup",
+    title: "새 광고주 가입",
+    rows: [
+      ["회사명", company],
+      ["담당자", name],
+      ["이메일", email],
+    ],
+    link: "/admin/dashboard",
+    linkLabel: "콘솔에서 확인",
+  });
 
   // 가입 직후 자동 로그인 (방금 발급한 임시 비밀번호 사용)
   const supabase = await createClient();

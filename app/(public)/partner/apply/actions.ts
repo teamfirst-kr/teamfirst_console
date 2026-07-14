@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyAdmins } from "@/lib/email/admin-alert";
 import {
   MAX_PORTFOLIO_FILES,
   partnerApplicationSchema,
@@ -195,6 +196,21 @@ export async function submitPartnerApplication(
   if (Object.keys(updatePayload).length > 0) {
     await admin.from("partners").update(updatePayload).eq("id", inserted.id);
   }
+
+  // 운영자 필수 알림: 새 대행사 등록신청 (메일 + 인앱)
+  await notifyAdmins({
+    type: "partner_apply",
+    title: "새 대행사 등록 신청",
+    rows: [
+      ["대행사명", data.company_name],
+      ["담당자", `${data.contact_person} (${data.contact_email})`],
+      ["연락처", data.contact_phone],
+      ["광고대행 매체", `${data.categories.length}개 선택`],
+      ...(data.specialty ? ([["전문 분야", data.specialty]] as [string, string][]) : []),
+    ],
+    link: `/admin/partners/${inserted.id}`,
+    linkLabel: "신청 검토하기",
+  });
 
   redirect("/partner/apply/success");
 }

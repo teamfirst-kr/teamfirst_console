@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyAdmins } from "@/lib/email/admin-alert";
 import {
   matchingRequestSchema,
   normalizeBizRegNo,
@@ -271,6 +272,24 @@ export async function submitMatchingRequest(
         .eq("id", requestId);
     }
   }
+
+  // 운영자 필수 알림: 새 매칭요청 접수 (메일 + 인앱)
+  await notifyAdmins({
+    type: "request",
+    title: "새 매칭 요청 접수",
+    rows: [
+      ["브랜드", data.brand_name],
+      ["상호", data.company_name],
+      ["카테고리", data.category],
+      ["담당자", `${data.contact_name} (${data.email})`],
+      [
+        "월 예산 합계",
+        budgetTotal ? `${budgetTotal.toLocaleString()}원` : "미입력/협의",
+      ],
+    ],
+    link: `/admin/requests/${requestId}`,
+    linkLabel: "요청 검토하기",
+  });
 
   redirect(`/client/request/${requestId}?created=1`);
 }
