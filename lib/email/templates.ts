@@ -38,6 +38,44 @@ function button(href: string, label: string): string {
   return `<a href="${href}" style="display:inline-block;margin:8px 0;padding:12px 24px;background:${BRAND_BLUE};color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;">${label}</a>`;
 }
 
+// 사용자 입력이 들어가는 값의 HTML 이스케이프 (운영자 알림 등)
+function esc(v: string): string {
+  return v
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// 운영자 알림: 신규 이벤트(매칭요청·광고주 가입·대행사 등록신청 등) 접수 안내
+export function adminEventEmail(params: {
+  heading: string;
+  rows: [string, string][];
+  linkUrl?: string;
+  linkLabel?: string;
+}): { subject: string; html: string } {
+  const rowsHtml = params.rows
+    .map(
+      ([k, v]) =>
+        `<tr>
+           <td style="padding:8px 0;color:#6b7280;width:110px;vertical-align:top;">${esc(k)}</td>
+           <td style="padding:8px 0;font-weight:600;color:#111827;">${esc(v)}</td>
+         </tr>`,
+    )
+    .join("");
+  return {
+    subject: `[TeamFirst 운영] ${params.heading}`,
+    html: layout(
+      params.heading,
+      `<p>콘솔에 새 이벤트가 접수되었습니다. 아래 내용을 확인해주세요.</p>
+       <div style="margin:16px 0;padding:18px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;">
+         <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;border-collapse:collapse;">${rowsHtml}</table>
+       </div>
+       ${params.linkUrl ? `<p style="text-align:center;">${button(params.linkUrl, params.linkLabel ?? "콘솔에서 확인")}</p>` : ""}`,
+    ),
+  };
+}
+
 export function partnerContractEmail(params: {
   companyName: string;
   glosignUrl: string;
