@@ -4,6 +4,7 @@ import { ko } from "date-fns/locale";
 
 import {
   REQUEST_MEDIA,
+  requestDisplayTitle,
   type MatchingBrief,
 } from "@/lib/schemas/matching-request";
 
@@ -51,7 +52,7 @@ export function RequestBoard({ requests }: { requests: BoardRequest[] }) {
             <div className="space-y-2">
               {items.length === 0 ? (
                 <p className="rounded-lg border border-dashed py-6 text-center text-xs text-muted-foreground">
-                  없음
+                  이 단계의 요청이 없습니다
                 </p>
               ) : (
                 items.map((r) => {
@@ -63,7 +64,9 @@ export function RequestBoard({ requests }: { requests: BoardRequest[] }) {
                       href={`/admin/requests/${r.id}`}
                       className="block rounded-lg border bg-card p-3 shadow-sm transition hover:border-primary hover:shadow-md"
                     >
-                      <div className="font-medium text-foreground">{r.title}</div>
+                      <div className="font-medium text-foreground">
+                        {requestDisplayTitle(r.title, brief)}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         {brief.category}
                       </div>
@@ -71,13 +74,13 @@ export function RequestBoard({ requests }: { requests: BoardRequest[] }) {
                         {channels.map((c) => (
                           <span
                             key={c}
-                            className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground"
+                            className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
                           >
                             {MEDIA_LABEL[c] ?? c}
                           </span>
                         ))}
                       </div>
-                      <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+                      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                         <span>
                           {r.budget_monthly
                             ? `${r.budget_monthly.toLocaleString()}원`

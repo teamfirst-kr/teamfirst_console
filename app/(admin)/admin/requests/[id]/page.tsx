@@ -44,8 +44,6 @@ export default async function AdminRequestDetailPage({
 
   if (!request) notFound();
 
-  const timeline = await buildRequestTimeline(id);
-
   const brief = (request.brief ?? {}) as MatchingBrief;
   const status = request.status as RequestStatus;
   const badge = REQUEST_STATUS_LABEL[status] ?? {
@@ -53,19 +51,62 @@ export default async function AdminRequestDetailPage({
     variant: "muted" as const,
   };
 
-  // RFP 발송 대상: 입점 완료 대행사 목록 (선택/제외용) + 카테고리
-  const { data: contractedPartners } = await supabase
-    .from("partners")
-    .select("id, company_name")
-    .eq("status", "contracted")
-    .order("company_name", { ascending: true });
+  // 서로 독립인 조회 6건을 병렬 실행 (직렬 9회 왕복 → 3단계)
+  const [
+    timeline,
+    { data: contractedPartners },
+    { data: notifiedRows },
+    { data: applications },
+    { data: candidates },
+    proofUrl,
+  ] = await Promise.all([
+    buildRequestTimeline(id),
+    supabase
+      .from("partners")
+      .select("id, company_name")
+      .eq("status", "contracted")
+      .order("company_name", { ascending: true }),
+    supabase.from("rfp_notifications").select("partner_id").eq("request_id", id),
+    supabase
+      .from("applications")
+      .select(
+        "id, partner_id, proposal, quote_monthly, start_available, status, submitted_at",
+      )
+      .eq("request_id", id)
+      .order("submitted_at", { ascending: true }),
+    supabase
+      .from("candidates")
+      .select(
+        "id, application_id, partner_id, rank, status, recommendation_reason, scores",
+      )
+      .eq("request_id", id),
+    (async () => {
+      if (!brief.ad_spend_proof?.path) return null;
+      const admin = createAdminClient();
+      const { data: signed } = await admin.storage
+        .from("client-files")
+        .createSignedUrl(brief.ad_spend_proof.path, 600);
+      return signed?.signedUrl ?? null;
+    })(),
+  ]);
+
   const contractedIds = (contractedPartners ?? []).map((p) => p.id);
-  const { data: partnerCats } = contractedIds.length
-    ? await supabase
-        .from("partner_categories")
-        .select("partner_id, category")
-        .in("partner_id", contractedIds)
-    : { data: [] as { partner_id: string; category: string }[] };
+  const appPartnerIds = (applications ?? []).map((a) => a.partner_id);
+
+  const [{ data: partnerCats }, { data: appPartners }] = await Promise.all([
+    contractedIds.length
+      ? supabase
+          .from("partner_categories")
+          .select("partner_id, category")
+          .in("partner_id", contractedIds)
+      : Promise.resolve({
+          data: [] as { partner_id: string; category: string }[],
+        }),
+    appPartnerIds.length
+      ? supabase.from("partners").select("id, company_name").in("id", appPartnerIds)
+      : Promise.resolve({ data: [] as { id: string; company_name: string }[] }),
+  ]);
+
   const catsByPartner = new Map<string, string[]>();
   for (const c of partnerCats ?? []) {
     const list = catsByPartner.get(c.partner_id) ?? [];
@@ -78,39 +119,13 @@ export default async function AdminRequestDetailPage({
     categories: catsByPartner.get(p.id) ?? [],
   }));
 
-  // 이미 RFP가 발송된 대행사
-  const { data: notifiedRows } = await supabase
-    .from("rfp_notifications")
-    .select("partner_id")
-    .eq("request_id", id);
   const notifiedIds = (notifiedRows ?? []).map((r) => r.partner_id);
   const sentCount = notifiedIds.length;
 
-  // 지원자 목록 (비교 뷰)
-  const { data: applications } = await supabase
-    .from("applications")
-    .select(
-      "id, partner_id, proposal, quote_monthly, start_available, status, submitted_at",
-    )
-    .eq("request_id", id)
-    .order("submitted_at", { ascending: true });
-
-  const appPartnerIds = (applications ?? []).map((a) => a.partner_id);
-  const { data: appPartners } = appPartnerIds.length
-    ? await supabase
-        .from("partners")
-        .select("id, company_name")
-        .in("id", appPartnerIds)
-    : { data: [] as { id: string; company_name: string }[] };
   const partnerNameMap = new Map(
     (appPartners ?? []).map((p) => [p.id, p.company_name]),
   );
 
-  // 기존 후보(candidates) — 재선정 시 초기값 + 대행 결정
-  const { data: candidates } = await supabase
-    .from("candidates")
-    .select("id, application_id, partner_id, rank, status, recommendation_reason, scores")
-    .eq("request_id", id);
   const candidateMap = new Map(
     (candidates ?? []).map((c) => [
       c.application_id,
@@ -151,16 +166,6 @@ export default async function AdminRequestDetailPage({
       scores: (candidateMap.get(a.id)?.scores ?? null) as ApplicantCard["scores"],
     };
   });
-
-  // 증빙 파일 signed URL
-  let proofUrl: string | null = null;
-  if (brief.ad_spend_proof?.path) {
-    const admin = createAdminClient();
-    const { data: signed } = await admin.storage
-      .from("client-files")
-      .createSignedUrl(brief.ad_spend_proof.path, 600);
-    proofUrl = signed?.signedUrl ?? null;
-  }
 
   return (
     <div className="space-y-6">

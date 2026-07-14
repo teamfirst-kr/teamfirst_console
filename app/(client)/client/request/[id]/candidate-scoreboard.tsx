@@ -74,7 +74,7 @@ export function CandidateScoreboard({
         {/* 비교표 */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground border-b">
+            <thead className="bg-muted/60 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="px-3 py-3 text-left font-medium">대행사명</th>
                 <th className="px-3 py-3 font-medium">총점</th>
@@ -103,7 +103,7 @@ export function CandidateScoreboard({
                     ) : null}
                     <button
                       onClick={() => setReferenceOf(c)}
-                      className="mt-1 rounded bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground"
+                      className="mt-1 rounded-md bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/85"
                     >
                       레퍼런스 보기
                     </button>

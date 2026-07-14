@@ -59,27 +59,26 @@ export default async function PartnerSettlementsPage() {
     ? requestIds
     : ["00000000-0000-0000-0000-000000000000"];
 
-  const { data: requests } = await supabase
-    .from("matching_requests")
-    .select("id, title")
-    .in("id", safeRequestIds);
+  // 서로 독립인 3개 조회 병렬 실행
+  const [{ data: requests }, { data: settlements }, { data: profileRow }] =
+    await Promise.all([
+      supabase.from("matching_requests").select("id, title").in("id", safeRequestIds),
+      supabase
+        .from("settlements")
+        .select(
+          "id, deal_id, yearmonth, total_spend, partner_fee, teamfirst_share, status, invoiced_at, paid_at",
+        )
+        .in("deal_id", safeDealIds)
+        .order("yearmonth", { ascending: false }),
+      supabase
+        .from("partner_invoice_profiles")
+        .select(
+          "company_name, biz_reg_no, representative, address, business_type, business_item, invoice_email, contact_name, contact_phone",
+        )
+        .eq("partner_id", partnerId)
+        .maybeSingle(),
+    ]);
   const requestTitle = new Map((requests ?? []).map((r) => [r.id, r.title]));
-
-  const { data: settlements } = await supabase
-    .from("settlements")
-    .select(
-      "id, deal_id, yearmonth, total_spend, partner_fee, teamfirst_share, status, invoiced_at, paid_at",
-    )
-    .in("deal_id", safeDealIds)
-    .order("yearmonth", { ascending: false });
-
-  const { data: profileRow } = await supabase
-    .from("partner_invoice_profiles")
-    .select(
-      "company_name, biz_reg_no, representative, address, business_type, business_item, invoice_email, contact_name, contact_phone",
-    )
-    .eq("partner_id", partnerId)
-    .maybeSingle();
 
   const profile: InvoiceProfileValues | null = profileRow
     ? (profileRow as InvoiceProfileValues)
@@ -187,7 +186,7 @@ export default async function PartnerSettlementsPage() {
                     ) : (
                       <div className="overflow-hidden rounded-lg border">
                         <table className="w-full text-sm">
-                          <thead className="bg-muted/60 text-left text-xs uppercase text-muted-foreground">
+                          <thead className="bg-muted/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
                             <tr>
                               <th className="px-3 py-2 font-medium">월</th>
                               <th className="px-3 py-2 font-medium">총 광고비</th>

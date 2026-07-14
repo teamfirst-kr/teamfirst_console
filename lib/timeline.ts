@@ -32,11 +32,26 @@ export async function buildRequestTimeline(
     detail: brief.brand_name ?? request.title,
   });
 
+  // 서로 독립인 조회는 병렬 실행 (후보는 한 번만 조회해 재사용)
+  const [{ data: rfps }, { data: apps }, { data: candidates }] =
+    await Promise.all([
+      supabase
+        .from("rfp_notifications")
+        .select("sent_at")
+        .eq("request_id", requestId),
+      supabase
+        .from("applications")
+        .select("id, partner_id, submitted_at")
+        .eq("request_id", requestId)
+        .order("submitted_at", { ascending: true }),
+      supabase
+        .from("candidates")
+        .select("id, partner_id, rank, proposed_at, status")
+        .eq("request_id", requestId)
+        .order("rank", { ascending: true }),
+    ]);
+
   // RFP 발송
-  const { data: rfps } = await supabase
-    .from("rfp_notifications")
-    .select("sent_at")
-    .eq("request_id", requestId);
   if (request.rfp_sent_at && rfps && rfps.length > 0) {
     events.push({
       at: request.rfp_sent_at,
@@ -46,22 +61,40 @@ export async function buildRequestTimeline(
     });
   }
 
+  const partnerIds = Array.from(
+    new Set([
+      ...(apps ?? []).map((a) => a.partner_id),
+      ...(candidates ?? []).map((c) => c.partner_id),
+    ]),
+  );
+  const candIdList = (candidates ?? []).map((c) => c.id);
+  const candPartner = new Map(
+    (candidates ?? []).map((c) => [c.id, c.partner_id]),
+  );
+
+  const [{ data: partnersData }, { data: meetings }] = await Promise.all([
+    partnerIds.length
+      ? supabase.from("partners").select("id, company_name").in("id", partnerIds)
+      : Promise.resolve({ data: [] as { id: string; company_name: string }[] }),
+    candIdList.length
+      ? supabase
+          .from("meetings")
+          .select("candidate_id, status, scheduled_at, created_at")
+          .in("candidate_id", candIdList)
+      : Promise.resolve({
+          data: [] as {
+            candidate_id: string;
+            status: string;
+            scheduled_at: string | null;
+            created_at: string;
+          }[],
+        }),
+  ]);
+  const partnerName = new Map(
+    (partnersData ?? []).map((p) => [p.id, p.company_name]),
+  );
+
   // 지원서
-  const { data: apps } = await supabase
-    .from("applications")
-    .select("id, partner_id, submitted_at")
-    .eq("request_id", requestId)
-    .order("submitted_at", { ascending: true });
-
-  const appPartnerIds = (apps ?? []).map((a) => a.partner_id);
-  const { data: partnersData } = appPartnerIds.length
-    ? await supabase
-        .from("partners")
-        .select("id, company_name")
-        .in("id", appPartnerIds)
-    : { data: [] as { id: string; company_name: string }[] };
-  const partnerName = new Map((partnersData ?? []).map((p) => [p.id, p.company_name]));
-
   for (const a of apps ?? []) {
     events.push({
       at: a.submitted_at,
@@ -72,12 +105,6 @@ export async function buildRequestTimeline(
   }
 
   // 후보 선정
-  const { data: candidates } = await supabase
-    .from("candidates")
-    .select("partner_id, rank, proposed_at, status")
-    .eq("request_id", requestId)
-    .order("rank", { ascending: true });
-
   if (candidates && candidates.length > 0) {
     events.push({
       at: candidates[0].proposed_at,
@@ -88,21 +115,6 @@ export async function buildRequestTimeline(
         .join(", ")}`,
     });
   }
-
-  // 미팅
-  const { data: candRows } = await supabase
-    .from("candidates")
-    .select("id, partner_id")
-    .eq("request_id", requestId);
-  const candIdList = (candRows ?? []).map((c) => c.id);
-  const candPartner = new Map((candRows ?? []).map((c) => [c.id, c.partner_id]));
-
-  const { data: meetings } = candIdList.length
-    ? await supabase
-        .from("meetings")
-        .select("candidate_id, status, scheduled_at, created_at")
-        .in("candidate_id", candIdList)
-    : { data: [] as { candidate_id: string; status: string; scheduled_at: string | null; created_at: string }[] };
 
   for (const m of meetings ?? []) {
     const pName = partnerName.get(candPartner.get(m.candidate_id) ?? "") ?? "대행사";

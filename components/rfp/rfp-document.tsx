@@ -42,7 +42,7 @@ export function RfpDocument({
           <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
             {brief.category}
           </span>
-          <span className="text-xs text-white/50">
+          <span className="text-xs text-white/70">
             발행일자{" "}
             {format(new Date(issuedAt ?? Date.now()), "yyyy.MM.dd")}
           </span>

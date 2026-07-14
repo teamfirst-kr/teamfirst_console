@@ -52,7 +52,7 @@ export function SpendSection({
         {existing.length > 0 ? (
           <div className="overflow-hidden rounded-lg border">
             <table className="w-full text-sm">
-              <thead className="bg-muted/60 text-left text-xs text-muted-foreground">
+              <thead className="bg-muted/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-3 py-2">기간</th>
                   <th className="px-3 py-2">매체별 소진액</th>

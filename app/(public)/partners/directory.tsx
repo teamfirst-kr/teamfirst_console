@@ -200,14 +200,14 @@ export function PartnerDirectory({ partners }: { partners: DirectoryPartner[] })
                         {tools.slice(0, 5).map((t) => (
                           <span
                             key={t}
-                            className="inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
+                            className="inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground"
                           >
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                             {t}
                           </span>
                         ))}
                         {p.performanceBased ? (
-                          <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-[11px] font-medium text-primary">
+                          <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary">
                             CPA 가능
                           </span>
                         ) : null}

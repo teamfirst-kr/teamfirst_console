@@ -8,64 +8,60 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import type { RequestStatus } from "@/types/database";
+import type { PartnerStatus, RequestStatus } from "@/types/database";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
-  const { count: pendingCount } = await supabase
-    .from("partners")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "pending");
+  // 모든 카운트는 서로 독립 → 한 번에 병렬 실행 (12회 왕복 → 1회 대기)
+  const partnerCount = (status: PartnerStatus) =>
+    supabase
+      .from("partners")
+      .select("id", { count: "exact", head: true })
+      .eq("status", status);
+  const requestCount = (statuses: RequestStatus[]) =>
+    supabase
+      .from("matching_requests")
+      .select("id", { count: "exact", head: true })
+      .in("status", statuses);
 
-  const { count: reviewingCount } = await supabase
-    .from("partners")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "reviewing");
+  const STAGES: { label: string; statuses: RequestStatus[] }[] = [
+    { label: "검수 대기", statuses: ["submitted"] },
+    { label: "RFP·수집", statuses: ["rfp_sent", "collecting"] },
+    { label: "후보 선정", statuses: ["curating", "candidates_sent"] },
+    { label: "미팅", statuses: ["meeting_scheduled"] },
+    { label: "성사", statuses: ["closed_won"] },
+  ];
 
-  const { count: contractedCount } = await supabase
-    .from("partners")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "contracted");
+  const [
+    { count: pendingCount },
+    { count: reviewingCount },
+    { count: contractedCount },
+    { count: submittedReq },
+    { count: activeReq },
+    { count: meetingReq },
+    { count: settlementPending },
+    ...stageResults
+  ] = await Promise.all([
+    partnerCount("pending"),
+    partnerCount("reviewing"),
+    partnerCount("contracted"),
+    requestCount(["submitted"]),
+    requestCount(["rfp_sent", "collecting", "curating", "candidates_sent"]),
+    requestCount(["meeting_scheduled"]),
+    supabase
+      .from("settlements")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["pending", "invoiced"]),
+    ...STAGES.map((s) => requestCount(s.statuses)),
+  ]);
 
-  const { count: submittedReq } = await supabase
-    .from("matching_requests")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "submitted");
-
-  const { count: activeReq } = await supabase
-    .from("matching_requests")
-    .select("id", { count: "exact", head: true })
-    .in("status", ["rfp_sent", "collecting", "curating", "candidates_sent"]);
-
-  const { count: meetingReq } = await supabase
-    .from("matching_requests")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "meeting_scheduled");
-
-  const { count: settlementPending } = await supabase
-    .from("settlements")
-    .select("id", { count: "exact", head: true })
-    .in("status", ["pending", "invoiced"]);
-
-  // 파이프라인 단계별 카운트 (보드와 동일한 그룹핑)
-  const stageCounts = await Promise.all(
-    [
-      { label: "검수 대기", statuses: ["submitted"] },
-      { label: "RFP·수집", statuses: ["rfp_sent", "collecting"] },
-      { label: "후보 선정", statuses: ["curating", "candidates_sent"] },
-      { label: "미팅", statuses: ["meeting_scheduled"] },
-      { label: "성사", statuses: ["closed_won"] },
-    ].map(async (s) => {
-      const { count } = await supabase
-        .from("matching_requests")
-        .select("id", { count: "exact", head: true })
-        .in("status", s.statuses as RequestStatus[]);
-      return { label: s.label, count: count ?? 0 };
-    }),
-  );
+  const stageCounts = STAGES.map((s, i) => ({
+    label: s.label,
+    count: stageResults[i]?.count ?? 0,
+  }));
 
   return (
     <div className="space-y-8">
