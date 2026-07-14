@@ -124,7 +124,7 @@ export default async function PartnerRfpDetailPage({
         </h1>
         <div className="mt-6 flex items-center gap-2">
           <Badge variant="muted">{brief.category}</Badge>
-          <span className="text-xs text-white/50">
+          <span className="text-xs text-white/70">
             발행일자{" "}
             {format(
               new Date(request.submitted_at ?? request.created_at ?? Date.now()),

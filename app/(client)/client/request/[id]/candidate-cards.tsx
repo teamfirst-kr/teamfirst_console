@@ -241,8 +241,13 @@ function MeetingBlock({
     );
   }
 
-  // 제안했고 파트너 응답 대기 중
-  if (meeting && meeting.proposedSlots.length > 0) {
+  // 제안했고 파트너 응답 대기 중.
+  // (rescheduling이면 아래 제안 폼으로 내려가 다시 제안할 수 있어야 함)
+  if (
+    meeting &&
+    meeting.proposedSlots.length > 0 &&
+    meeting.status !== "rescheduling"
+  ) {
     return (
       <div className="mt-4 rounded-md border bg-muted/30 p-3 text-sm">
         <p className="font-medium text-foreground">제안한 미팅 일정 (응답 대기)</p>

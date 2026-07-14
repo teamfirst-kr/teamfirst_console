@@ -1,4 +1,4 @@
-@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
+/* Pretendard는 app/layout.tsx에서 preconnect + <link>로 로드 (CSS @import 체인 제거) */
 @import "tailwindcss";
 
 @layer base {
@@ -152,4 +152,23 @@ body {
 }
 .tf-marquee:hover .tf-marquee-track {
   animation-play-state: paused;
+}
+
+/* ── 전역 인터랙션 폴리시 ─────────────────────────────────────────────── */
+/* 브랜드 텍스트 선택 색 */
+::selection {
+  background: hsl(var(--brand-blue) / 0.18);
+}
+
+/* 키보드 포커스 기본 링: 자체 ring을 정의한 컴포넌트(shadcn Button 등)는
+   focus-visible:outline-none으로 이 기본값을 대체한다. */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* 얇은 스크롤바 (사이드바·내부 스크롤 영역) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
 }

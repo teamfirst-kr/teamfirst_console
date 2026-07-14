@@ -31,7 +31,14 @@ export async function proposeMeeting(
   const role = await getCurrentRole();
   if (role !== "client") return { ok: false, error: "광고주만 사용할 수 있습니다." };
 
-  const valid = slots.filter(Boolean).map((s) => new Date(s).toISOString());
+  // datetime-local 값(YYYY-MM-DDTHH:mm[:ss])에는 타임존이 없어 서버 로컬(UTC 배포 시
+  // UTC)로 해석된다. 입력은 항상 한국시간이므로 +09:00을 붙여 KST로 확정 후 저장한다.
+  const valid = slots
+    .filter(Boolean)
+    .map((s) => (s.length === 16 ? `${s}:00` : s))
+    .map((s) => new Date(`${s}+09:00`))
+    .filter((d) => !Number.isNaN(d.getTime()))
+    .map((d) => d.toISOString());
   if (valid.length === 0) {
     return { ok: false, error: "최소 한 개의 일정 후보를 입력해주세요." };
   }

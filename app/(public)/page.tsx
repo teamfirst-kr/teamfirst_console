@@ -227,7 +227,7 @@ export default async function HomeLanding() {
             <Button asChild size="lg" className="mt-7 bg-white text-secondary hover:bg-white/90">
               <Link href={startHref}>1분만에 매칭 신청하기 →</Link>
             </Button>
-            <p className="mt-3 text-xs text-white/55">모든 매칭과정은 무료입니다.</p>
+            <p className="mt-3 text-xs text-white/70">모든 매칭과정은 무료입니다.</p>
           </div>
         </Reveal>
       </section>

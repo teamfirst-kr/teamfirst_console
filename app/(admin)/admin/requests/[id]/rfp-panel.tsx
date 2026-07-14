@@ -110,14 +110,14 @@ export function RfpPanel({
                 <button
                   type="button"
                   onClick={selectAll}
-                  className="rounded-md border border-input px-2 py-1 text-xs hover:bg-accent"
+                  className="rounded-md border border-input bg-card px-2.5 py-1 text-xs font-medium transition-colors hover:bg-accent"
                 >
                   전체 선택
                 </button>
                 <button
                   type="button"
                   onClick={clearAll}
-                  className="rounded-md border border-input px-2 py-1 text-xs hover:bg-accent"
+                  className="rounded-md border border-input bg-card px-2.5 py-1 text-xs font-medium transition-colors hover:bg-accent"
                 >
                   전체 해제
                 </button>
@@ -125,7 +125,7 @@ export function RfpPanel({
                   <button
                     type="button"
                     onClick={selectMatching}
-                    className="rounded-md border border-input px-2 py-1 text-xs hover:bg-accent"
+                    className="rounded-md border border-input bg-card px-2.5 py-1 text-xs font-medium transition-colors hover:bg-accent"
                   >
                     요청 매체 일치만
                   </button>

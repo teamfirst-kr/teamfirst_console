@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { logoutAction } from "@/app/(auth)/actions";
+import { AppNav } from "@/components/app-nav";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notification-bell";
 import { getMyNotifications } from "@/components/notification-actions";
@@ -40,17 +41,7 @@ export async function AppShell({
         <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-white/40">
           {title}
         </div>
-        <nav className="flex-1 px-3 space-y-1">
-          {nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="block rounded-md px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <AppNav items={nav} />
         <div className="border-t border-white/10 p-3">
           <div className="mb-2 flex items-center justify-between">
             {email ? (

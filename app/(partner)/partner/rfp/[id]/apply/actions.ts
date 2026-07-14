@@ -61,6 +61,28 @@ export async function submitRfpApplication(
     return { error: "이 RFP에 지원할 권한이 없습니다." };
   }
 
+  // 모집 상태 가드: 후보 전달·마감된 요청에는 지원 불가.
+  const { data: request } = await supabase
+    .from("matching_requests")
+    .select("status")
+    .eq("id", requestId)
+    .maybeSingle();
+  const ACCEPTING = new Set(["rfp_sent", "collecting", "curating"]);
+  if (!request || !ACCEPTING.has(request.status)) {
+    return { error: "이미 모집이 마감된 RFP입니다. 다음 기회에 지원해주세요." };
+  }
+
+  // 중복 지원 선확인 (첨부 업로드 전에 걸러 고아 파일 방지)
+  const { data: existingApp } = await supabase
+    .from("applications")
+    .select("id")
+    .eq("request_id", requestId)
+    .eq("partner_id", partnerId)
+    .maybeSingle();
+  if (existingApp) {
+    return { error: "이미 이 RFP에 지원하셨습니다." };
+  }
+
   const files = formData
     .getAll("attachments")
     .filter((v): v is File => v instanceof File && v.size > 0);

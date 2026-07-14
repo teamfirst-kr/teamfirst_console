@@ -216,7 +216,7 @@ export async function submitMatchingRequest(
   let requestId: string;
 
   if (draftId) {
-    const { error: updateError } = await supabase
+    const { data: updatedRows, error: updateError } = await supabase
       .from("matching_requests")
       .update({
         title: data.brand_name,
@@ -227,9 +227,15 @@ export async function submitMatchingRequest(
       })
       .eq("id", draftId)
       .eq("client_id", client.id)
-      .eq("status", "draft");
+      .eq("status", "draft")
+      .select("id");
     if (updateError) {
       return { error: updateError.message };
+    }
+    // 0행 갱신 = 이미 제출된 임시저장 건 (뒤로가기/중복 탭 재제출).
+    // 중복 알림·재업로드 없이 기존 요청 화면으로 보낸다.
+    if (!updatedRows || updatedRows.length === 0) {
+      redirect(`/client/request/${draftId}`);
     }
     requestId = draftId;
   } else {

@@ -72,7 +72,7 @@ export default async function AdminPartnerDetailPage({
   const { data: partner } = await supabase
     .from("partners")
     .select(
-      "id, company_name, biz_reg_no, staff_size, website, specialty, contact_person, contact_email, contact_phone, status, applied_at, intro, application, admin_memo, user_id",
+      "id, company_name, biz_reg_no, staff_size, website, specialty, contact_person, contact_email, contact_phone, status, applied_at, intro, application, admin_memo, user_id, portfolio",
     )
     .eq("id", id)
     .single();
@@ -94,32 +94,33 @@ export default async function AdminPartnerDetailPage({
   const contracts = contractRows ?? [];
   const meta = (partner.application ?? {}) as ApplicationMeta;
 
-  // 첨부파일 signed URL
-  const { data: pf } = await supabase
-    .from("partners")
-    .select("portfolio")
-    .eq("id", id)
-    .single();
-  const portfolio = (pf?.portfolio ?? null) as {
+  // 첨부파일 signed URL — 경로를 모아 일괄 발급 (N+1 방지)
+  const portfolio = (partner.portfolio ?? null) as {
     items?: { name: string; path: string }[];
   } | null;
   const attachments: { name: string; url: string }[] = [];
   let licenseUrl: string | null = null;
-  if (portfolio?.items?.length || meta.business_license?.path) {
+  const portfolioItems = portfolio?.items ?? [];
+  const licensePath = meta.business_license?.path ?? null;
+  const allPaths = [
+    ...portfolioItems.map((i) => i.path),
+    ...(licensePath ? [licensePath] : []),
+  ];
+  if (allPaths.length > 0) {
     const admin = createAdminClient();
-    for (const item of portfolio?.items ?? []) {
-      const { data: signed } = await admin.storage
-        .from("partner-files")
-        .createSignedUrl(item.path, 600);
-      if (signed?.signedUrl)
-        attachments.push({ name: item.name, url: signed.signedUrl });
+    const { data: signedList } = await admin.storage
+      .from("partner-files")
+      .createSignedUrls(allPaths, 600);
+    const urlByPath = new Map(
+      (signedList ?? [])
+        .filter((s) => s.signedUrl)
+        .map((s) => [s.path, s.signedUrl] as const),
+    );
+    for (const item of portfolioItems) {
+      const url = urlByPath.get(item.path);
+      if (url) attachments.push({ name: item.name, url });
     }
-    if (meta.business_license?.path) {
-      const { data: signed } = await admin.storage
-        .from("partner-files")
-        .createSignedUrl(meta.business_license.path, 600);
-      licenseUrl = signed?.signedUrl ?? null;
-    }
+    if (licensePath) licenseUrl = urlByPath.get(licensePath) ?? null;
   }
 
   return (
