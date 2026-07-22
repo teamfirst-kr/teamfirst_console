@@ -14,8 +14,11 @@ import {
 
 export function NotificationBell({
   initialUnread = 0,
+  placement = "sidebar",
 }: {
   initialUnread?: number;
+  // sidebar: 좌하단 벨 → 오른쪽 위로 펼침 / topbar: 우상단 벨 → 왼쪽 아래로 펼침
+  placement?: "sidebar" | "topbar";
 }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -64,7 +67,14 @@ export function NotificationBell({
       </button>
 
       {open ? (
-        <div className="absolute left-0 bottom-11 z-20 w-72 overflow-hidden rounded-lg border bg-card text-foreground shadow-lg md:left-auto md:right-0">
+        <div
+          className={
+            "absolute z-30 w-72 overflow-hidden rounded-lg border bg-card text-foreground shadow-lg " +
+            (placement === "sidebar"
+              ? "bottom-11 left-0" // 사이드바 좌하단 → 오른쪽 위로 (본문 위에 겹침, 잘림 없음)
+              : "right-0 top-11") // 모바일 상단바 → 왼쪽 아래로
+          }
+        >
           <div className="border-b px-3 py-2 text-sm font-semibold">알림</div>
           <div className="max-h-80 overflow-y-auto">
             {items.length === 0 ? (
