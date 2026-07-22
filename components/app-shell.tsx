@@ -51,7 +51,7 @@ export async function AppShell({
             ) : (
               <span />
             )}
-            <NotificationBell initialUnread={unread} />
+            <NotificationBell initialUnread={unread} placement="sidebar" />
           </div>
           <form action={logoutAction}>
             <Button
@@ -72,7 +72,7 @@ export async function AppShell({
           TeamFirst · {title}
         </Link>
         <div className="flex items-center gap-1">
-          <NotificationBell initialUnread={unread} />
+          <NotificationBell initialUnread={unread} placement="topbar" />
           <form action={logoutAction}>
             <Button
               variant="ghost"
