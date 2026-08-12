@@ -15,6 +15,7 @@ export default async function AdminLayout({
       nav={[
         { href: "/admin/dashboard", label: "대시보드" },
         { href: "/admin/payback", label: "페이백" },
+        { href: "/admin/payback/settlements", label: "페이백 정산" },
         { href: "/admin/requests", label: "매칭 요청" },
         { href: "/admin/partners", label: "파트너 대행사" },
         { href: "/admin/clients", label: "브랜드사" },

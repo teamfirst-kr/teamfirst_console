@@ -88,11 +88,29 @@ export default async function PaybackPipelinePage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-secondary">페이백 파이프라인</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          신청 접수 → 약정 → 대행권 이관 → 활성화까지 한 화면에서 처리하세요.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-secondary">페이백 파이프라인</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            신청 접수 → 약정 → 대행권 이관 → 활성화까지 한 화면에서 처리하세요.
+          </p>
+        </div>
+        <div className="flex gap-1.5 text-xs">
+          {[
+            { href: "/admin/payback/settlements", label: "월 정산" },
+            { href: "/admin/payback/receipts", label: "입금 대사" },
+            { href: "/admin/payback/rate-tables", label: "요율표" },
+            { href: "/admin/payback/settings", label: "설정" },
+          ].map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className="rounded-full border border-border bg-card px-3 py-1 text-muted-foreground transition-colors hover:bg-accent"
+            >
+              {l.label}
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* 1. 신규 신청 */}

@@ -29,7 +29,7 @@ export async function AppShell({
   return (
     <div className="min-h-screen flex bg-muted/30">
       {/* 사이드바 */}
-      <aside className="hidden md:flex md:w-60 md:flex-col bg-secondary text-secondary-foreground">
+      <aside className="print:hidden hidden md:flex md:w-60 md:flex-col bg-secondary text-secondary-foreground">
         <div className="h-14 flex items-center px-5 border-b border-white/10">
           <Link
             href="/"
@@ -67,7 +67,7 @@ export async function AppShell({
       </aside>
 
       {/* 모바일 상단바 */}
-      <div className="md:hidden fixed inset-x-0 top-0 z-10 flex h-12 items-center justify-between bg-secondary px-4 text-secondary-foreground">
+      <div className="print:hidden md:hidden fixed inset-x-0 top-0 z-10 flex h-12 items-center justify-between bg-secondary px-4 text-secondary-foreground">
         <Link href="/" className="text-sm font-bold text-white">
           TeamFirst · {title}
         </Link>

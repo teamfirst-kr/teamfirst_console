@@ -90,6 +90,184 @@ export function pbAgreementSentEmail(params: {
   };
 }
 
+// 부록 B — 세금계산서 발행 가이드 원문 (수정 금지). 금액·일자만 자동 삽입.
+function invoiceGuideHtml(params: {
+  supplyValue: number;
+  writeDate: string; // 정산월 말일
+  dueDate: string; // 익월 10일
+}): string {
+  return `<div style="margin:16px 0;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;line-height:1.8;">
+    <strong>세금계산서 발행 가이드</strong>
+    <ul style="margin:8px 0 0;padding-left:18px;">
+      <li>발행 방향: 귀사(공급자) → 팀퍼스트(공급받는자), <strong>청구</strong> 구분</li>
+      <li>품목: <strong>판매촉진비</strong></li>
+      <li>공급가액: 정산서의 페이백 금액 <strong>(${params.supplyValue.toLocaleString()}원)</strong> / 세액: 공급가액의 10%</li>
+      <li>작성일자: <strong>정산월 말일</strong> (${params.writeDate})</li>
+      <li>발행 기한: <strong>익월 10일 (${params.dueDate})</strong> — 기한 경과 시 지급이 발행 확인월로 순연되며, 지연 발행에 따른 가산세는 발행 사업자에게 발생할 수 있습니다</li>
+      <li>세금계산서 발행이 어려운 간이과세·면세사업자는 별도 안내드리는 절차(계산서 없이 공급가액 지급)로 진행됩니다</li>
+    </ul>
+  </div>`;
+}
+
+// E3: 활성화 완료 (솔루션 오픈 + 콘솔 로그인)
+export function pbActivatedEmail(params: {
+  companyName: string;
+  contactName: string;
+  loginEmail: string;
+  tempPassword?: string | null;
+}): { subject: string; html: string } {
+  const url = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  return {
+    subject: "[TeamFirst] 페이백 활성화 완료 — 솔루션이 오픈되었습니다",
+    html: layout(
+      "활성화 완료 🎉",
+      `<p>${esc(params.companyName)} ${esc(params.contactName)}님, 대행권 이관이 확인되어 <strong>페이백이 활성화</strong>되었습니다.</p>
+       <p>이번 달 실집행 광고비부터 페이백이 산정되며, 솔루션 이용이 오픈되었습니다.</p>
+       <div style="margin:16px 0;padding:16px;background:#f1f5f9;border-radius:8px;font-size:14px;">
+         <div>콘솔 주소: <strong>${url}/app</strong></div>
+         <div>아이디(이메일): <strong>${esc(params.loginEmail)}</strong></div>
+         ${params.tempPassword ? `<div>임시 비밀번호: <strong style="font-family:monospace;">${esc(params.tempPassword)}</strong> (첫 로그인 시 변경)</div>` : ""}
+       </div>
+       <p style="text-align:center;">${button(`${url}/app`, "내 페이백 콘솔 열기")}</p>`,
+    ),
+  };
+}
+
+// E4: 월 정산서 발행 (정산 확정 시)
+export function pbStatementEmail(params: {
+  companyName: string;
+  period: string; // YYYY-MM
+  statementNo: string;
+  adSpend: number;
+  appliedRate: number;
+  supplyValue: number;
+  vat: number;
+  total: number;
+  invoiceCapable: boolean;
+  writeDate: string;
+  dueDate: string;
+}): { subject: string; html: string } {
+  const url = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const [y, m] = params.period.split("-");
+  return {
+    subject: `[TeamFirst] ${y}년 ${Number(m)}월 페이백 정산서 (${params.statementNo})`,
+    html: layout(
+      `${y}년 ${Number(m)}월 페이백 정산서`,
+      `<p>${esc(params.companyName)}님, ${Number(m)}월 페이백 정산이 확정되었습니다.</p>
+       <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;font-size:14px;border-collapse:collapse;">
+         <tr><td style="padding:6px 0;color:#6b7280;">정산서 번호</td><td style="padding:6px 0;text-align:right;font-weight:600;">${esc(params.statementNo)}</td></tr>
+         <tr><td style="padding:6px 0;color:#6b7280;">실집행 광고비 (VAT 제외)</td><td style="padding:6px 0;text-align:right;font-weight:600;">${params.adSpend.toLocaleString()}원</td></tr>
+         <tr><td style="padding:6px 0;color:#6b7280;">적용 요율</td><td style="padding:6px 0;text-align:right;font-weight:600;">${params.appliedRate}%</td></tr>
+         <tr><td style="padding:6px 0;color:#6b7280;">페이백 (공급가액)</td><td style="padding:6px 0;text-align:right;font-weight:600;">${params.supplyValue.toLocaleString()}원</td></tr>
+         <tr><td style="padding:6px 0;color:#6b7280;">부가세</td><td style="padding:6px 0;text-align:right;font-weight:600;">${params.vat.toLocaleString()}원</td></tr>
+         <tr><td style="padding:8px 0;border-top:1px solid #e5e7eb;font-weight:700;">지급 예정 합계</td><td style="padding:8px 0;border-top:1px solid #e5e7eb;text-align:right;font-weight:800;color:#004AAD;">${params.total.toLocaleString()}원</td></tr>
+       </table>
+       ${
+         params.invoiceCapable
+           ? invoiceGuideHtml({
+               supplyValue: params.supplyValue,
+               writeDate: params.writeDate,
+               dueDate: params.dueDate,
+             })
+           : `<p style="font-size:13px;color:#64748b;">귀사는 세금계산서 발행 대상이 아니므로(간이·면세) 계산서 절차 없이 공급가액이 지급됩니다.</p>`
+       }
+       <p style="text-align:center;">${button(`${url}/app/settlements`, "콘솔에서 정산서 보기")}</p>
+       <p style="color:#64748b;font-size:12px;">페이백은 당월 실집행 광고비(VAT·무상쿠폰 제외, 매체 리포트 기준)로 매월 자동 산정됩니다. 지급은 매체 수수료 정산 입금 확인 후 매월 지급일에 진행됩니다.</p>`,
+    ),
+  };
+}
+
+// E5: 계산서 리마인드 (매월 5·9일 크론)
+export function pbInvoiceRemindEmail(params: {
+  companyName: string;
+  period: string;
+  supplyValue: number;
+  writeDate: string;
+  dueDate: string;
+  dday: number;
+}): { subject: string; html: string } {
+  const url = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  return {
+    subject: `[TeamFirst] 세금계산서 발행 기한 D-${params.dday} — ${params.period} 정산분`,
+    html: layout(
+      `세금계산서 발행 안내 (D-${params.dday})`,
+      `<p>${esc(params.companyName)}님, ${params.period} 정산분 세금계산서 발행 기한이 <strong>${params.dueDate} (D-${params.dday})</strong>입니다.</p>
+       ${invoiceGuideHtml(params)}
+       <p style="text-align:center;">${button(`${url}/app/settlements`, "정산서·발행 정보 확인")}</p>`,
+    ),
+  };
+}
+
+// E7: 보류(이월) 안내 (기한 경과)
+export function pbInvoiceOverdueEmail(params: {
+  companyName: string;
+  period: string;
+  supplyValue: number;
+  writeDate: string;
+  dueDate: string;
+}): { subject: string; html: string } {
+  const url = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  return {
+    subject: `[TeamFirst] ${params.period} 정산분 지급 보류 안내 (계산서 미발행)`,
+    html: layout(
+      "지급 보류(이월) 안내",
+      `<p>${esc(params.companyName)}님, ${params.period} 정산분 세금계산서가 기한(${params.dueDate}) 내 확인되지 않아 <strong>지급이 보류(이월)</strong>되었습니다.</p>
+       <p><strong>페이백 권리는 소멸하지 않습니다.</strong> 세금계산서 발행이 확인된 달의 지급일에 합산 지급됩니다.</p>
+       ${invoiceGuideHtml(params)}
+       <p style="text-align:center;">${button(`${url}/app/settlements`, "지금 발행 정보 확인")}</p>`,
+    ),
+  };
+}
+
+// E6: 지급 완료
+export function pbPaidEmail(params: {
+  companyName: string;
+  periods: string[];
+  supplyValue: number;
+  vat: number;
+  total: number;
+  bankLast4: string;
+}): { subject: string; html: string } {
+  return {
+    subject: `[TeamFirst] 페이백 지급 완료 (${params.total.toLocaleString()}원)`,
+    html: layout(
+      "페이백 지급 완료 💸",
+      `<p>${esc(params.companyName)}님, 페이백이 지급되었습니다.</p>
+       <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;font-size:14px;border-collapse:collapse;">
+         <tr><td style="padding:6px 0;color:#6b7280;">대상 정산월</td><td style="padding:6px 0;text-align:right;font-weight:600;">${params.periods.join(", ")}</td></tr>
+         <tr><td style="padding:6px 0;color:#6b7280;">공급가액</td><td style="padding:6px 0;text-align:right;font-weight:600;">${params.supplyValue.toLocaleString()}원</td></tr>
+         <tr><td style="padding:6px 0;color:#6b7280;">부가세</td><td style="padding:6px 0;text-align:right;font-weight:600;">${params.vat.toLocaleString()}원</td></tr>
+         <tr><td style="padding:8px 0;border-top:1px solid #e5e7eb;font-weight:700;">입금 합계</td><td style="padding:8px 0;border-top:1px solid #e5e7eb;text-align:right;font-weight:800;color:#004AAD;">${params.total.toLocaleString()}원</td></tr>
+         <tr><td style="padding:6px 0;color:#6b7280;">입금 계좌</td><td style="padding:6px 0;text-align:right;font-weight:600;">끝자리 ${esc(params.bankLast4)}</td></tr>
+       </table>
+       <p style="color:#64748b;font-size:13px;">이용해주셔서 감사합니다. 다음 달에도 페이백은 자동으로 산정됩니다.</p>`,
+    ),
+  };
+}
+
+// E8: 컨설팅 자동 해제 예고/확정 (D3)
+export function pbConsultingTerminationEmail(params: {
+  companyName: string;
+  mode: "notice" | "final";
+  effectiveDate: string; // 익월 1일
+}): { subject: string; html: string } {
+  const isNotice = params.mode === "notice";
+  return {
+    subject: isNotice
+      ? "[TeamFirst] 월간 전문가 컨설팅 옵션 해제 예정 안내"
+      : "[TeamFirst] 월간 전문가 컨설팅 옵션이 해제되었습니다",
+    html: layout(
+      isNotice ? "컨설팅 옵션 해제 예정 안내" : "컨설팅 옵션 해제 완료",
+      `<p>${esc(params.companyName)}님, 월간 전문가 컨설팅 옵션은 월 광고비 700만 원 이상 구간에서 이용 가능합니다.</p>
+       ${
+         isNotice
+           ? `<p>최근 2개월 연속 월 광고비가 700만 원 미만으로 확인되어, <strong>${params.effectiveDate}부로 옵션이 자동 해제될 예정</strong>입니다. 해제 후에는 컨설팅 조정(−2%p)이 적용되지 않아 페이백률이 올라갑니다.</p>`
+           : `<p><strong>${params.effectiveDate}부로 컨설팅 옵션이 해제</strong>되었습니다. 이번 달부터 컨설팅 조정(−2%p)이 적용되지 않습니다. 월 광고비가 다시 700만 원 이상이 되면 콘솔에서 재신청할 수 있습니다.</p>`
+       }`,
+    ),
+  };
+}
+
 // 사용자 입력이 들어가는 값의 HTML 이스케이프 (운영자 알림 등)
 function esc(v: string): string {
   return v

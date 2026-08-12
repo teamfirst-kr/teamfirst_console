@@ -155,6 +155,11 @@ body {
 }
 
 /* ── 전역 인터랙션 폴리시 ─────────────────────────────────────────────── */
+/* 앵커 이동(#calculator 등)을 부드러운 스크롤로 */
+html {
+  scroll-behavior: smooth;
+}
+
 /* 브랜드 텍스트 선택 색 */
 ::selection {
   background: hsl(var(--brand-blue) / 0.18);
