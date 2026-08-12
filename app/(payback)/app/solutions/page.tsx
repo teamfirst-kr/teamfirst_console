@@ -61,7 +61,7 @@ export default async function PortalSolutionsPage() {
                 <p className="mt-4 text-xs text-muted-foreground">
                   잠금 —{" "}
                   <Link href="/app/options" className="text-primary hover:underline">
-                    솔루션 4종 전체 이용 옵션
+                    솔루션 전체 이용 옵션
                   </Link>
                   으로 오픈할 수 있습니다 (−1%p).
                 </p>

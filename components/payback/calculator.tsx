@@ -86,7 +86,7 @@ export function PaybackCalculator({ table }: { table: RateTable }) {
                 className="mt-0.5 h-4 w-4"
               />
               <span>
-                솔루션 4종 전체 이용{" "}
+                솔루션 전체 이용{" "}
                 <span className="text-muted-foreground">
                   (−{table.modifiers.allSolutions}%p)
                 </span>

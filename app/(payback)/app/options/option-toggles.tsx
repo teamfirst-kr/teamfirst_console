@@ -39,8 +39,8 @@ export function OptionToggles({
   return (
     <div className="space-y-4">
       <OptionRow
-        title="솔루션 4종 전체 이용"
-        desc="기본 2종 대신 4종 전체를 이용합니다. 페이백률 −1%p."
+        title="솔루션 전체 이용"
+        desc="기본 제공 솔루션 외 전체 솔루션을 이용합니다. 추가 출시되는 솔루션도 자동 포함됩니다. 페이백률 −1%p."
         current={currentAll}
         next={nextAll}
         disabled={pending}
