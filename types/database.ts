@@ -182,6 +182,8 @@ export type PbClientRow = {
   bank_name: string | null;
   bank_account: string | null;
   bank_holder: string | null;
+  solution_login_id: string | null;
+  solution_login_pw: string | null;
   status: PbClientStatus;
   memo: string | null;
   created_at: string;
@@ -204,6 +206,8 @@ export type PbApplicationRow = {
   bank_account: string | null;
   bank_holder: string | null;
   invoice_capable: boolean;
+  solution_login_id: string | null;
+  solution_login_pw: string | null;
   agreed_terms_at: string | null;
   status: PbApplicationStatus;
   memo: string | null;

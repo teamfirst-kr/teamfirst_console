@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateText } from "@/components/date-text";
+import { CredentialReveal } from "@/components/payback/credential-reveal";
 import { createClient } from "@/lib/supabase/server";
 
 import { ClientActions } from "../board-cards";
@@ -118,6 +119,23 @@ export default async function PaybackClientDetailPage({
             <p>
               계좌: {client.bank_name ?? "-"} {maskAccount(client.bank_account)}{" "}
               {client.bank_holder ? `(${client.bank_holder})` : ""}
+            </p>
+            <p className="flex items-center gap-1.5">
+              솔루션 계정:{" "}
+              {client.solution_login_id ? (
+                <>
+                  <strong>{client.solution_login_id}</strong>
+                  {client.solution_login_pw ? (
+                    <CredentialReveal value={client.solution_login_pw} />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">(비밀번호 미입력)</span>
+                  )}
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  미입력 — 활성화 안내 시 수집 필요
+                </span>
+              )}
             </p>
             <p className="text-xs text-muted-foreground">
               등록 <DateText value={client.created_at} />

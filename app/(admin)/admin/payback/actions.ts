@@ -135,6 +135,8 @@ export async function pbConvertAndSendAgreement(
       bank_name: app.bank_name,
       bank_account: app.bank_account,
       bank_holder: app.bank_holder,
+      solution_login_id: app.solution_login_id,
+      solution_login_pw: app.solution_login_pw,
       status: "agreement_sent",
     })
     .select("id")

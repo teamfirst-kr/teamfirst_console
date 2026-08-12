@@ -17,7 +17,7 @@ export default async function PortalSettingsPage() {
   const { data: client } = await supabase
     .from("pb_clients")
     .select(
-      "company_name, business_number, ceo_name, contact_name, contact_email, contact_phone, invoice_capable, bank_name, bank_account, bank_holder",
+      "company_name, business_number, ceo_name, contact_name, contact_email, contact_phone, invoice_capable, bank_name, bank_account, bank_holder, solution_login_id",
     )
     .eq("id", clientId)
     .maybeSingle();
@@ -49,6 +49,26 @@ export default async function PortalSettingsPage() {
             {client.invoice_capable
               ? "발행 가능 (일반과세)"
               : "발행 불가 (간이·면세) — 공급가액만 지급"}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>솔루션 접속 계정</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1.5 text-sm">
+          <p>
+            ID:{" "}
+            {client.solution_login_id ? (
+              <strong>{client.solution_login_id}</strong>
+            ) : (
+              <span className="text-muted-foreground">미등록 — 활성화 시 안내드립니다</span>
+            )}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            비밀번호는 보안을 위해 표시하지 않습니다. 분실 시 아래 변경 요청 절차로
+            재설정을 요청해주세요.
           </p>
         </CardContent>
       </Card>

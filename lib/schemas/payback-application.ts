@@ -22,6 +22,18 @@ export const paybackApplicationSchema = z.object({
   bank_account: z.string().max(40).optional().or(z.literal("")),
   bank_holder: z.string().max(50).optional().or(z.literal("")),
   invoice_capable: z.boolean(),
+  solution_login_id: z
+    .string()
+    .max(30, "솔루션 ID는 30자 이내입니다.")
+    .regex(/^[A-Za-z0-9_.-]*$/, "솔루션 ID는 영문·숫자·-_. 만 사용할 수 있습니다.")
+    .optional()
+    .or(z.literal("")),
+  solution_login_pw: z
+    .string()
+    .max(50)
+    .refine((v) => v === "" || v.length >= 8, "솔루션 비밀번호는 8자 이상이어야 합니다.")
+    .optional()
+    .or(z.literal("")),
   media_accounts: z
     .array(
       z.object({

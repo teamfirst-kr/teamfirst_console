@@ -67,6 +67,8 @@ export async function submitPaybackApplication(
     bank_account: String(formData.get("bank_account") ?? "").trim(),
     bank_holder: String(formData.get("bank_holder") ?? "").trim(),
     invoice_capable: formData.get("invoice_capable") !== "no",
+    solution_login_id: String(formData.get("solution_login_id") ?? "").trim(),
+    solution_login_pw: String(formData.get("solution_login_pw") ?? ""),
     media_accounts,
     agreed: formData.get("agreed") === "on",
   });
@@ -128,6 +130,8 @@ export async function submitPaybackApplication(
     bank_account: data.bank_account || null,
     bank_holder: data.bank_holder || null,
     invoice_capable: data.invoice_capable,
+    solution_login_id: data.solution_login_id || null,
+    solution_login_pw: data.solution_login_pw || null,
     agreed_terms_at: new Date().toISOString(),
     status: "received",
   });
