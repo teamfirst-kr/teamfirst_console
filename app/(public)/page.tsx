@@ -336,7 +336,7 @@ export default async function PaybackLanding() {
             이미 쓰고 있는 광고비, 이제 돌려받으세요
           </h2>
           <p className="mt-3 text-sm text-white/70">
-            신청부터 활성화까지 영업일 기준 3~5일이면 충분합니다.
+            활성화 즉시, 당일 광고비부터 페이백 산정이 시작됩니다.
           </p>
           <Button
             asChild
