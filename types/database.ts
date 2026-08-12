@@ -184,6 +184,8 @@ export type PbClientRow = {
   bank_holder: string | null;
   solution_login_id: string | null;
   solution_login_pw: string | null;
+  business_license: Json;
+  invoice_email: string | null;
   status: PbClientStatus;
   memo: string | null;
   created_at: string;
@@ -208,6 +210,9 @@ export type PbApplicationRow = {
   invoice_capable: boolean;
   solution_login_id: string | null;
   solution_login_pw: string | null;
+  business_license: Json;
+  invoice_email: string | null;
+  agreed_invoice_at: string | null;
   agreed_terms_at: string | null;
   status: PbApplicationStatus;
   memo: string | null;

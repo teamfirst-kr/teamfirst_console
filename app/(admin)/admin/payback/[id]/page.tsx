@@ -75,6 +75,17 @@ export default async function PaybackClientDetailPage({
       .limit(10),
   ]);
 
+  // 사업자등록증 signed URL
+  const license = client.business_license as { name: string; path: string } | null;
+  let licenseUrl: string | null = null;
+  if (license?.path) {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const { data: signed } = await createAdminClient()
+      .storage.from("pb-files")
+      .createSignedUrl(license.path, 600);
+    licenseUrl = signed?.signedUrl ?? null;
+  }
+
   const [{ data: rateRow }, { data: solutions }] = await Promise.all([
     agreement?.rate_table_id
       ? supabase
@@ -119,6 +130,24 @@ export default async function PaybackClientDetailPage({
             <p>
               계좌: {client.bank_name ?? "-"} {maskAccount(client.bank_account)}{" "}
               {client.bank_holder ? `(${client.bank_holder})` : ""}
+            </p>
+            <p>
+              계산서 발행 이메일: {client.invoice_email ?? "-"}
+            </p>
+            <p>
+              사업자등록증:{" "}
+              {licenseUrl ? (
+                <a
+                  href={licenseUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  📄 {license?.name ?? "다운로드"} ↗
+                </a>
+              ) : (
+                <span className="text-xs text-muted-foreground">미첨부</span>
+              )}
             </p>
             <p className="flex items-center gap-1.5">
               솔루션 계정:{" "}

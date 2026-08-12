@@ -22,6 +22,12 @@ export const paybackApplicationSchema = z.object({
   bank_account: z.string().max(40).optional().or(z.literal("")),
   bank_holder: z.string().max(50).optional().or(z.literal("")),
   invoice_capable: z.boolean(),
+  invoice_email: z
+    .string()
+    .email("올바른 계산서 발행 이메일을 입력해주세요.")
+    .optional()
+    .or(z.literal("")),
+  agreed_invoice: z.boolean(),
   solution_login_id: z
     .string()
     .max(30, "솔루션 ID는 30자 이내입니다.")

@@ -31,6 +31,8 @@ type AppRow = {
   invoice_capable: boolean;
   media_accounts: { media: string; account_id: string }[] | null;
   solution_login_id: string | null;
+  business_license: { name: string; path: string } | null;
+  invoice_email: string | null;
   status: string;
   created_at: string;
 };
@@ -55,7 +57,7 @@ export default async function PaybackPipelinePage() {
       supabase
         .from("pb_applications")
         .select(
-          "id, company_name, business_number, contact_name, contact_email, contact_phone, expected_budget, opt_all_solutions, opt_consulting, invoice_capable, media_accounts, solution_login_id, status, created_at",
+          "id, company_name, business_number, contact_name, contact_email, contact_phone, expected_budget, opt_all_solutions, opt_consulting, invoice_capable, media_accounts, solution_login_id, business_license, invoice_email, status, created_at",
         )
         .in("status", ["received", "reviewing"])
         .order("created_at", { ascending: true }),
@@ -71,6 +73,21 @@ export default async function PaybackPipelinePage() {
     ]);
 
   const applications = (apps ?? []) as AppRow[];
+
+  // 사업자등록증 signed URL 일괄 발급 (신청 검토용)
+  const licensePaths = applications
+    .map((a) => a.business_license?.path)
+    .filter((p): p is string => !!p);
+  const licenseUrlByPath = new Map<string, string>();
+  if (licensePaths.length > 0) {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const { data: signed } = await createAdminClient()
+      .storage.from("pb-files")
+      .createSignedUrls(licensePaths, 600);
+    for (const s of signed ?? []) {
+      if (s.signedUrl) licenseUrlByPath.set(s.path ?? "", s.signedUrl);
+    }
+  }
   const clientList = (clients ?? []) as ClientRow[];
   const mediaByClient = new Map<string, NonNullable<typeof mediaRows>>();
   for (const m of mediaRows ?? []) {
@@ -171,8 +188,22 @@ export default async function PaybackPipelinePage() {
                     </span>
                   ))}
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                   접수 <DateText value={a.created_at} />
+                  {a.business_license?.path &&
+                  licenseUrlByPath.get(a.business_license.path) ? (
+                    <a
+                      href={licenseUrlByPath.get(a.business_license.path)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium text-primary hover:underline"
+                    >
+                      📄 사업자등록증 ↗
+                    </a>
+                  ) : (
+                    <span className="text-amber-600">등록증 미첨부</span>
+                  )}
+                  {a.invoice_email ? <span>· 계산서 {a.invoice_email}</span> : null}
                 </p>
                 <ApplicationActions applicationId={a.id} status={a.status} />
               </div>
