@@ -38,6 +38,58 @@ function button(href: string, label: string): string {
   return `<a href="${href}" style="display:inline-block;margin:8px 0;padding:12px 24px;background:${BRAND_BLUE};color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;">${label}</a>`;
 }
 
+// ── 페이백 플랫폼 (E1~E9) ────────────────────────────────────────────
+
+// E1: 페이백 신청 접수 확인
+export function pbApplicationReceivedEmail(params: {
+  companyName: string;
+  contactName: string;
+}): { subject: string; html: string } {
+  return {
+    subject: "[TeamFirst] 페이백 신청이 접수되었습니다",
+    html: layout(
+      "페이백 신청 접수 완료",
+      `<p>${esc(params.companyName)} ${esc(params.contactName)}님, 안녕하세요. 팀퍼스트입니다.</p>
+       <p><strong>광고비 페이백 신청이 정상 접수</strong>되었습니다. 검토 후 영업일 기준 1~2일 내에 연락드리겠습니다.</p>
+       <div style="margin:16px 0;padding:16px;background:#f1f5f9;border-radius:8px;font-size:14px;">
+         <strong>다음 절차</strong>
+         <ol style="margin:8px 0 0;padding-left:18px;">
+           <li>담당자 검토 및 약정서(전자계약) 발송</li>
+           <li>매체 광고시스템에서 대행권 지정 (가이드 제공)</li>
+           <li>활성화 완료 — 솔루션 오픈 + 익월부터 페이백 산정</li>
+         </ol>
+       </div>
+       <p style="color:#64748b;font-size:13px;">본 메일은 발신 전용이 아니며, 궁금하신 점은 회신으로 문의해주세요.</p>`,
+    ),
+  };
+}
+
+// E2: 약정/온보딩 안내 (글로싸인 링크 + 대행권 이관 가이드)
+export function pbAgreementSentEmail(params: {
+  companyName: string;
+  contactName: string;
+  glosignUrl: string;
+}): { subject: string; html: string } {
+  return {
+    subject: "[TeamFirst] 페이백 약정서와 대행권 지정 안내드립니다",
+    html: layout(
+      "약정 체결 및 대행권 지정 안내",
+      `<p>${esc(params.companyName)} ${esc(params.contactName)}님, 안녕하세요. 팀퍼스트입니다.</p>
+       <p>페이백 신청 검토가 완료되어 <strong>약정서(전자계약)</strong>를 보내드립니다.</p>
+       <p style="text-align:center;">${button(params.glosignUrl, "약정서 확인·서명하기 (글로싸인)")}</p>
+       <div style="margin:16px 0;padding:16px;background:#f1f5f9;border-radius:8px;font-size:14px;">
+         <strong>서명 후 진행 절차 — 대행권 지정</strong>
+         <ol style="margin:8px 0 0;padding-left:18px;line-height:1.8;">
+           <li>네이버 광고시스템 접속 → 도구 → 광고 담당자(대행사) 관리</li>
+           <li>대행사 검색에서 <strong>팀퍼스트</strong>를 선택하고 위임 요청</li>
+           <li>팀퍼스트 수락 확인 후 활성화 완료 안내를 받으시면 끝</li>
+         </ol>
+       </div>
+       <p style="color:#64748b;font-size:13px;">계정 소유권과 운영 권한은 그대로 유지되며, 광고 운영은 지금처럼 직접 하시면 됩니다.</p>`,
+    ),
+  };
+}
+
 // 사용자 입력이 들어가는 값의 HTML 이스케이프 (운영자 알림 등)
 function esc(v: string): string {
   return v
