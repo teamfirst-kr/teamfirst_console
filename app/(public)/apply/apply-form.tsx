@@ -201,7 +201,39 @@ export function PaybackApplyForm() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-base font-bold text-secondary">5. 페이백 수령 정보</h2>
+        <h2 className="text-base font-bold text-secondary">5. 솔루션 접속 계정 설정</h2>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          모든 고객에게 팀퍼스트 솔루션(로그분석·자동리포트 등)이 제공됩니다.
+          솔루션 접속에 사용할 계정을 미리 정해주세요.{" "}
+          <strong>다른 서비스에서 쓰지 않는 비밀번호</strong>를 입력해주시고,
+          미입력 시 활성화 단계에서 별도 안내드립니다.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="solution_login_id">솔루션 ID (영문·숫자)</Label>
+            <Input
+              id="solution_login_id"
+              name="solution_login_id"
+              autoComplete="off"
+              placeholder="예: teamfirst_brand"
+            />
+            <FieldError messages={errors.solution_login_id} />
+          </div>
+          <div>
+            <Label htmlFor="solution_login_pw">솔루션 비밀번호 (8자 이상)</Label>
+            <Input
+              id="solution_login_pw"
+              name="solution_login_pw"
+              type="password"
+              autoComplete="new-password"
+            />
+            <FieldError messages={errors.solution_login_pw} />
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-base font-bold text-secondary">6. 페이백 수령 정보</h2>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
             <Label htmlFor="bank_name">은행</Label>

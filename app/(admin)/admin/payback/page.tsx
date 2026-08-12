@@ -30,6 +30,7 @@ type AppRow = {
   opt_consulting: boolean;
   invoice_capable: boolean;
   media_accounts: { media: string; account_id: string }[] | null;
+  solution_login_id: string | null;
   status: string;
   created_at: string;
 };
@@ -54,7 +55,7 @@ export default async function PaybackPipelinePage() {
       supabase
         .from("pb_applications")
         .select(
-          "id, company_name, business_number, contact_name, contact_email, contact_phone, expected_budget, opt_all_solutions, opt_consulting, invoice_capable, media_accounts, status, created_at",
+          "id, company_name, business_number, contact_name, contact_email, contact_phone, expected_budget, opt_all_solutions, opt_consulting, invoice_capable, media_accounts, solution_login_id, status, created_at",
         )
         .in("status", ["received", "reviewing"])
         .order("created_at", { ascending: true }),
@@ -157,6 +158,13 @@ export default async function PaybackPipelinePage() {
                       간이·면세
                     </span>
                   ) : null}
+                  {a.solution_login_id ? (
+                    <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-700">
+                      솔루션 계정 ✓
+                    </span>
+                  ) : (
+                    <span className="rounded bg-muted px-1.5 py-0.5">솔루션 계정 미입력</span>
+                  )}
                   {(a.media_accounts ?? []).map((m) => (
                     <span key={m.account_id} className="rounded bg-muted px-1.5 py-0.5 uppercase">
                       {m.media}
