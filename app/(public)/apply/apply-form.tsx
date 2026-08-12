@@ -67,6 +67,21 @@ export function PaybackApplyForm() {
             <Label htmlFor="ceo_name">대표자</Label>
             <Input id="ceo_name" name="ceo_name" />
           </div>
+          <div>
+            <Label htmlFor="business_license">사업자등록증 첨부 *</Label>
+            <Input
+              id="business_license"
+              name="business_license"
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              required
+              className="pt-1.5"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              세금계산서 발행 확인을 위해 필요합니다. (PDF/JPG/PNG, 10MB 이하)
+            </p>
+            <FieldError messages={errors.business_license} />
+          </div>
         </div>
       </section>
 
@@ -279,7 +294,47 @@ export function PaybackApplyForm() {
               세금계산서 발행이 불가한 사업자는 계산서 절차 없이 공급가액(페이백
               금액)만 지급되며, 부가세는 지급되지 않습니다.
             </p>
-          ) : null}
+          ) : (
+            <div className="mt-4 space-y-4">
+              <div>
+                <Label htmlFor="invoice_email">세금계산서 발행 이메일 *</Label>
+                <Input
+                  id="invoice_email"
+                  name="invoice_email"
+                  type="email"
+                  required
+                  placeholder="tax@company.co.kr"
+                  className="max-w-sm"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  정산서와 계산서 발행 안내를 받을 세무 담당 이메일을 입력해주세요.
+                </p>
+                <FieldError messages={errors.invoice_email} />
+              </div>
+              <div className="rounded-lg border border-primary/25 bg-primary/5 p-4">
+                <p className="text-sm font-semibold text-secondary">
+                  📋 세금계산서 발행 의무 안내
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-foreground">
+                  매월 팀퍼스트로부터 전달받는 페이백 금액은{" "}
+                  <strong>정산월 말일을 작성일자</strong>로,{" "}
+                  <strong>품목 &lsquo;판매촉진비&rsquo;</strong>로 세금계산서{" "}
+                  <strong>청구 발행</strong>을 해주셔야 합니다. (발행 기한: 익월
+                  10일 — 기한 내 미발행 시 지급이 발행 확인월로 순연됩니다)
+                </p>
+                <label className="mt-3 flex cursor-pointer items-start gap-2.5 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    name="agreed_invoice"
+                    required
+                    className="mt-0.5 h-4 w-4"
+                  />
+                  <span>위 내용을 이해하셨습니까? — 네, 이해했습니다. *</span>
+                </label>
+                <FieldError messages={errors.agreed_invoice} />
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

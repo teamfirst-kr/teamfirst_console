@@ -17,7 +17,7 @@ export default async function PortalSettingsPage() {
   const { data: client } = await supabase
     .from("pb_clients")
     .select(
-      "company_name, business_number, ceo_name, contact_name, contact_email, contact_phone, invoice_capable, bank_name, bank_account, bank_holder, solution_login_id",
+      "company_name, business_number, ceo_name, contact_name, contact_email, contact_phone, invoice_capable, bank_name, bank_account, bank_holder, solution_login_id, invoice_email",
     )
     .eq("id", clientId)
     .maybeSingle();
@@ -50,6 +50,9 @@ export default async function PortalSettingsPage() {
               ? "발행 가능 (일반과세)"
               : "발행 불가 (간이·면세) — 공급가액만 지급"}
           </p>
+          {client.invoice_capable ? (
+            <p>계산서 발행 이메일: {client.invoice_email ?? "미등록"}</p>
+          ) : null}
         </CardContent>
       </Card>
 

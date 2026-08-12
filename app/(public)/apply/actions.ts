@@ -4,6 +4,12 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  sanitizeFileName,
+  validateUploadFile,
+  MAX_FILE_SIZE,
+} from "@/lib/schemas/partner-application";
 import { notifyAdmins } from "@/lib/email/admin-alert";
 import { sendPbEmail } from "@/lib/email/pb";
 import { pbApplicationReceivedEmail } from "@/lib/email/templates";
@@ -67,6 +73,8 @@ export async function submitPaybackApplication(
     bank_account: String(formData.get("bank_account") ?? "").trim(),
     bank_holder: String(formData.get("bank_holder") ?? "").trim(),
     invoice_capable: formData.get("invoice_capable") !== "no",
+    invoice_email: String(formData.get("invoice_email") ?? "").trim(),
+    agreed_invoice: formData.get("agreed_invoice") === "on",
     solution_login_id: String(formData.get("solution_login_id") ?? "").trim(),
     solution_login_pw: String(formData.get("solution_login_pw") ?? ""),
     media_accounts,
@@ -82,6 +90,37 @@ export async function submitPaybackApplication(
     return { error: "입력값을 다시 확인해주세요.", fieldErrors };
   }
   const data = parsed.data;
+
+  // 사업자등록증 첨부 (필수 — 세금계산서 발행 검증용)
+  const licenseFile = formData.get("business_license");
+  if (!(licenseFile instanceof File) || licenseFile.size === 0) {
+    return {
+      error: "사업자등록증을 첨부해주세요. (필수)",
+      fieldErrors: { business_license: ["사업자등록증 첨부는 필수입니다."] },
+    };
+  }
+  if (licenseFile.size > MAX_FILE_SIZE) {
+    return { error: "사업자등록증 파일은 10MB 이하여야 합니다." };
+  }
+  const licenseError = validateUploadFile(licenseFile);
+  if (licenseError) return { error: licenseError };
+
+  // 계산서 발행 가능 사업자: 발행 이메일 + 발행 의무 이해 확인 필수
+  const invoiceCapable = formData.get("invoice_capable") !== "no";
+  if (invoiceCapable) {
+    if (!String(formData.get("invoice_email") ?? "").trim()) {
+      return {
+        error: "세금계산서 발행 이메일을 입력해주세요. (필수)",
+        fieldErrors: { invoice_email: ["계산서 발행 이메일은 필수입니다."] },
+      };
+    }
+    if (formData.get("agreed_invoice") !== "on") {
+      return {
+        error: "세금계산서 발행 의무 안내를 확인하고 동의해주세요.",
+        fieldErrors: { agreed_invoice: ["발행 의무 이해 확인이 필요합니다."] },
+      };
+    }
+  }
 
   // 컨설팅 자격 (D3): 예상 광고비 700만 미만이면 서버에서도 거부
   if (data.opt_consulting && (data.expected_budget ?? 0) < 7_000_000) {
@@ -115,7 +154,24 @@ export async function submitPaybackApplication(
     };
   }
 
+  // 사업자등록증 업로드 (private 버킷, service_role)
+  const admin = createAdminClient();
+  const licensePath = `applications/${Date.now()}_${crypto.randomUUID().slice(0, 8)}/${sanitizeFileName(licenseFile.name)}`;
+  const { error: uploadError } = await admin.storage
+    .from("pb-files")
+    .upload(licensePath, licenseFile, {
+      upsert: false,
+      contentType: licenseFile.type || undefined,
+    });
+  if (uploadError) {
+    return { error: `사업자등록증 업로드 실패: ${uploadError.message}` };
+  }
+
   const { error: insertError } = await supabase.from("pb_applications").insert({
+    business_license: { name: licenseFile.name, path: licensePath } as unknown as Json,
+    invoice_email: data.invoice_email || null,
+    agreed_invoice_at:
+      data.invoice_capable && data.agreed_invoice ? new Date().toISOString() : null,
     company_name: data.company_name,
     business_number: data.business_number,
     ceo_name: data.ceo_name || null,
@@ -136,6 +192,8 @@ export async function submitPaybackApplication(
     status: "received",
   });
   if (insertError) {
+    // 고아 파일 정리
+    await admin.storage.from("pb-files").remove([licensePath]);
     return { error: `접수 중 오류가 발생했습니다: ${insertError.message}` };
   }
 
