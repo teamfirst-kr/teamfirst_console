@@ -151,6 +151,23 @@ export default async function PaybackLanding() {
         </div>
       </section>
 
+      {/* 1.5 계산기 (히어로 바로 다음 — 전환 핵심) */}
+      <section id="calculator" className="mx-auto max-w-5xl scroll-mt-16 px-6 py-24">
+        <SectionHeader
+          eyebrow="PAYBACK CALCULATOR"
+          heading="우리 회사 페이백, 지금 계산해보세요"
+          sub="월 광고비만 입력하면 예상 페이백이 바로 나옵니다."
+        />
+        <Reveal className="mt-10">
+          <PaybackCalculator table={table} />
+        </Reveal>
+        <Reveal delay={80} className="mt-8 text-center">
+          <Button asChild size="lg">
+            <Link href="/apply">이 조건으로 신청하기</Link>
+          </Button>
+        </Reveal>
+      </section>
+
       {/* 2. 작동 방식 3단계 */}
       <section className="mx-auto max-w-5xl px-6 py-24">
         <SectionHeader
@@ -231,23 +248,6 @@ export default async function PaybackLanding() {
             </div>
           </Reveal>
         </div>
-      </section>
-
-      {/* 4. 계산기 */}
-      <section id="calculator" className="mx-auto max-w-5xl scroll-mt-16 px-6 py-24">
-        <SectionHeader
-          eyebrow="PAYBACK CALCULATOR"
-          heading="우리 회사 페이백, 지금 계산해보세요"
-          sub="월 광고비만 입력하면 예상 페이백이 바로 나옵니다."
-        />
-        <Reveal className="mt-10">
-          <PaybackCalculator table={table} />
-        </Reveal>
-        <Reveal delay={80} className="mt-8 text-center">
-          <Button asChild size="lg">
-            <Link href="/apply">이 조건으로 신청하기</Link>
-          </Button>
-        </Reveal>
       </section>
 
       {/* 5. 대상 매체/상품 (D6) */}
