@@ -20,7 +20,7 @@ export default async function PaybackSettingsPage() {
       </div>
       <PbSettingsForm
         commissionRate={Number(map.get("commission_rate") ?? 14.5)}
-        payoutDay={Number(map.get("payout_day") ?? 25)}
+        payoutDay={Number(map.get("payout_day") ?? 15)}
         invoiceDueDay={Number(map.get("invoice_due_day") ?? 10)}
         minPayout={Number(map.get("min_payout") ?? 10000)}
         disputeDays={Number(map.get("dispute_window_days") ?? 3)}

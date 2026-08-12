@@ -187,7 +187,7 @@ export function PaybackApplyForm() {
           <label className="flex cursor-pointer items-start gap-2.5 text-sm">
             <input type="checkbox" name="opt_all_solutions" className="mt-0.5 h-4 w-4" />
             <span>
-              솔루션 4종 전체 이용 <span className="text-muted-foreground">(−1%p)</span>
+              솔루션 전체 이용 <span className="text-muted-foreground">(−1%p)</span>
             </span>
           </label>
           <label

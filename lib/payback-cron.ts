@@ -41,7 +41,7 @@ export async function runPbMorningTasks(): Promise<Record<string, unknown>> {
     out.remind = await sendInvoiceReminders(today);
   }
 
-  const payoutDay = await getSetting("payout_day", 25);
+  const payoutDay = await getSetting("payout_day", 15);
   if (day === payoutDay) {
     out.payoutSummary = await notifyPayableSummary();
   }

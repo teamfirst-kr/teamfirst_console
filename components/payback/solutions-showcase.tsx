@@ -307,16 +307,14 @@ export function SolutionsShowcase() {
           </div>
         </Reveal>
       ))}
-      {/* 솔루션 4 예고 — 요율표·계산기의 "4종 전체 이용(−1%p)" 문구와 개수 일치 유지 */}
       <Reveal>
         <div className="mx-auto max-w-2xl rounded-2xl border border-dashed border-white/20 p-6 text-center">
-          <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-bold text-white/60">
-            솔루션 4
-          </span>
-          <p className="mt-3 font-semibold text-white">공개 예정</p>
+          <p className="text-2xl">🧪</p>
+          <p className="mt-2 font-semibold text-white">
+            새로운 솔루션을 계속 고민하고 개발하고 있습니다
+          </p>
           <p className="mt-1 text-sm leading-relaxed text-white/65">
-            네 번째 성과 도구를 준비 중입니다. 솔루션 4종 전체 이용 옵션(−1%p)은
-            현재 오픈된 솔루션부터 동일하게 적용됩니다.
+            솔루션이 추가되어도 이용 비용은 추가되지 않습니다.
           </p>
         </div>
       </Reveal>
