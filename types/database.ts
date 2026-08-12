@@ -10,7 +10,35 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export type UserRole = "client" | "partner" | "admin" | "marketer";
+export type UserRole = "client" | "partner" | "admin" | "marketer" | "payback";
+
+// ── 페이백 플랫폼 (pb_*) ──────────────────────────────────────────────
+export type PbClientStatus =
+  | "applied"
+  | "reviewing"
+  | "agreement_sent"
+  | "agreement_signed"
+  | "transferring"
+  | "active"
+  | "terminating"
+  | "terminated"
+  | "rejected";
+
+export type PbApplicationStatus =
+  | "received"
+  | "reviewing"
+  | "agreement_sent"
+  | "converted"
+  | "rejected";
+
+export type PbSettlementStatus = "draft" | "confirmed" | "paid" | "canceled";
+export type PbInvoiceStatus = "not_required" | "pending" | "issued" | "overdue";
+export type PbTransferStatus =
+  | "pending"
+  | "in_progress"
+  | "completed"
+  | "released";
+export type PbMedia = "naver" | "kakao" | "google" | "meta";
 
 export type PartnerStatus =
   | "pending"

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 
-export type Role = "client" | "partner" | "admin" | "marketer";
+export type Role = "client" | "partner" | "admin" | "marketer" | "payback";
 
 export async function getCurrentUser() {
   const supabase = await createClient();
@@ -70,6 +70,20 @@ export async function getCurrentPartnerId(): Promise<string | null> {
   return data?.id ?? null;
 }
 
+export async function getCurrentPbClientId(): Promise<string | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("pb_clients")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle<{ id: string }>();
+  return data?.id ?? null;
+}
+
 export async function getCurrentMarketerId(): Promise<string | null> {
   const supabase = await createClient();
   const {
@@ -94,6 +108,8 @@ export function roleHome(role: Role | null): string {
       return "/client/dashboard";
     case "marketer":
       return "/marketer-console";
+    case "payback":
+      return "/app";
     default:
       return "/login";
   }
