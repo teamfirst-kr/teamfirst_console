@@ -168,9 +168,203 @@ type PartnerCategoryInsert = {
   category: string;
 };
 
+// ── 페이백 Row 타입 ──────────────────────────────────────────────────
+export type PbClientRow = {
+  id: string;
+  user_id: string | null;
+  company_name: string;
+  business_number: string;
+  ceo_name: string | null;
+  contact_name: string | null;
+  contact_email: string;
+  contact_phone: string | null;
+  invoice_capable: boolean;
+  bank_name: string | null;
+  bank_account: string | null;
+  bank_holder: string | null;
+  status: PbClientStatus;
+  memo: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PbApplicationRow = {
+  id: string;
+  company_name: string;
+  business_number: string;
+  ceo_name: string | null;
+  contact_name: string;
+  contact_email: string;
+  contact_phone: string;
+  media_accounts: Json;
+  expected_budget: number | null;
+  opt_all_solutions: boolean;
+  opt_consulting: boolean;
+  bank_name: string | null;
+  bank_account: string | null;
+  bank_holder: string | null;
+  invoice_capable: boolean;
+  agreed_terms_at: string | null;
+  status: PbApplicationStatus;
+  memo: string | null;
+  created_at: string;
+};
+
+export type PbMediaAccountRow = {
+  id: string;
+  client_id: string;
+  media: PbMedia;
+  account_id: string;
+  transfer_status: PbTransferStatus;
+  transferred_at: string | null;
+  released_at: string | null;
+  created_at: string;
+};
+
+export type PbRateTableRow = {
+  id: string;
+  version: string;
+  effective_from: string;
+  tiers: Json;
+  modifiers: Json;
+  consulting_min_spend: number;
+  published: boolean;
+  created_at: string;
+};
+
+export type PbAgreementRow = {
+  id: string;
+  client_id: string;
+  rate_table_id: string;
+  glosign_url: string | null;
+  signed_at: string | null;
+  all_solutions: boolean;
+  consulting: boolean;
+  status: "active" | "terminated";
+  terminated_at: string | null;
+  created_at: string;
+};
+
+export type PbOptionChangeRow = {
+  id: string;
+  agreement_id: string;
+  field: "all_solutions" | "consulting";
+  old_value: boolean;
+  new_value: boolean;
+  requested_at: string;
+  effective_from: string;
+  applied_at: string | null;
+  reason: string;
+};
+
+export type PbSolutionRow = {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  url: string | null;
+  sort: number;
+};
+
+export type PbEntitlementRow = {
+  id: string;
+  client_id: string;
+  solution_id: string;
+  active: boolean;
+  starts_at: string;
+  ends_at: string | null;
+};
+
+export type PbSettlementRow = {
+  id: string;
+  client_id: string;
+  agreement_id: string;
+  period: string;
+  statement_no: string | null;
+  ad_spend_total: number;
+  spend_details: Json;
+  rate_table_version: string | null;
+  tier_label: string | null;
+  base_rate: number | null;
+  modifier_total: number | null;
+  applied_rate: number | null;
+  payback_supply: number;
+  payback_vat: number;
+  payback_total: number;
+  status: PbSettlementStatus;
+  invoice_status: PbInvoiceStatus;
+  invoice_due: string | null;
+  invoice_issued_at: string | null;
+  reconciled: boolean;
+  reconciled_at: string | null;
+  confirmed_at: string | null;
+  paid_at: string | null;
+  payout_id: string | null;
+  dispute_flag: boolean;
+  dispute_note: string | null;
+  cancel_reason: string | null;
+  created_at: string;
+};
+
+export type PbPayoutRow = {
+  id: string;
+  paid_at: string;
+  total_amount: number;
+  memo: string | null;
+  created_by: string | null;
+  created_at: string;
+};
+
+export type PbMediaReceiptRow = {
+  id: string;
+  media: string;
+  period: string;
+  amount: number;
+  received_at: string | null;
+  memo: string | null;
+  created_at: string;
+};
+
+type PbTable<R> = {
+  Row: R;
+  Insert: Partial<R>;
+  Update: Partial<R>;
+  Relationships: [];
+};
+
 export type Database = {
   public: {
     Tables: {
+      pb_clients: PbTable<PbClientRow>;
+      pb_applications: PbTable<PbApplicationRow>;
+      pb_media_accounts: PbTable<PbMediaAccountRow>;
+      pb_rate_tables: PbTable<PbRateTableRow>;
+      pb_agreements: PbTable<PbAgreementRow>;
+      pb_option_changes: PbTable<PbOptionChangeRow>;
+      pb_solutions: PbTable<PbSolutionRow>;
+      pb_entitlements: PbTable<PbEntitlementRow>;
+      pb_monthly_settlements: PbTable<PbSettlementRow>;
+      pb_payouts: PbTable<PbPayoutRow>;
+      pb_media_receipts: PbTable<PbMediaReceiptRow>;
+      pb_app_settings: PbTable<{ key: string; value: Json }>;
+      pb_audit_logs: PbTable<{
+        id: string;
+        actor_id: string | null;
+        action: string;
+        entity: string;
+        entity_id: string | null;
+        diff: Json;
+        created_at: string;
+      }>;
+      pb_email_logs: PbTable<{
+        id: string;
+        client_id: string | null;
+        to_email: string;
+        type: string;
+        resend_id: string | null;
+        payload: Json;
+        sent_at: string;
+      }>;
       users: {
         Row: {
           id: string;

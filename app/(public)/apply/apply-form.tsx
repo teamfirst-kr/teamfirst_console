@@ -1,0 +1,280 @@
+"use client";
+
+import { useActionState, useMemo, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PB_MEDIA_OPTIONS } from "@/lib/schemas/payback-application";
+
+import { submitPaybackApplication, type PbApplyState } from "./actions";
+
+function FieldError({ messages }: { messages?: string[] }) {
+  if (!messages?.length) return null;
+  return <p className="mt-1 text-xs text-destructive">{messages[0]}</p>;
+}
+
+type MediaRow = { media: string; account_id: string };
+
+export function PaybackApplyForm() {
+  const [state, formAction, pending] = useActionState<PbApplyState, FormData>(
+    submitPaybackApplication,
+    null,
+  );
+  const [rows, setRows] = useState<MediaRow[]>([
+    { media: "naver", account_id: "" },
+  ]);
+  const [budget, setBudget] = useState("");
+  const [invoiceCapable, setInvoiceCapable] = useState<"yes" | "no">("yes");
+  const startedAt = useMemo(() => Date.now(), []);
+
+  const budgetNum = Number(budget.replace(/\D/g, "")) || 0;
+  const consultingEligible = budgetNum >= 7_000_000;
+  const errors = state && "fieldErrors" in state ? (state.fieldErrors ?? {}) : {};
+
+  return (
+    <form action={formAction} className="space-y-8">
+      {/* 허니팟 + 작성 시작 시각 (스팸 방어) */}
+      <input
+        type="text"
+        name="website_url"
+        tabIndex={-1}
+        autoComplete="off"
+        className="hidden"
+        aria-hidden="true"
+      />
+      <input type="hidden" name="started_at" value={startedAt} />
+
+      <section className="space-y-4">
+        <h2 className="text-base font-bold text-secondary">1. 회사 정보</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="company_name">회사명 *</Label>
+            <Input id="company_name" name="company_name" required />
+            <FieldError messages={errors.company_name} />
+          </div>
+          <div>
+            <Label htmlFor="business_number">사업자등록번호 *</Label>
+            <Input
+              id="business_number"
+              name="business_number"
+              placeholder="000-00-00000"
+              required
+            />
+            <FieldError messages={errors.business_number} />
+          </div>
+          <div>
+            <Label htmlFor="ceo_name">대표자</Label>
+            <Input id="ceo_name" name="ceo_name" />
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-base font-bold text-secondary">2. 담당자</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <Label htmlFor="contact_name">성함 *</Label>
+            <Input id="contact_name" name="contact_name" required />
+            <FieldError messages={errors.contact_name} />
+          </div>
+          <div>
+            <Label htmlFor="contact_email">이메일 *</Label>
+            <Input id="contact_email" name="contact_email" type="email" required />
+            <FieldError messages={errors.contact_email} />
+          </div>
+          <div>
+            <Label htmlFor="contact_phone">연락처 *</Label>
+            <Input id="contact_phone" name="contact_phone" required />
+            <FieldError messages={errors.contact_phone} />
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-base font-bold text-secondary">3. 광고 계정</h2>
+        <p className="text-xs text-muted-foreground">
+          대행권을 지정할 매체별 광고 계정을 입력해주세요.
+        </p>
+        {rows.map((row, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <select
+              name="media[]"
+              value={row.media}
+              onChange={(e) =>
+                setRows((prev) =>
+                  prev.map((r, j) => (j === i ? { ...r, media: e.target.value } : r)),
+                )
+              }
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            >
+              {PB_MEDIA_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <Input
+              name="account_id[]"
+              placeholder="광고 계정 ID (예: 네이버 검색광고 로그인 ID)"
+              value={row.account_id}
+              onChange={(e) =>
+                setRows((prev) =>
+                  prev.map((r, j) =>
+                    j === i ? { ...r, account_id: e.target.value } : r,
+                  ),
+                )
+              }
+              className="flex-1"
+            />
+            {rows.length > 1 ? (
+              <button
+                type="button"
+                onClick={() => setRows((prev) => prev.filter((_, j) => j !== i))}
+                className="rounded-md border border-input px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent"
+                aria-label="계정 삭제"
+              >
+                삭제
+              </button>
+            ) : null}
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => setRows((prev) => [...prev, { media: "naver", account_id: "" }])}
+          className="rounded-md border border-input bg-card px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
+        >
+          + 계정 추가
+        </button>
+        <FieldError messages={errors.media_accounts} />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-base font-bold text-secondary">4. 월 예상 광고비 & 옵션</h2>
+        <div>
+          <Label htmlFor="expected_budget">월 예상 광고비 (VAT 제외)</Label>
+          <div className="mt-1 flex max-w-xs items-center gap-2">
+            <Input
+              id="expected_budget"
+              name="expected_budget"
+              inputMode="numeric"
+              value={budget}
+              onChange={(e) => {
+                const n = e.target.value.replace(/\D/g, "");
+                setBudget(n ? Number(n).toLocaleString("ko-KR") : "");
+              }}
+              className="text-right"
+            />
+            <span className="text-sm text-muted-foreground">원</span>
+          </div>
+        </div>
+        <div className="space-y-2.5">
+          <label className="flex cursor-pointer items-start gap-2.5 text-sm">
+            <input type="checkbox" name="opt_all_solutions" className="mt-0.5 h-4 w-4" />
+            <span>
+              솔루션 4종 전체 이용 <span className="text-muted-foreground">(−1%p)</span>
+            </span>
+          </label>
+          <label
+            className={
+              "flex items-start gap-2.5 text-sm " +
+              (consultingEligible ? "cursor-pointer" : "cursor-not-allowed opacity-50")
+            }
+          >
+            <input
+              type="checkbox"
+              name="opt_consulting"
+              disabled={!consultingEligible}
+              className="mt-0.5 h-4 w-4"
+            />
+            <span>
+              월간 전문가 컨설팅 <span className="text-muted-foreground">(−2%p)</span>
+              {!consultingEligible ? (
+                <span className="block text-xs text-muted-foreground">
+                  월 광고비 700만 원 이상 구간에서 선택 가능
+                </span>
+              ) : null}
+            </span>
+          </label>
+          <FieldError messages={errors.opt_consulting} />
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-base font-bold text-secondary">5. 페이백 수령 정보</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <Label htmlFor="bank_name">은행</Label>
+            <Input id="bank_name" name="bank_name" />
+          </div>
+          <div>
+            <Label htmlFor="bank_account">계좌번호</Label>
+            <Input id="bank_account" name="bank_account" />
+          </div>
+          <div>
+            <Label htmlFor="bank_holder">예금주</Label>
+            <Input id="bank_holder" name="bank_holder" />
+          </div>
+        </div>
+        <div>
+          <Label>세금계산서 발행 가능 여부 *</Label>
+          <div className="mt-2 flex gap-4 text-sm">
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="radio"
+                name="invoice_capable"
+                value="yes"
+                checked={invoiceCapable === "yes"}
+                onChange={() => setInvoiceCapable("yes")}
+                className="h-4 w-4"
+              />
+              발행 가능 (일반과세)
+            </label>
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="radio"
+                name="invoice_capable"
+                value="no"
+                checked={invoiceCapable === "no"}
+                onChange={() => setInvoiceCapable("no")}
+                className="h-4 w-4"
+              />
+              발행 불가 (간이·면세)
+            </label>
+          </div>
+          {invoiceCapable === "no" ? (
+            <p className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              세금계산서 발행이 불가한 사업자는 계산서 절차 없이 공급가액(페이백
+              금액)만 지급되며, 부가세는 지급되지 않습니다.
+            </p>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <label className="flex cursor-pointer items-start gap-2.5 text-sm">
+          <input type="checkbox" name="agreed" required className="mt-0.5 h-4 w-4" />
+          <span>
+            서비스 약관 및 세무 고지에 동의합니다. *
+            <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+              페이백은 광고주가 발행하는 세금계산서(품목: 판매촉진비,
+              공급가액=페이백액) 확인 후 지급되며, 부가가치세는 페이백과 함께 별도
+              지급됩니다. 광고 운영과 매체 정책 준수 책임은 광고주에게 있습니다.
+            </span>
+          </span>
+        </label>
+        <FieldError messages={errors.agreed} />
+      </section>
+
+      {state && "error" in state ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+          {state.error}
+        </div>
+      ) : null}
+
+      <Button type="submit" size="lg" className="w-full" disabled={pending}>
+        {pending ? "접수 중..." : "페이백 신청하기"}
+      </Button>
+    </form>
+  );
+}

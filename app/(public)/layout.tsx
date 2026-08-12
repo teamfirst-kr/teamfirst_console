@@ -27,6 +27,9 @@ export default async function PublicLayout({
           </Link>
           <nav className="ml-8 mr-auto hidden items-center gap-6 text-sm font-medium text-white/80 md:flex">
             <Link href="/" className="hover:text-white">
+              광고비 페이백
+            </Link>
+            <Link href="/matching" className="hover:text-white">
               대행사 매칭
             </Link>
             <Link href="/partners" className="hover:text-white">
@@ -95,6 +98,9 @@ export default async function PublicLayout({
               <div className="space-y-2">
                 <p className="font-semibold text-white/80">서비스</p>
                 <Link href="/" className="block hover:text-white">
+                  광고비 페이백
+                </Link>
+                <Link href="/matching" className="block hover:text-white">
                   대행사 매칭
                 </Link>
                 <Link href="/partners" className="block hover:text-white">
