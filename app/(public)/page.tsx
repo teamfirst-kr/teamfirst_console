@@ -31,7 +31,7 @@ const STEPS = [
   {
     no: "02",
     title: "솔루션 이용 (셀프 운영)",
-    body: "팀퍼스트 자체 개발 솔루션을 무료로 사용하며 광고는 지금처럼 직접 운영합니다. 아무것도 바뀌지 않습니다.",
+    body: "광고는 지금처럼 직접 운영하되, 팀퍼스트 자체 개발 솔루션이 무료로 더해집니다. 운영 방식은 그대로, 성과를 끌어올릴 도구만 늘어납니다.",
   },
   {
     no: "03",
@@ -155,6 +155,59 @@ export default async function PaybackLanding() {
               </div>
             </Reveal>
           ))}
+        </div>
+      </section>
+
+      {/* 2.5 자체 개발 솔루션 */}
+      <section className="bg-secondary py-24 text-secondary-foreground">
+        <div className="mx-auto max-w-5xl px-6">
+          <SectionHeader
+            eyebrow="TEAMFIRST SOLUTIONS"
+            heading={<span className="text-white">팀퍼스트 자체 개발 솔루션</span>}
+            sub={
+              <span className="text-white/70">
+                대행권을 지정한 광고주에게 무료로 제공되는 성과 도구입니다.
+              </span>
+            }
+          />
+          <div className="mt-12 grid gap-4 md:grid-cols-3">
+            {/* 솔루션 1 — 로그분석 프로그램 (대표) */}
+            <div className="rounded-2xl border border-white/15 bg-white/5 p-6 md:col-span-2">
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-sky-400/20 px-2.5 py-0.5 text-xs font-bold text-sky-300">
+                  솔루션 1
+                </span>
+                <h3 className="text-lg font-bold text-white">로그분석 프로그램</h3>
+              </div>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-xl bg-white/5 p-4">
+                  <p className="text-2xl">🛡️</p>
+                  <p className="mt-2 font-semibold text-white">악성 클릭 IP 차단</p>
+                  <p className="mt-1 text-sm leading-relaxed text-white/70">
+                    경쟁사의 악의적인 클릭을 탐지해 IP를 차단합니다. 자사몰뿐 아니라
+                    쇼핑몰 유입까지 보호해 광고비 낭비를 막습니다.
+                  </p>
+                </div>
+                <div className="rounded-xl bg-white/5 p-4">
+                  <p className="text-2xl">🔎</p>
+                  <p className="mt-2 font-semibold text-white">고객 로그 퍼널 분석</p>
+                  <p className="mt-1 text-sm leading-relaxed text-white/70">
+                    고객 로그 패턴으로 어디서 이탈하고 어디서 전환이 발생하는지
+                    퍼널 단위로 분석해, 개선 포인트를 정확히 짚어줍니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+            {/* 추가 솔루션 예고 */}
+            <div className="flex flex-col justify-center rounded-2xl border border-dashed border-white/20 p-6 text-center">
+              <p className="text-2xl">🚀</p>
+              <p className="mt-2 font-semibold text-white">추가 솔루션 공개 예정</p>
+              <p className="mt-1 text-sm leading-relaxed text-white/60">
+                입찰 최적화·리포트 대시보드 등 성과 도구를 순차 오픈합니다.
+                솔루션 4종 전체 이용 시 페이백률 −1%p로 이용할 수 있습니다.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 

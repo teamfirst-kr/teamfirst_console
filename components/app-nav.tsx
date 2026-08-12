@@ -11,11 +11,15 @@ export type AppNavItem = { href: string; label: string };
 export function AppNav({ items }: { items: AppNavItem[] }) {
   const pathname = usePathname();
 
+  // 최장 일치 항목만 활성화 (예: /app 과 /app/settlements 가 동시에 켜지지 않게)
+  const best = items
+    .filter((i) => pathname === i.href || pathname.startsWith(`${i.href}/`))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+
   return (
     <nav className="flex-1 px-3 space-y-1">
       {items.map((item) => {
-        const active =
-          pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const active = best?.href === item.href;
         return (
           <Link
             key={item.href}
