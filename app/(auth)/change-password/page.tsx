@@ -1,6 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { Suspense, useActionState } from "react";
+
+import { RegistrationEvent } from "./registration-event";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +26,9 @@ export default function ChangePasswordPage() {
 
   return (
     <Card className="w-full max-w-md">
+      <Suspense fallback={null}>
+        <RegistrationEvent />
+      </Suspense>
       <CardHeader>
         <CardTitle>비밀번호 변경</CardTitle>
         <CardDescription>

@@ -235,5 +235,6 @@ export async function submitPaybackApplication(
     linkLabel: "신청 검토하기",
   });
 
-  redirect("/apply/success");
+  // 전환 추적: 접수 완료 = 구매 전환, 전환값 = 월 예상 광고비
+  redirect(`/apply/success?v=${data.expected_budget ?? 0}`);
 }
