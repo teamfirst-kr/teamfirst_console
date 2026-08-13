@@ -145,7 +145,8 @@ export async function signupClientAction(
   await supabase.auth.signInWithPassword({ email, password: tempPassword });
 
   revalidatePath("/", "layout");
-  redirect("/change-password");
+  // signup=1 → 등록완료(CompleteRegistration) 전환 발화용
+  redirect("/change-password?signup=1");
 }
 
 export async function logoutAction() {

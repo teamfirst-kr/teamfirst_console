@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/reveal";
 import { SectionHeader } from "@/components/section-header";
+import { ApplyCtaLink } from "@/components/analytics/apply-cta";
 import { PaybackCalculator } from "@/components/payback/calculator";
 import { SolutionsShowcase } from "@/components/payback/solutions-showcase";
 import { createClient } from "@/lib/supabase/server";
@@ -132,13 +133,12 @@ export default async function PaybackLanding() {
             </p>
           </Reveal>
           <Reveal delay={220} immediate className="mt-10 flex flex-wrap justify-center gap-3">
-            <Button
-              asChild
-              size="lg"
+            <ApplyCtaLink
+              location="hero"
               className="bg-white text-secondary shadow-lg shadow-black/20 hover:bg-white/90"
             >
-              <Link href="/apply">💸 페이백 신청하기</Link>
-            </Button>
+              💸 페이백 신청하기
+            </ApplyCtaLink>
             <Button
               asChild
               size="lg"
@@ -162,9 +162,7 @@ export default async function PaybackLanding() {
           <PaybackCalculator table={table} />
         </Reveal>
         <Reveal delay={80} className="mt-8 text-center">
-          <Button asChild size="lg">
-            <Link href="/apply">이 조건으로 신청하기</Link>
-          </Button>
+          <ApplyCtaLink location="calculator">이 조건으로 신청하기</ApplyCtaLink>
         </Reveal>
       </section>
 
@@ -354,13 +352,12 @@ export default async function PaybackLanding() {
           <p className="mt-3 text-sm text-white/70">
             활성화 즉시, 당일 광고비부터 페이백 산정이 시작됩니다.
           </p>
-          <Button
-            asChild
-            size="lg"
+          <ApplyCtaLink
+            location="footer"
             className="mt-8 bg-white text-secondary hover:bg-white/90"
           >
-            <Link href="/apply">💸 페이백 신청하기</Link>
-          </Button>
+            💸 페이백 신청하기
+          </ApplyCtaLink>
           <ol className="mx-auto mt-12 max-w-2xl space-y-1 text-left text-[11px] leading-relaxed text-white/45">
             {FOOTNOTES.map((f) => (
               <li key={f}>{f}</li>

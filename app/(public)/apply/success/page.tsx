@@ -2,9 +2,18 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 
-export default function PaybackApplySuccessPage() {
+import { PurchaseEvent } from "./lead-event";
+
+export default async function PaybackApplySuccessPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ v?: string }>;
+}) {
+  const sp = await searchParams;
+  const value = Math.max(0, Number(sp.v ?? 0) || 0);
   return (
     <div className="mx-auto max-w-xl px-6 py-24 text-center">
+      <PurchaseEvent value={value} />
       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl">
         ✅
       </div>
