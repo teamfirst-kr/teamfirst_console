@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 const FIELD_LABEL: Record<string, string> = {
   all_solutions: "솔루션 전체 이용",
-  consulting: "월간 전문가 컨설팅",
+  consulting: "주간/월간 전문가 컨설팅",
 };
 
 export default async function PortalOptionsPage() {

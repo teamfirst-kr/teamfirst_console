@@ -125,7 +125,7 @@ export async function submitPaybackApplication(
   // 컨설팅 자격 (D3): 예상 광고비 700만 미만이면 서버에서도 거부
   if (data.opt_consulting && (data.expected_budget ?? 0) < 7_000_000) {
     return {
-      error: "월간 전문가 컨설팅 옵션은 월 광고비 700만 원 이상 구간에서 선택 가능합니다.",
+      error: "주간/월간 전문가 컨설팅 옵션은 월 광고비 700만 원 이상 구간에서 선택 가능합니다.",
       fieldErrors: { opt_consulting: ["700만 원 이상 구간 전용 옵션입니다."] },
     };
   }

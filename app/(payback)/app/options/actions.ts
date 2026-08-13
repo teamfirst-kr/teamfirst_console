@@ -71,7 +71,7 @@ export async function requestOptionChange(
     if (lastSpend < minSpend) {
       return {
         ok: false,
-        error: `월간 전문가 컨설팅 옵션은 월 광고비 ${(minSpend / 10_000).toLocaleString()}만 원 이상 구간에서 선택 가능합니다. (최근 확정 정산 광고비: ${lastSpend.toLocaleString()}원)`,
+        error: `주간/월간 전문가 컨설팅 옵션은 월 광고비 ${(minSpend / 10_000).toLocaleString()}만 원 이상 구간에서 선택 가능합니다. (최근 확정 정산 광고비: ${lastSpend.toLocaleString()}원)`,
       };
     }
   }
