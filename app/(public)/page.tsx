@@ -10,14 +10,14 @@ import { rateTableFromRow, tierLabelOf, type RateTable } from "@/lib/payback";
 
 export const dynamic = "force-dynamic";
 
-// 시드(018)와 동일 — DB 조회 실패 시 렌더 폴백 (계산·정산에는 사용하지 않음)
+// v1.1 요율표와 동일 — DB 조회 실패 시 렌더 폴백 (계산·정산에는 사용하지 않음)
 const FALLBACK_TABLE: RateTable = {
-  version: "v1.0",
+  version: "v1.1",
   tiers: [
     { min: 0, max: 3_000_000, rate: 7 },
     { min: 3_000_000, max: 7_000_000, rate: 8 },
-    { min: 7_000_000, max: 20_000_000, rate: 9 },
-    { min: 20_000_000, max: null, rate: 10 },
+    { min: 7_000_000, max: 20_000_000, rate: 10 },
+    { min: 20_000_000, max: null, rate: 11 },
   ],
   modifiers: { allSolutions: 1, consulting: 2 },
   consultingMinSpend: 7_000_000,
@@ -37,7 +37,7 @@ const STEPS = [
   {
     no: "03",
     title: "매월 페이백",
-    body: "매체가 팀퍼스트에 지급하는 대행수수료를 재원으로, 광고비 구간에 따라 7~10%를 매월 현금으로 돌려드립니다.",
+    body: "매체가 팀퍼스트에 지급하는 대행수수료를 재원으로, 광고비 구간에 따라 7~11%를 매월 현금으로 돌려드립니다.",
   },
 ];
 
@@ -113,7 +113,7 @@ export default async function PaybackLanding() {
             immediate
             className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/70"
           >
-            광고비 페이백 7~10% · 솔루션 무료 · 운영은 그대로 셀프
+            광고비 페이백 7~11% · 솔루션 무료 · 운영은 그대로 셀프
           </Reveal>
           <Reveal delay={60} immediate>
             <h1 className="text-4xl font-extrabold leading-[1.18] tracking-[-0.03em] md:text-6xl">
