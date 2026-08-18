@@ -27,13 +27,13 @@ export function SectionHeader({
           {eyebrow}
         </p>
       ) : null}
-      <h2 className="mt-3 text-[26px] font-extrabold leading-snug tracking-[-0.02em] text-secondary md:text-[34px]">
+      <h2 className="mt-3 break-keep text-2xl font-extrabold leading-snug tracking-[-0.02em] text-secondary sm:text-[26px] md:text-[34px]">
         {heading}
       </h2>
       {sub ? (
         <p
           className={cn(
-            "mt-4 text-[15px] leading-relaxed text-muted-foreground md:text-base",
+            "mt-4 break-keep text-[15px] leading-relaxed text-muted-foreground md:text-base",
             align === "center" && "mx-auto max-w-2xl",
           )}
         >

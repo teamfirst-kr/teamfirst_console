@@ -76,7 +76,7 @@ export default async function HomeLanding() {
             검증 4기준 · 전액 무료 · 한 화면 완결
           </Reveal>
           <Reveal delay={60} immediate>
-            <h1 className="text-4xl font-extrabold leading-[1.18] tracking-[-0.03em] md:text-6xl">
+            <h1 className="break-keep text-[30px] font-extrabold leading-[1.25] tracking-[-0.02em] sm:text-4xl sm:leading-[1.2] md:text-6xl md:leading-[1.18] md:tracking-[-0.03em]">
               신뢰할 수 있는 광고대행사
               <br />
               <span className="bg-gradient-to-r from-white to-sky-200 bg-clip-text text-transparent">
@@ -86,7 +86,7 @@ export default async function HomeLanding() {
             </h1>
           </Reveal>
           <Reveal delay={140} immediate>
-            <p className="mx-auto mt-6 max-w-2xl text-base text-white/75 md:text-lg">
+            <p className="mx-auto mt-6 max-w-2xl break-keep text-[15px] leading-relaxed text-white/75 sm:text-base md:text-lg">
               RFP 작성부터 제안서 검토, 니즈에 맞는 대행사 검증까지{" "}
               <strong className="text-white">팀퍼스트</strong>가 전부 지원합니다.
             </p>

@@ -155,6 +155,16 @@ body {
 }
 
 /* ── 전역 인터랙션 폴리시 ─────────────────────────────────────────────── */
+/* 한글 가독성: 어절(단어) 중간에서 줄이 끊기지 않게. 긴 URL 등은 강제 개행 허용 */
+body {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+/* 표 안에서는 keep-all이 셀 최소 폭을 키워 좁은 화면에서 잘림을 유발하므로 제외 */
+table {
+  word-break: normal;
+}
+
 /* 앵커 이동(#calculator 등)을 부드러운 스크롤로 */
 html {
   scroll-behavior: smooth;
