@@ -52,8 +52,11 @@ type ClientRow = {
 export default async function PaybackPipelinePage() {
   const supabase = await createClient();
 
-  const [{ data: apps }, { data: clients }, { data: mediaRows }] =
-    await Promise.all([
+  const [
+    { data: apps, error: appsError },
+    { data: clients, error: clientsError },
+    { data: mediaRows },
+  ] = await Promise.all([
       supabase
         .from("pb_applications")
         .select(
@@ -70,7 +73,10 @@ export default async function PaybackPipelinePage() {
       supabase
         .from("pb_media_accounts")
         .select("id, client_id, media, account_id, transfer_status"),
-    ]);
+  ]);
+
+  // 조회 실패는 빈 목록으로 위장하지 않고 오류로 노출 (마이그레이션 누락 등 감지)
+  const loadError = appsError?.message ?? clientsError?.message ?? null;
 
   const applications = (apps ?? []) as AppRow[];
 
@@ -130,6 +136,16 @@ export default async function PaybackPipelinePage() {
           ))}
         </div>
       </div>
+
+      {loadError ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          목록 조회 실패: {loadError}
+          <span className="block text-xs">
+            마이그레이션 누락 가능성이 있습니다. db/migrations의 미실행 SQL을
+            확인하세요.
+          </span>
+        </div>
+      ) : null}
 
       {/* 1. 신규 신청 */}
       <section>
