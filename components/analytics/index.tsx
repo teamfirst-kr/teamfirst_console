@@ -1,17 +1,27 @@
 import { GoogleAnalytics, GoogleTagManager } from "@next/third-parties/google";
 
+import { GoogleTag } from "./google-tag";
 import { MetaPixel } from "./meta-pixel";
 
-// 트래킹 스크립트 일괄 로더 — env에 ID가 설정된 것만 로드된다.
-// NEXT_PUBLIC_GTM_ID / NEXT_PUBLIC_GA_ID / NEXT_PUBLIC_META_PIXEL_ID
+// 트래킹 스크립트 일괄 로더.
+// - Google 태그(gtag): 팀퍼스트 태그(GT-P36VR84W + Ads AW-17029250004) 기본 로드,
+//   NEXT_PUBLIC_GOOGLE_TAG_IDS(콤마 구분)로 교체 가능
+// - NEXT_PUBLIC_GTM_ID(GTM-xxx) / NEXT_PUBLIC_GA_ID(G-xxx)는 설정 시에만 추가 로드
 export function Analytics() {
   const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
+  const googleTagIds = (
+    process.env.NEXT_PUBLIC_GOOGLE_TAG_IDS ?? "GT-P36VR84W,AW-17029250004"
+  )
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
   // 팀퍼스트_콘솔 독립몰_픽셀 (데이터세트 1418550610140762) — env로 덮어쓰기 가능
   const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "1418550610140762";
 
   return (
     <>
+      <GoogleTag ids={googleTagIds} />
       {gtmId ? <GoogleTagManager gtmId={gtmId} /> : null}
       {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
       {pixelId ? <MetaPixel pixelId={pixelId} /> : null}
