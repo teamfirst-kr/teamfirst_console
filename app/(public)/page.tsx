@@ -109,15 +109,18 @@ export default async function PaybackLanding() {
     <div className="overflow-hidden">
       {/* 1. 히어로 */}
       <section className="tf-hero-spotlight bg-secondary text-secondary-foreground">
-        <div className="mx-auto max-w-5xl px-6 py-28 text-center md:py-36">
+        <div className="mx-auto max-w-5xl px-5 py-20 text-center sm:px-6 md:py-36">
           <Reveal
             immediate
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/70"
+            className="mb-6 inline-flex max-w-full items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/70"
           >
-            광고비 페이백 7~11% · 솔루션 무료 · 운영은 그대로 셀프
+            <span className="sm:hidden">광고비 페이백 7~11% · 솔루션 무료</span>
+            <span className="hidden sm:inline">
+              광고비 페이백 7~11% · 솔루션 무료 · 운영은 그대로 셀프
+            </span>
           </Reveal>
           <Reveal delay={60} immediate>
-            <h1 className="text-4xl font-extrabold leading-[1.18] tracking-[-0.03em] md:text-6xl">
+            <h1 className="break-keep text-[30px] font-extrabold leading-[1.25] tracking-[-0.02em] sm:text-4xl sm:leading-[1.2] md:text-6xl md:leading-[1.18] md:tracking-[-0.03em]">
               대행권만 지정하면
               <br />
               <span className="bg-gradient-to-r from-white to-sky-200 bg-clip-text text-transparent">
@@ -126,9 +129,9 @@ export default async function PaybackLanding() {
             </h1>
           </Reveal>
           <Reveal delay={140} immediate>
-            <p className="mx-auto mt-6 max-w-2xl text-base text-white/75 md:text-lg">
-              광고는 지금처럼 직접 운영하세요. 팀퍼스트를 대행사로 지정하는 것만으로
-              매체 대행수수료의 일부를{" "}
+            <p className="mx-auto mt-5 max-w-[19rem] break-keep text-[15px] leading-relaxed text-white/75 sm:mt-6 sm:max-w-2xl sm:text-base md:text-lg">
+              광고는 지금처럼 직접 운영하세요. 팀퍼스트를 대행사로 지정하는
+              것만으로 매체 대행수수료의 일부를{" "}
               <strong className="text-white">매월 현금으로</strong> 돌려드립니다.
             </p>
           </Reveal>
@@ -346,8 +349,9 @@ export default async function PaybackLanding() {
       {/* 8. CTA + 각주 (부록 A 원문) */}
       <section className="bg-secondary py-20 text-center text-secondary-foreground">
         <div className="mx-auto max-w-3xl px-6">
-          <h2 className="text-2xl font-extrabold md:text-3xl">
-            이미 쓰고 있는 광고비, 이제 돌려받으세요
+          <h2 className="break-keep text-[22px] font-extrabold leading-snug sm:text-2xl md:text-3xl">
+            이미 쓰고 있는 광고비,
+            <br className="sm:hidden" /> 이제 돌려받으세요
           </h2>
           <p className="mt-3 text-sm text-white/70">
             활성화 즉시, 당일 광고비부터 페이백 산정이 시작됩니다.
@@ -358,7 +362,7 @@ export default async function PaybackLanding() {
           >
             💸 페이백 신청하기
           </ApplyCtaLink>
-          <ol className="mx-auto mt-12 max-w-2xl space-y-1 text-left text-[11px] leading-relaxed text-white/45">
+          <ol className="mx-auto mt-12 max-w-2xl space-y-1.5 text-left text-xs leading-relaxed text-white/55">
             {FOOTNOTES.map((f) => (
               <li key={f}>{f}</li>
             ))}
