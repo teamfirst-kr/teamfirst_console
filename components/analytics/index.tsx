@@ -1,5 +1,6 @@
 import { GoogleAnalytics, GoogleTagManager } from "@next/third-parties/google";
 
+import { AttributionCapture } from "./attribution";
 import { GoogleTag } from "./google-tag";
 import { MetaPixel } from "./meta-pixel";
 
@@ -21,6 +22,7 @@ export function Analytics() {
 
   return (
     <>
+      <AttributionCapture />
       <GoogleTag ids={googleTagIds} />
       {gtmId ? <GoogleTagManager gtmId={gtmId} /> : null}
       {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
