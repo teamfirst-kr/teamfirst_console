@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PB_MEDIA_OPTIONS } from "@/lib/schemas/payback-application";
+import { calcPayback, type RateTable } from "@/lib/payback";
 
 import { submitPaybackApplication, type PbApplyState } from "./actions";
 
@@ -16,7 +17,7 @@ function FieldError({ messages }: { messages?: string[] }) {
 
 type MediaRow = { media: string; account_id: string };
 
-export function PaybackApplyForm() {
+export function PaybackApplyForm({ table }: { table: RateTable }) {
   const [state, formAction, pending] = useActionState<PbApplyState, FormData>(
     submitPaybackApplication,
     null,
@@ -25,11 +26,24 @@ export function PaybackApplyForm() {
     { media: "naver", account_id: "" },
   ]);
   const [budget, setBudget] = useState("");
+  const [optAll, setOptAll] = useState(false);
+  const [optConsulting, setOptConsulting] = useState(false);
   const [invoiceCapable, setInvoiceCapable] = useState<"yes" | "no">("yes");
   const startedAt = useMemo(() => Date.now(), []);
 
   const budgetNum = Number(budget.replace(/\D/g, "")) || 0;
-  const consultingEligible = budgetNum >= 7_000_000;
+  const consultingEligible = budgetNum >= table.consultingMinSpend;
+
+  // 예상 페이백 미리보기 — 계산기·정산과 동일한 lib/payback.ts 사용
+  const preview =
+    budgetNum > 0
+      ? calcPayback(table, {
+          adSpend: budgetNum,
+          allSolutions: optAll,
+          consulting: optConsulting && consultingEligible,
+          invoiceCapable: true,
+        })
+      : null;
   const errors = state && "fieldErrors" in state ? (state.fieldErrors ?? {}) : {};
 
   return (
@@ -185,9 +199,18 @@ export function PaybackApplyForm() {
         </div>
         <div className="space-y-2.5">
           <label className="flex cursor-pointer items-start gap-2.5 text-sm">
-            <input type="checkbox" name="opt_all_solutions" className="mt-0.5 h-4 w-4" />
+            <input
+              type="checkbox"
+              name="opt_all_solutions"
+              checked={optAll}
+              onChange={(e) => setOptAll(e.target.checked)}
+              className="mt-0.5 h-4 w-4"
+            />
             <span>
-              솔루션 전체 이용 <span className="text-muted-foreground">(−1%p)</span>
+              솔루션 전체 이용{" "}
+              <span className="text-muted-foreground">
+                (−{table.modifiers.allSolutions}%p)
+              </span>
             </span>
           </label>
           <label
@@ -199,7 +222,9 @@ export function PaybackApplyForm() {
             <input
               type="checkbox"
               name="opt_consulting"
+              checked={optConsulting && consultingEligible}
               disabled={!consultingEligible}
+              onChange={(e) => setOptConsulting(e.target.checked)}
               className="mt-0.5 h-4 w-4"
             />
             <span>
@@ -213,6 +238,37 @@ export function PaybackApplyForm() {
           </label>
           <FieldError messages={errors.opt_consulting} />
         </div>
+
+        {/* 예상 페이백률 미리보기 (요율표 게시 버전 기준) */}
+        {preview ? (
+          <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-muted-foreground">
+                예상 적용 요율{" "}
+                <span className="text-xs">
+                  ({preview.tierLabel} · 기본 {preview.baseRate}%
+                  {preview.modifierTotal > 0 ? ` − 옵션 ${preview.modifierTotal}%p` : ""})
+                </span>
+              </span>
+              <span className="text-xl font-extrabold text-primary">
+                {preview.appliedRate}%
+              </span>
+            </div>
+            <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-muted-foreground">월 예상 페이백</span>
+              <span className="font-bold text-secondary">
+                약 {preview.supplyValue.toLocaleString()}원{" "}
+                <span className="text-xs font-normal text-muted-foreground">
+                  (부가세 별도 지급)
+                </span>
+              </span>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              실제 페이백은 당월 실집행 광고비(매체 리포트 기준)로 매월 자동
+              산정됩니다.
+            </p>
+          </div>
+        ) : null}
       </section>
 
       <section className="space-y-4">

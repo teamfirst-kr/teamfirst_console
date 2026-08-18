@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { DateText } from "@/components/date-text";
 import { createClient } from "@/lib/supabase/server";
+import { calcPayback, rateTableFromRow } from "@/lib/payback";
 
 import { ApplicationActions, ClientActions } from "./board-cards";
 
@@ -56,6 +57,7 @@ export default async function PaybackPipelinePage() {
     { data: apps, error: appsError },
     { data: clients, error: clientsError },
     { data: mediaRows },
+    { data: rateRow },
   ] = await Promise.all([
       supabase
         .from("pb_applications")
@@ -73,7 +75,27 @@ export default async function PaybackPipelinePage() {
       supabase
         .from("pb_media_accounts")
         .select("id, client_id, media, account_id, transfer_status"),
+      supabase
+        .from("pb_rate_tables")
+        .select("version, tiers, modifiers, consulting_min_spend")
+        .eq("published", true)
+        .order("effective_from", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
   ]);
+
+  const rateTable = rateRow ? rateTableFromRow(rateRow) : null;
+  // 신청서 기준 예상 적용 요율 (게시 요율표 + 선택 옵션 반영)
+  const expectedRateOf = (a: AppRow): number | null => {
+    if (!rateTable || !a.expected_budget || a.expected_budget <= 0) return null;
+    return calcPayback(rateTable, {
+      adSpend: a.expected_budget,
+      allSolutions: a.opt_all_solutions,
+      consulting:
+        a.opt_consulting && a.expected_budget >= rateTable.consultingMinSpend,
+      invoiceCapable: a.invoice_capable,
+    }).appliedRate;
+  };
 
   // 조회 실패는 빈 목록으로 위장하지 않고 오류로 노출 (마이그레이션 누락 등 감지)
   const loadError = appsError?.message ?? clientsError?.message ?? null;
@@ -176,6 +198,11 @@ export default async function PaybackPipelinePage() {
                     예상 광고비{" "}
                     {a.expected_budget ? `${a.expected_budget.toLocaleString()}원` : "미입력"}
                   </span>
+                  {expectedRateOf(a) !== null ? (
+                    <span className="rounded bg-sky-100 px-1.5 py-0.5 font-semibold text-sky-700">
+                      예상 요율 {expectedRateOf(a)}%
+                    </span>
+                  ) : null}
                   {a.opt_all_solutions ? (
                     <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">
                       솔루션 전체
