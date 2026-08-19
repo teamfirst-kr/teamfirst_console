@@ -8,6 +8,13 @@ declare global {
 
 import { getStoredAttribution } from "./attribution";
 
+// Google Ads 전환 라벨 (전환 액션별 send_to) — 이름 매칭과 무관하게 명시 전송
+const ADS_SEND_TO: Record<string, string> = {
+  AddToCart: "AW-17029250004/4rp9CIiKheQcENT3lrg_",
+  Purchase: "AW-17029250004/3mG4CIuKheQcENT3lrg_",
+  CompleteRegistration: "AW-17029250004/bVAnCI6KheQcENT3lrg_",
+};
+
 // 전환 이벤트 헬퍼 — Meta 픽셀 + GA4 + GTM dataLayer 동시 발화 (미로드 시 무시).
 // 크로스 플랫폼 동기화:
 //  - 공통 event_id를 Meta(eventID)와 GA(event_id/transaction_id)에 동일 부여
@@ -31,6 +38,17 @@ export function trackConversion(
         ...shared,
         event_id: eventId,
         ...(gaEvent === "purchase" ? { transaction_id: eventId } : {}),
+      });
+    }
+
+    // Google Ads 전환 명시 전송 (구매는 전환값 + transaction_id로 중복 제거)
+    const sendTo = ADS_SEND_TO[metaEvent];
+    if (sendTo) {
+      const value = typeof shared.value === "number" ? shared.value : undefined;
+      window.gtag?.("event", "conversion", {
+        send_to: sendTo,
+        ...(value !== undefined ? { value, currency: "KRW" } : {}),
+        ...(metaEvent === "Purchase" ? { transaction_id: eventId } : {}),
       });
     }
     window.dataLayer?.push({
