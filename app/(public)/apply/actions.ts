@@ -20,6 +20,25 @@ export type PbApplyState =
   | { error: string; fieldErrors?: Record<string, string[]> }
   | null;
 
+// 신청 실패/차단 지점 서버 로그 (PII 없이) — 유실 원인 추적용
+async function logApplyIssue(
+  reason: string,
+  diff: Record<string, unknown>,
+): Promise<void> {
+  try {
+    const admin = createAdminClient();
+    await admin.from("pb_audit_logs").insert({
+      actor_id: null,
+      action: `application.${reason}`,
+      entity: "pb_applications",
+      entity_id: null,
+      diff: diff as unknown as Json,
+    });
+  } catch {
+    // 로그 실패 무시
+  }
+}
+
 // 베스트에포트 rate limit (서버리스 인스턴스 단위, 외부 서비스 불필요 — 스펙 §6.1)
 const recentByIp = new Map<string, number[]>();
 function rateLimited(ip: string): boolean {
@@ -35,18 +54,23 @@ export async function submitPaybackApplication(
   _prev: PbApplyState,
   formData: FormData,
 ): Promise<PbApplyState> {
-  // 허니팟: 봇이 채우는 숨김 필드 — 채워져 있으면 조용히 성공 처리
-  if (String(formData.get("website_url") ?? "").trim() !== "") {
+  // 허니팟: 봇이 채우는 숨김 필드 — 채워져 있으면 조용히 성공 처리.
+  // (필드명은 자동완성이 채우지 않도록 무의미한 이름 사용 — 과거 website_url은
+  //  브라우저 자동완성이 채워 실사용자 신청이 유실될 수 있어 교체)
+  if (String(formData.get("hp_field_x9") ?? "").trim() !== "") {
+    await logApplyIssue("honeypot", {});
     redirect("/apply/success");
   }
   // 최소 작성 시간 3초 (봇 방어)
   const startedAt = Number(formData.get("started_at") ?? 0);
   if (startedAt > 0 && Date.now() - startedAt < 3000) {
+    await logApplyIssue("too_fast", { elapsed_ms: Date.now() - startedAt });
     return { error: "잠시 후 다시 시도해주세요." };
   }
   const ip =
     (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   if (rateLimited(ip)) {
+    await logApplyIssue("rate_limited", {});
     return { error: "요청이 너무 잦습니다. 잠시 후 다시 시도해주세요." };
   }
 
@@ -82,6 +106,9 @@ export async function submitPaybackApplication(
   });
 
   if (!parsed.success) {
+    await logApplyIssue("validation_failed", {
+      fields: parsed.error.issues.map((i) => i.path[0]?.toString() || "_form"),
+    });
     const fieldErrors: Record<string, string[]> = {};
     for (const issue of parsed.error.issues) {
       const key = issue.path[0]?.toString() || "_form";
@@ -147,6 +174,7 @@ export async function submitPaybackApplication(
       .limit(1),
   ]);
   if ((dupApp && dupApp.length > 0) || (dupClient && dupClient.length > 0)) {
+    await logApplyIssue("duplicate_bizno", {});
     return {
       error:
         "이미 접수되었거나 등록된 사업자번호입니다. 진행 상황은 담당자 메일로 안내드리며, 문의는 team1st2025@gmail.com 으로 부탁드립니다.",
@@ -164,6 +192,7 @@ export async function submitPaybackApplication(
       contentType: licenseFile.type || undefined,
     });
   if (uploadError) {
+    await logApplyIssue("license_upload_failed", { message: uploadError.message });
     return { error: `사업자등록증 업로드 실패: ${uploadError.message}` };
   }
 
@@ -192,6 +221,7 @@ export async function submitPaybackApplication(
     status: "received",
   });
   if (insertError) {
+    await logApplyIssue("insert_failed", { message: insertError.message });
     // 고아 파일 정리
     await admin.storage.from("pb-files").remove([licensePath]);
     return { error: `접수 중 오류가 발생했습니다: ${insertError.message}` };

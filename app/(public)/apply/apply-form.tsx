@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PB_MEDIA_OPTIONS } from "@/lib/schemas/payback-application";
 import { calcPayback, type RateTable } from "@/lib/payback";
+import { trackConversion } from "@/components/analytics/track";
 
 import { submitPaybackApplication, type PbApplyState } from "./actions";
 
@@ -31,6 +32,11 @@ export function PaybackApplyForm({ table }: { table: RateTable }) {
   const [invoiceCapable, setInvoiceCapable] = useState<"yes" | "no">("yes");
   const startedAt = useMemo(() => Date.now(), []);
 
+  // 퍼널 가시화: 신청 폼 진입 (CTA 클릭 → 폼 도달 → 제출 완료 사이 이탈 측정용)
+  useEffect(() => {
+    trackConversion("InitiateCheckout", {}, "begin_checkout");
+  }, []);
+
   const budgetNum = Number(budget.replace(/\D/g, "")) || 0;
   const consultingEligible = budgetNum >= table.consultingMinSpend;
 
@@ -51,7 +57,7 @@ export function PaybackApplyForm({ table }: { table: RateTable }) {
       {/* 허니팟 + 작성 시작 시각 (스팸 방어) */}
       <input
         type="text"
-        name="website_url"
+        name="hp_field_x9"
         tabIndex={-1}
         autoComplete="off"
         className="hidden"
