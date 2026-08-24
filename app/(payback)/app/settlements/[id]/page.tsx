@@ -107,6 +107,14 @@ export default async function StatementPage({
               <dd className="font-medium">−{Number(s.modifier_total)}%p</dd>
             </div>
           ) : null}
+          {Number(s.modifier_total) < 0 ? (
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">🎁 첫 달 프로모션</dt>
+              <dd className="font-medium text-emerald-600">
+                +{-Number(s.modifier_total)}%p (옵션 무료 포함)
+              </dd>
+            </div>
+          ) : null}
           <div className="flex justify-between border-t pt-2.5 text-base">
             <dt className="font-semibold">적용 요율</dt>
             <dd className="font-extrabold text-primary">{Number(s.applied_rate)}%</dd>

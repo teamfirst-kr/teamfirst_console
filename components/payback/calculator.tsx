@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import {
   calcPayback,
   consultingEligible,
+  type PaybackPromo,
   type RateTable,
 } from "@/lib/payback";
 
@@ -17,7 +18,13 @@ function fmt(won: number): string {
 }
 
 // 공개 랜딩 페이백 계산기 — 정산 엔진과 동일한 lib/payback.ts 사용 (스펙 §3)
-export function PaybackCalculator({ table }: { table: RateTable }) {
+export function PaybackCalculator({
+  table,
+  promo = null,
+}: {
+  table: RateTable;
+  promo?: PaybackPromo | null;
+}) {
   const [adSpend, setAdSpend] = useState(5_000_000);
   const [allSolutions, setAllSolutions] = useState(false);
   const [consulting, setConsulting] = useState(false);
@@ -34,6 +41,24 @@ export function PaybackCalculator({ table }: { table: RateTable }) {
         invoiceCapable: true,
       }),
     [table, adSpend, allSolutions, effectiveConsulting],
+  );
+
+  // 첫 달 프로모션 적용치 (활성 시)
+  const promoResult = useMemo(
+    () =>
+      promo
+        ? calcPayback(
+            table,
+            {
+              adSpend,
+              allSolutions,
+              consulting: effectiveConsulting,
+              invoiceCapable: true,
+            },
+            promo,
+          )
+        : null,
+    [table, adSpend, allSolutions, effectiveConsulting, promo],
   );
 
   function onInput(raw: string) {
@@ -127,16 +152,41 @@ export function PaybackCalculator({ table }: { table: RateTable }) {
 
         {/* 출력 */}
         <div className="rounded-xl bg-secondary p-6 text-white">
-          <p className="text-xs font-medium uppercase tracking-wider text-white/70">
-            예상 페이백
-          </p>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold tracking-tight">
-              {fmt(result.supplyValue)}
-            </span>
-            <span className="text-sm text-white/80">원 / 월</span>
-          </div>
-          <p className="mt-1 text-xs text-white/70">부가세 별도 지급</p>
+          {promoResult ? (
+            <>
+              <p className="text-xs font-medium uppercase tracking-wider text-amber-300">
+                🎁 첫 달 예상 페이백 (+{promoResult.promoBonus}%p · 옵션 무료)
+              </p>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-3xl font-extrabold tracking-tight text-amber-300">
+                  {fmt(promoResult.supplyValue)}
+                </span>
+                <span className="text-sm text-white/80">원</span>
+                <span className="ml-1 rounded bg-amber-400/20 px-1.5 py-0.5 text-xs font-bold text-amber-300">
+                  {promoResult.appliedRate}%
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-white/85">
+                2개월 차부터{" "}
+                <strong className="text-white">{fmt(result.supplyValue)}원</strong> / 월
+                ({result.appliedRate}%)
+              </p>
+              <p className="mt-1 text-xs text-white/70">부가세 별도 지급</p>
+            </>
+          ) : (
+            <>
+              <p className="text-xs font-medium uppercase tracking-wider text-white/70">
+                예상 페이백
+              </p>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-3xl font-extrabold tracking-tight">
+                  {fmt(result.supplyValue)}
+                </span>
+                <span className="text-sm text-white/80">원 / 월</span>
+              </div>
+              <p className="mt-1 text-xs text-white/70">부가세 별도 지급</p>
+            </>
+          )}
 
           <dl className="mt-5 space-y-2 border-t border-white/15 pt-4 text-sm">
             <div className="flex justify-between">

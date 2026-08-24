@@ -17,10 +17,17 @@ export type PaybackInput = {
   invoiceCapable: boolean; // 세금계산서 발행 가능 사업자 여부
 };
 
+// 첫 달 프로모션 (운영 설정으로 on/off): 보너스 %p 가산 + 옵션 차감 면제
+export type PaybackPromo = {
+  bonusRate: number; // +1 → 기본 요율에 1%p 가산
+  freeOptions: boolean; // true → 솔루션/컨설팅 차감(-1/-2%p) 미적용
+};
+
 export type PaybackResult = {
   tierLabel: string; // "700만~2,000만 원"
   baseRate: number; // 9
   modifierTotal: number; // 3
+  promoBonus: number; // 프로모션 가산 %p (없으면 0)
   appliedRate: number; // 6
   supplyValue: number; // floor(adSpend * appliedRate / 100)
   vat: number; // invoiceCapable ? floor(supplyValue * 0.1) : 0
@@ -57,7 +64,11 @@ function applyRate(amountWon: number, ratePercent: number): number {
   return Math.floor((amountWon * rate10) / 1000);
 }
 
-export function calcPayback(table: RateTable, input: PaybackInput): PaybackResult {
+export function calcPayback(
+  table: RateTable,
+  input: PaybackInput,
+  promo?: PaybackPromo,
+): PaybackResult {
   if (!Number.isInteger(input.adSpend) || input.adSpend < 0) {
     throw new Error("광고비는 0 이상의 정수(원)여야 합니다.");
   }
@@ -67,11 +78,14 @@ export function calcPayback(table: RateTable, input: PaybackInput): PaybackResul
 
   // 컨설팅 −2%p는 해당 월 옵션이 활성이면 광고비와 무관하게 적용 (§3 — 유예월 포함).
   // 700만 조건은 옵션의 선택/유지 단계(D3)에서만 검증한다.
-  const modifierTotal =
-    (input.allSolutions ? table.modifiers.allSolutions : 0) +
-    (input.consulting ? table.modifiers.consulting : 0);
+  // 프로모션 freeOptions면 옵션 차감을 면제하고, bonusRate를 가산한다.
+  const modifierTotal = promo?.freeOptions
+    ? 0
+    : (input.allSolutions ? table.modifiers.allSolutions : 0) +
+      (input.consulting ? table.modifiers.consulting : 0);
+  const promoBonus = promo?.bonusRate ?? 0;
 
-  const appliedRate = Math.max(0, baseRate - modifierTotal);
+  const appliedRate = Math.max(0, baseRate - modifierTotal + promoBonus);
   const supplyValue = applyRate(input.adSpend, appliedRate);
   const vat = input.invoiceCapable ? Math.floor(supplyValue / 10) : 0;
 
@@ -79,6 +93,7 @@ export function calcPayback(table: RateTable, input: PaybackInput): PaybackResul
     tierLabel: tierLabelOf(tier),
     baseRate,
     modifierTotal,
+    promoBonus,
     appliedRate,
     supplyValue,
     vat,

@@ -32,8 +32,19 @@ export async function savePbSettings(
     return { ok: false, error: "계산서 기한일은 1~28 사이여야 합니다." };
   }
 
+  const promoEnabled = formData.get("promo_enabled") === "on";
+  const promoBonus = Number(formData.get("promo_bonus") ?? 1);
+
   const admin = createAdminClient();
   const entries: [string, Json][] = [
+    [
+      "promo_first_month",
+      {
+        enabled: promoEnabled,
+        bonus_rate: Number.isFinite(promoBonus) ? promoBonus : 1,
+        free_options: true,
+      },
+    ],
     ["commission_rate", commissionRate],
     ["payout_day", payoutDay],
     ["invoice_due_day", invoiceDueDay],

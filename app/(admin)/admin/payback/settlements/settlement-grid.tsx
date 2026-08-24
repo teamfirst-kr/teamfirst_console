@@ -282,8 +282,16 @@ export function SettlementGrid({
                         {r.tierLabel}
                         <div>
                           {r.baseRate}%
-                          {r.modifierTotal ? ` − ${r.modifierTotal}%p` : ""} ={" "}
-                          <strong className="text-foreground">{r.appliedRate}%</strong>
+                          {r.modifierTotal && r.modifierTotal > 0
+                            ? ` − ${r.modifierTotal}%p`
+                            : ""}
+                          {r.modifierTotal && r.modifierTotal < 0 ? (
+                            <span className="text-emerald-600">
+                              {" "}
+                              + {-r.modifierTotal}%p 🎁
+                            </span>
+                          ) : null}{" "}
+                          = <strong className="text-foreground">{r.appliedRate}%</strong>
                         </div>
                       </>
                     ) : (

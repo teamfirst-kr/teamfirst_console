@@ -5,7 +5,12 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentRole } from "@/lib/auth";
-import { calcPayback, rateTableFromRow, type RateTable } from "@/lib/payback";
+import {
+  calcPayback,
+  rateTableFromRow,
+  type PaybackPromo,
+  type RateTable,
+} from "@/lib/payback";
 import {
   consultingShouldTerminate,
   effectiveOptionsForPeriod,
@@ -62,6 +67,39 @@ async function audit(
 
 function revalidate() {
   revalidatePath("/admin/payback/settlements");
+}
+
+// 첫 달 프로모션: pb_app_settings.promo_first_month = {"enabled":true,"bonus_rate":1,"free_options":true}
+// 해당 고객의 첫 정산(취소 제외, 본 건 제외 기존 정산 0건)에만 적용
+async function getFirstMonthPromo(
+  clientId: string,
+  excludeSettlementId: string,
+): Promise<PaybackPromo | null> {
+  const admin = createAdminClient();
+  const { data: setting } = await admin
+    .from("pb_app_settings")
+    .select("value")
+    .eq("key", "promo_first_month")
+    .maybeSingle();
+  const cfg = (setting?.value ?? null) as {
+    enabled?: boolean;
+    bonus_rate?: number;
+    free_options?: boolean;
+  } | null;
+  if (!cfg?.enabled) return null;
+
+  const { count } = await admin
+    .from("pb_monthly_settlements")
+    .select("id", { count: "exact", head: true })
+    .eq("client_id", clientId)
+    .neq("status", "canceled")
+    .neq("id", excludeSettlementId);
+  if ((count ?? 0) > 0) return null;
+
+  return {
+    bonusRate: Number(cfg.bonus_rate ?? 1) || 0,
+    freeOptions: cfg.free_options !== false,
+  };
 }
 
 async function getInvoiceDueDay(): Promise<number> {
@@ -195,12 +233,17 @@ export async function pbUpdateSpend(
     .eq("id", s.client_id)
     .maybeSingle();
 
-  const result = calcPayback(ctx.table, {
-    adSpend: adSpendTotal,
-    allSolutions: ctx.options.all_solutions,
-    consulting: ctx.options.consulting,
-    invoiceCapable: client?.invoice_capable ?? true,
-  });
+  const promo = await getFirstMonthPromo(s.client_id, s.id);
+  const result = calcPayback(
+    ctx.table,
+    {
+      adSpend: adSpendTotal,
+      allSolutions: ctx.options.all_solutions,
+      consulting: ctx.options.consulting,
+      invoiceCapable: client?.invoice_capable ?? true,
+    },
+    promo ?? undefined,
+  );
 
   const { error } = await admin
     .from("pb_monthly_settlements")
@@ -210,7 +253,8 @@ export async function pbUpdateSpend(
       rate_table_version: ctx.table.version,
       tier_label: result.tierLabel,
       base_rate: result.baseRate,
-      modifier_total: result.modifierTotal,
+      // 음수 = 프로모션 가산 (applied = base − modifier_total 관계 유지)
+      modifier_total: result.modifierTotal - result.promoBonus,
       applied_rate: result.appliedRate,
       payback_supply: result.supplyValue,
       payback_vat: result.vat,

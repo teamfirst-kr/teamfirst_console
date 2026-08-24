@@ -22,6 +22,7 @@ export function PbSettingsForm({
   minPayout,
   disputeDays,
   targetMedia,
+  promo,
 }: {
   commissionRate: number;
   payoutDay: number;
@@ -29,6 +30,7 @@ export function PbSettingsForm({
   minPayout: number;
   disputeDays: number;
   targetMedia: string[];
+  promo: { enabled?: boolean; bonus_rate?: number } | null;
 }) {
   const [state, formAction, pending] = useActionState<SettingsResult | null, FormData>(
     savePbSettings,
@@ -59,6 +61,37 @@ export function PbSettingsForm({
           <Label htmlFor="s-dispute">이의신청 창 (영업일)</Label>
           <Input id="s-dispute" name="dispute_window_days" type="number" min={1} max={10} defaultValue={disputeDays} />
         </div>
+      </div>
+      <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-4">
+        <Label className="font-semibold">🎁 첫 달 프로모션</Label>
+        <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="promo_enabled"
+              defaultChecked={promo?.enabled === true}
+              className="h-4 w-4"
+            />
+            활성화 (첫 정산월: 보너스 %p 가산 + 솔루션·컨설팅 무료)
+          </label>
+          <span className="flex items-center gap-1.5">
+            보너스
+            <Input
+              name="promo_bonus"
+              type="number"
+              step="0.5"
+              min={0}
+              max={5}
+              defaultValue={promo?.bonus_rate ?? 1}
+              className="h-8 w-16 text-right"
+            />
+            %p
+          </span>
+        </div>
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          끄면 랜딩·계산기·신청 폼의 프로모션 표기와 정산 자동 적용이 즉시
+          중단됩니다. (이미 확정된 정산은 불변)
+        </p>
       </div>
       <div>
         <Label>대상 매체</Label>
