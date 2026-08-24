@@ -25,6 +25,12 @@ export default async function PaybackSettingsPage() {
         minPayout={Number(map.get("min_payout") ?? 10000)}
         disputeDays={Number(map.get("dispute_window_days") ?? 3)}
         targetMedia={(map.get("target_media") as string[] | undefined) ?? ["naver", "kakao"]}
+        promo={
+          (map.get("promo_first_month") as {
+            enabled?: boolean;
+            bonus_rate?: number;
+          } | null) ?? null
+        }
       />
     </div>
   );

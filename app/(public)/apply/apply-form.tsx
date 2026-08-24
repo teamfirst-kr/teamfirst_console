@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PB_MEDIA_OPTIONS } from "@/lib/schemas/payback-application";
-import { calcPayback, type RateTable } from "@/lib/payback";
+import { calcPayback, type PaybackPromo, type RateTable } from "@/lib/payback";
 import { trackConversion } from "@/components/analytics/track";
 
 import { submitPaybackApplication, type PbApplyState } from "./actions";
@@ -18,7 +18,13 @@ function FieldError({ messages }: { messages?: string[] }) {
 
 type MediaRow = { media: string; account_id: string };
 
-export function PaybackApplyForm({ table }: { table: RateTable }) {
+export function PaybackApplyForm({
+  table,
+  promo = null,
+}: {
+  table: RateTable;
+  promo?: PaybackPromo | null;
+}) {
   const [state, formAction, pending] = useActionState<PbApplyState, FormData>(
     submitPaybackApplication,
     null,
@@ -41,15 +47,18 @@ export function PaybackApplyForm({ table }: { table: RateTable }) {
   const consultingEligible = budgetNum >= table.consultingMinSpend;
 
   // 예상 페이백 미리보기 — 계산기·정산과 동일한 lib/payback.ts 사용
-  const preview =
+  const previewInput =
     budgetNum > 0
-      ? calcPayback(table, {
+      ? {
           adSpend: budgetNum,
           allSolutions: optAll,
           consulting: optConsulting && consultingEligible,
           invoiceCapable: true,
-        })
+        }
       : null;
+  const preview = previewInput ? calcPayback(table, previewInput) : null;
+  const previewPromo =
+    previewInput && promo ? calcPayback(table, previewInput, promo) : null;
   const errors = state && "fieldErrors" in state ? (state.fieldErrors ?? {}) : {};
 
   return (
@@ -248,6 +257,17 @@ export function PaybackApplyForm({ table }: { table: RateTable }) {
         {/* 예상 페이백률 미리보기 (요율표 게시 버전 기준) */}
         {preview ? (
           <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 text-sm">
+            {previewPromo ? (
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-amber-50 px-3 py-2">
+                <span className="text-xs font-semibold text-amber-800">
+                  🎁 첫 달 프로모션 (+{previewPromo.promoBonus}%p · 옵션 무료)
+                </span>
+                <span className="font-extrabold text-amber-700">
+                  {previewPromo.appliedRate}% · 약{" "}
+                  {previewPromo.supplyValue.toLocaleString()}원
+                </span>
+              </div>
+            ) : null}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-muted-foreground">
                 예상 적용 요율{" "}

@@ -23,14 +23,32 @@ const FALLBACK_TABLE: RateTable = {
 
 export default async function PaybackApplyPage() {
   const supabase = await createClient();
-  const { data: row } = await supabase
-    .from("pb_rate_tables")
-    .select("version, tiers, modifiers, consulting_min_spend")
-    .eq("published", true)
-    .order("effective_from", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const [{ data: row }, { data: promoRow }] = await Promise.all([
+    supabase
+      .from("pb_rate_tables")
+      .select("version, tiers, modifiers, consulting_min_spend")
+      .eq("published", true)
+      .order("effective_from", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("pb_app_settings")
+      .select("value")
+      .eq("key", "promo_first_month")
+      .maybeSingle(),
+  ]);
   const table = row ? rateTableFromRow(row) : FALLBACK_TABLE;
+  const promoCfg = (promoRow?.value ?? null) as {
+    enabled?: boolean;
+    bonus_rate?: number;
+    free_options?: boolean;
+  } | null;
+  const promo = promoCfg?.enabled
+    ? {
+        bonusRate: Number(promoCfg.bonus_rate ?? 1) || 0,
+        freeOptions: promoCfg.free_options !== false,
+      }
+    : null;
   return (
     <div className="mx-auto max-w-2xl px-6 py-14">
       <h1 className="text-2xl font-bold text-secondary">광고비 페이백 신청</h1>
@@ -39,7 +57,7 @@ export default async function PaybackApplyPage() {
         기준 1~2일 내 담당자가 연락드립니다.
       </p>
       <div className="mt-8 rounded-2xl border bg-card p-6 shadow-sm md:p-8">
-        <PaybackApplyForm table={table} />
+        <PaybackApplyForm table={table} promo={promo} />
       </div>
     </div>
   );

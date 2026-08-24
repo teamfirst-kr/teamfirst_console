@@ -108,6 +108,44 @@ describe("계산기/정산 공통 계산", () => {
   });
 });
 
+describe("첫 달 프로모션 (+1%p & 옵션 무료)", () => {
+  const PROMO = { bonusRate: 1, freeOptions: true };
+
+  it("12,000,000 + 옵션 전부 → 첫 달 10% (차감 면제 + 1%p 가산) = 1,200,000", () => {
+    const r = calcPayback(
+      V1,
+      { adSpend: 12_000_000, allSolutions: true, consulting: true, invoiceCapable: true },
+      PROMO,
+    );
+    expect(r.baseRate).toBe(9);
+    expect(r.modifierTotal).toBe(0);
+    expect(r.promoBonus).toBe(1);
+    expect(r.appliedRate).toBe(10);
+    expect(r.supplyValue).toBe(1_200_000);
+  });
+
+  it("옵션 없어도 +1%p 가산 (5,000,000 → 9% = 450,000)", () => {
+    const r = calcPayback(
+      V1,
+      { adSpend: 5_000_000, allSolutions: false, consulting: false, invoiceCapable: true },
+      PROMO,
+    );
+    expect(r.appliedRate).toBe(9);
+    expect(r.supplyValue).toBe(450_000);
+  });
+
+  it("프로모션 없으면 기존과 동일 (promoBonus 0)", () => {
+    const r = calcPayback(V1, {
+      adSpend: 5_000_000,
+      allSolutions: false,
+      consulting: false,
+      invoiceCapable: true,
+    });
+    expect(r.promoBonus).toBe(0);
+    expect(r.appliedRate).toBe(8);
+  });
+});
+
 describe("컨설팅 자격 (D3 — 선택/유지 단계)", () => {
   it("인수기준 2: 6,900,000 → 불가 / 7,000,000 → 가능", () => {
     expect(consultingEligible(V1, 6_900_000)).toBe(false);

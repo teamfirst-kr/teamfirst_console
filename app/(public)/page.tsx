@@ -44,6 +44,10 @@ const STEPS = [
 
 const FAQS = [
   {
+    q: "첫 달 프로모션은 어떻게 적용되나요?",
+    a: "첫 정산월에 한해 기본 페이백률에 1%p가 추가되고, 솔루션 전체와 주간/월간 전문가 컨설팅이 요율 차감 없이 무료 제공됩니다. 2개월 차부터는 표준 요율표와 선택 옵션 기준으로 적용되며, 프로모션은 별도 공지 시까지 운영됩니다.",
+  },
+  {
     q: "페이백은 언제 지급되나요?",
     a: "전월 광고비 기준 정산서가 매월 25일까지 도착하고, 세금계산서 발행 확인과 매체 수수료 입금 확인이 완료되면 익월 15일까지(휴일 시 익영업일) 등록 계좌로 입금됩니다.",
   },
@@ -91,19 +95,38 @@ const FOOTNOTES = [
   "⑥ 파워콘텐츠·플레이스 광고 등 매체 수수료가 발생하지 않는 상품은 페이백 대상에서 제외됩니다",
   "⑦ 주간/월간 전문가 컨설팅 옵션은 월 광고비 700만 원 이상 구간에서 선택 가능합니다",
   "⑧ 사업자등록 보유 광고주 대상이며, 세금계산서 발행이 불가한 사업자는 별도 절차로 안내됩니다",
+  "⑨ 첫 달 프로모션(+1%p 추가 페이백, 솔루션·전문가 컨설팅 무료)은 고객사별 첫 정산월에 한해 적용되며, 별도 공지 시까지 운영됩니다",
 ];
 
 export default async function PaybackLanding() {
   const supabase = await createClient();
-  const { data: row } = await supabase
-    .from("pb_rate_tables")
-    .select("version, tiers, modifiers, consulting_min_spend, effective_from")
-    .eq("published", true)
-    .order("effective_from", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const [{ data: row }, { data: promoRow }] = await Promise.all([
+    supabase
+      .from("pb_rate_tables")
+      .select("version, tiers, modifiers, consulting_min_spend, effective_from")
+      .eq("published", true)
+      .order("effective_from", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("pb_app_settings")
+      .select("value")
+      .eq("key", "promo_first_month")
+      .maybeSingle(),
+  ]);
 
   const table: RateTable = row ? rateTableFromRow(row) : FALLBACK_TABLE;
+  const promoCfg = (promoRow?.value ?? null) as {
+    enabled?: boolean;
+    bonus_rate?: number;
+    free_options?: boolean;
+  } | null;
+  const promo = promoCfg?.enabled
+    ? {
+        bonusRate: Number(promoCfg.bonus_rate ?? 1) || 0,
+        freeOptions: promoCfg.free_options !== false,
+      }
+    : null;
 
   return (
     <div className="overflow-hidden">
@@ -161,8 +184,21 @@ export default async function PaybackLanding() {
           heading="우리 회사 페이백, 지금 계산해보세요"
           sub="월 광고비만 입력하면 예상 페이백이 바로 나옵니다."
         />
-        <Reveal className="mt-10">
-          <PaybackCalculator table={table} />
+        {promo ? (
+          <Reveal className="mx-auto mt-8 max-w-3xl">
+            <div className="flex flex-wrap items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm font-semibold text-amber-800">
+              🎁 런칭 프로모션 — 첫 달 <strong>+{promo.bonusRate}%p 추가 페이백</strong>
+              {promo.freeOptions ? (
+                <>
+                  {" "}
+                  & <strong>솔루션·전문가 컨설팅 무료</strong> (요율 차감 없음)
+                </>
+              ) : null}
+            </div>
+          </Reveal>
+        ) : null}
+        <Reveal className="mt-6">
+          <PaybackCalculator table={table} promo={promo} />
         </Reveal>
         <Reveal delay={80} className="mt-8 text-center">
           <ApplyCtaLink location="calculator">이 조건으로 신청하기</ApplyCtaLink>
@@ -240,6 +276,12 @@ export default async function PaybackLanding() {
                 </tbody>
               </table>
               <div className="border-t bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+                {promo ? (
+                  <p className="font-semibold text-amber-700">
+                    🎁 첫 달: 위 요율에 +{promo.bonusRate}%p 추가
+                    {promo.freeOptions ? " · 솔루션·컨설팅 무료(차감 없음)" : ""}
+                  </p>
+                ) : null}
                 <p>· 솔루션 전체 이용 시 −{table.modifiers.allSolutions}%p</p>
                 <p>
                   · 주간/월간 전문가 컨설팅 이용 시 −{table.modifiers.consulting}%p (월
