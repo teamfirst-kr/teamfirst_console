@@ -146,6 +146,43 @@ describe("첫 달 프로모션 (+1%p & 옵션 무료)", () => {
   });
 });
 
+describe("v1.2 요율표 (D-060 — 컨설팅 −1%p)", () => {
+  const V12: RateTable = {
+    version: "v1.2",
+    tiers: [
+      { min: 0, max: 3_000_000, rate: 7 },
+      { min: 3_000_000, max: 7_000_000, rate: 8 },
+      { min: 7_000_000, max: 20_000_000, rate: 10 },
+      { min: 20_000_000, max: null, rate: 11 },
+    ],
+    modifiers: { allSolutions: 1, consulting: 1 },
+    consultingMinSpend: 7_000_000,
+  };
+
+  it("12,000,000 + 전체 솔루션 + 월간 컨설팅 → 10−1−1=8%, 페이백 960,000", () => {
+    const r = calcPayback(V12, {
+      adSpend: 12_000_000,
+      allSolutions: true,
+      consulting: true,
+      invoiceCapable: true,
+    });
+    expect(r.baseRate).toBe(10);
+    expect(r.modifierTotal).toBe(2);
+    expect(r.appliedRate).toBe(8);
+    expect(r.supplyValue).toBe(960_000);
+  });
+
+  it("2,000만+ 구간: 솔루션+컨설팅 전부 켜도 11−2=9% 유지", () => {
+    const r = calcPayback(V12, {
+      adSpend: 20_000_000,
+      allSolutions: true,
+      consulting: true,
+      invoiceCapable: true,
+    });
+    expect(r.appliedRate).toBe(9);
+  });
+});
+
 describe("컨설팅 자격 (D3 — 선택/유지 단계)", () => {
   it("인수기준 2: 6,900,000 → 불가 / 7,000,000 → 가능", () => {
     expect(consultingEligible(V1, 6_900_000)).toBe(false);

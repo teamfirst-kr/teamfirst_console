@@ -180,7 +180,7 @@ export default async function PaybackClientDetailPage({
             <p>요율표 버전: <strong>{rateVersion}</strong> (체결 시점 스냅샷 — 개정 무관)</p>
             <p>
               옵션: {agreement?.all_solutions ? "솔루션 전체(−1%p) " : ""}
-              {agreement?.consulting ? "컨설팅(−2%p)" : ""}
+              {agreement?.consulting ? "컨설팅(−1%p)" : ""}
               {!agreement?.all_solutions && !agreement?.consulting ? "없음" : ""}
             </p>
             <p>

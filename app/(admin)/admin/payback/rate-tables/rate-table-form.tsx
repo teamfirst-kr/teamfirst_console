@@ -82,7 +82,7 @@ export function RateTableForm() {
         </div>
         <div>
           <Label htmlFor="rt-cons">컨설팅 (−%p)</Label>
-          <Input id="rt-cons" name="mod_consulting" type="number" step="0.5" defaultValue="2" />
+          <Input id="rt-cons" name="mod_consulting" type="number" step="0.5" defaultValue="1" />
         </div>
         <div>
           <Label htmlFor="rt-min">컨설팅 기준액 (원)</Label>
