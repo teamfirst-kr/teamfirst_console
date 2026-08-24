@@ -62,7 +62,7 @@ export default async function PaybackRateTablesPage() {
                 </tbody>
               </table>
               <p className="mt-2 text-xs text-muted-foreground">
-                옵션: 솔루션 전체 −{mods.allSolutions ?? 1}%p · 컨설팅 −{mods.consulting ?? 2}%p
+                옵션: 솔루션 전체 −{mods.allSolutions ?? 1}%p · 컨설팅 −{mods.consulting ?? 1}%p
                 (기준 {(t.consulting_min_spend / 10_000).toLocaleString()}만 원)
               </p>
             </div>

@@ -53,8 +53,8 @@ export function OptionToggles({
         }
       />
       <OptionRow
-        title="주간/월간 전문가 컨설팅"
-        desc={`주간/월간 주기로 전문가 컨설팅을 받습니다. 페이백률 −2%p. (월 광고비 700만 원 이상 구간 전용 · 최근 확정 정산: ${lastSpendLabel})`}
+        title="월간 전문가 컨설팅"
+        desc={`월간 주기로 전문가 컨설팅을 받습니다. 페이백률 −1%p. (월 광고비 700만 원 이상 구간 전용 · 최근 확정 정산: ${lastSpendLabel})`}
         current={currentConsulting}
         next={nextConsulting}
         disabled={pending || (!nextConsulting && !consultingEligible)}

@@ -21,7 +21,7 @@ export async function createRateTable(
   const effectiveFrom = String(formData.get("effective_from") ?? "").trim();
   const tiersRaw = String(formData.get("tiers") ?? "").trim();
   const allSolutions = Number(formData.get("mod_all") ?? 1);
-  const consulting = Number(formData.get("mod_consulting") ?? 2);
+  const consulting = Number(formData.get("mod_consulting") ?? 1);
   const minSpend = Number(String(formData.get("min_spend") ?? "").replace(/\D/g, "")) || 7_000_000;
   const publish = formData.get("published") === "on";
 

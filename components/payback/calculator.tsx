@@ -125,7 +125,7 @@ export function PaybackCalculator({
               title={
                 eligible
                   ? undefined
-                  : "주간/월간 전문가 컨설팅 옵션은 월 광고비 700만 원 이상 구간에서 선택 가능합니다"
+                  : "월간 전문가 컨설팅 옵션은 월 광고비 700만 원 이상 구간에서 선택 가능합니다"
               }
             >
               <input
@@ -136,7 +136,7 @@ export function PaybackCalculator({
                 className="mt-0.5 h-4 w-4"
               />
               <span>
-                주간/월간 전문가 컨설팅{" "}
+                월간 전문가 컨설팅{" "}
                 <span className="text-muted-foreground">
                   (−{table.modifiers.consulting}%p)
                 </span>

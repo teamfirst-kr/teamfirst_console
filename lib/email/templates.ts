@@ -254,15 +254,15 @@ export function pbConsultingTerminationEmail(params: {
   const isNotice = params.mode === "notice";
   return {
     subject: isNotice
-      ? "[TeamFirst] 주간/월간 전문가 컨설팅 옵션 해제 예정 안내"
-      : "[TeamFirst] 주간/월간 전문가 컨설팅 옵션이 해제되었습니다",
+      ? "[TeamFirst] 월간 전문가 컨설팅 옵션 해제 예정 안내"
+      : "[TeamFirst] 월간 전문가 컨설팅 옵션이 해제되었습니다",
     html: layout(
       isNotice ? "컨설팅 옵션 해제 예정 안내" : "컨설팅 옵션 해제 완료",
-      `<p>${esc(params.companyName)}님, 주간/월간 전문가 컨설팅 옵션은 월 광고비 700만 원 이상 구간에서 이용 가능합니다.</p>
+      `<p>${esc(params.companyName)}님, 월간 전문가 컨설팅 옵션은 월 광고비 700만 원 이상 구간에서 이용 가능합니다.</p>
        ${
          isNotice
-           ? `<p>최근 2개월 연속 월 광고비가 700만 원 미만으로 확인되어, <strong>${params.effectiveDate}부로 옵션이 자동 해제될 예정</strong>입니다. 해제 후에는 컨설팅 조정(−2%p)이 적용되지 않아 페이백률이 올라갑니다.</p>`
-           : `<p><strong>${params.effectiveDate}부로 컨설팅 옵션이 해제</strong>되었습니다. 이번 달부터 컨설팅 조정(−2%p)이 적용되지 않습니다. 월 광고비가 다시 700만 원 이상이 되면 콘솔에서 재신청할 수 있습니다.</p>`
+           ? `<p>최근 2개월 연속 월 광고비가 700만 원 미만으로 확인되어, <strong>${params.effectiveDate}부로 옵션이 자동 해제될 예정</strong>입니다. 해제 후에는 컨설팅 조정(−1%p)이 적용되지 않아 페이백률이 올라갑니다.</p>`
+           : `<p><strong>${params.effectiveDate}부로 컨설팅 옵션이 해제</strong>되었습니다. 이번 달부터 컨설팅 조정(−1%p)이 적용되지 않습니다. 월 광고비가 다시 700만 원 이상이 되면 콘솔에서 재신청할 수 있습니다.</p>`
        }`,
     ),
   };

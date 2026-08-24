@@ -243,7 +243,7 @@ export function PaybackApplyForm({
               className="mt-0.5 h-4 w-4"
             />
             <span>
-              주간/월간 전문가 컨설팅 <span className="text-muted-foreground">(−2%p)</span>
+              월간 전문가 컨설팅 <span className="text-muted-foreground">(−1%p)</span>
               {!consultingEligible ? (
                 <span className="block text-xs text-muted-foreground">
                   월 광고비 700만 원 이상 구간에서 선택 가능

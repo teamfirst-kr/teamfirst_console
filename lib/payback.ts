@@ -20,7 +20,7 @@ export type PaybackInput = {
 // 첫 달 프로모션 (운영 설정으로 on/off): 보너스 %p 가산 + 옵션 차감 면제
 export type PaybackPromo = {
   bonusRate: number; // +1 → 기본 요율에 1%p 가산
-  freeOptions: boolean; // true → 솔루션/컨설팅 차감(-1/-2%p) 미적용
+  freeOptions: boolean; // true → 솔루션/컨설팅 차감(요율표 modifiers) 미적용
 };
 
 export type PaybackResult = {
@@ -76,7 +76,7 @@ export function calcPayback(
   const tier = findTier(table, input.adSpend);
   const baseRate = tier.rate;
 
-  // 컨설팅 −2%p는 해당 월 옵션이 활성이면 광고비와 무관하게 적용 (§3 — 유예월 포함).
+  // 컨설팅 차감은 해당 월 옵션이 활성이면 광고비와 무관하게 적용 (§3 — 유예월 포함).
   // 700만 조건은 옵션의 선택/유지 단계(D3)에서만 검증한다.
   // 프로모션 freeOptions면 옵션 차감을 면제하고, bonusRate를 가산한다.
   const modifierTotal = promo?.freeOptions

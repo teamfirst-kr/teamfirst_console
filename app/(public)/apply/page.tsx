@@ -10,14 +10,14 @@ export const metadata = {
 };
 
 const FALLBACK_TABLE: RateTable = {
-  version: "v1.1",
+  version: "v1.2",
   tiers: [
     { min: 0, max: 3_000_000, rate: 7 },
     { min: 3_000_000, max: 7_000_000, rate: 8 },
     { min: 7_000_000, max: 20_000_000, rate: 10 },
     { min: 20_000_000, max: null, rate: 11 },
   ],
-  modifiers: { allSolutions: 1, consulting: 2 },
+  modifiers: { allSolutions: 1, consulting: 1 },
   consultingMinSpend: 7_000_000,
 };
 

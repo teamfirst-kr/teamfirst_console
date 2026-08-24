@@ -199,7 +199,7 @@ export default async function PaybackDashboardPage() {
               이번 달 옵션:{" "}
               {[
                 currentOptions.all_solutions ? "솔루션 전체(−1%p)" : null,
-                currentOptions.consulting ? "컨설팅(−2%p)" : null,
+                currentOptions.consulting ? "컨설팅(−1%p)" : null,
               ]
                 .filter(Boolean)
                 .join(" · ") || "없음"}
