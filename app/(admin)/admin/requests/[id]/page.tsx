@@ -21,6 +21,7 @@ import {
 import type { RequestStatus } from "@/types/database";
 
 import { RfpPanel } from "./rfp-panel";
+import { RejectPanel } from "./reject-panel";
 import { CandidateSelector, type ApplicantCard } from "./candidate-selector";
 import { DecisionPanel, type DecisionCandidate } from "./decision-panel";
 
@@ -38,7 +39,9 @@ export default async function AdminRequestDetailPage({
 
   const { data: request } = await supabase
     .from("matching_requests")
-    .select("id, title, brief, budget_monthly, status, submitted_at, created_at, admin_memo")
+    .select(
+      "id, title, brief, budget_monthly, status, submitted_at, created_at, admin_memo, reject_reason, rejected_at",
+    )
     .eq("id", id)
     .single();
 
@@ -140,6 +143,11 @@ export default async function AdminRequestDetailPage({
     status: c.status,
   }));
   const isClosed = status === "closed_won" || status === "closed_lost";
+  const isRejected = status === "rejected";
+  // 후보를 광고주에게 전달하기 전 단계에서만 반려 가능
+  const canReject = ["submitted", "rfp_sent", "collecting", "curating"].includes(
+    status,
+  );
   // 미팅 단계 이후에만 결정 패널 노출
   const showDecision =
     decisionCandidates.length > 0 &&
@@ -198,20 +206,38 @@ export default async function AdminRequestDetailPage({
         </div>
       </div>
 
+      {isRejected ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+          <p className="font-semibold">
+            반려된 요청입니다
+            {request.rejected_at
+              ? ` (${format(new Date(request.rejected_at), "yyyy.MM.dd")})`
+              : ""}
+          </p>
+          <p className="mt-1 whitespace-pre-wrap">
+            사유: {request.reject_reason || "-"}
+          </p>
+        </div>
+      ) : null}
+
       {sentCount > 0 ? (
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-primary">
           이 요청에 대해 RFP {sentCount}건이 발송되었습니다.
         </div>
       ) : null}
 
-      <RfpPanel
-        requestId={request.id}
-        status={status}
-        partners={rfpPartners}
-        requestChannels={brief.channels ?? []}
-        notifiedIds={notifiedIds}
-        alreadySent={sentCount > 0}
-      />
+      {!isRejected ? (
+        <RfpPanel
+          requestId={request.id}
+          status={status}
+          partners={rfpPartners}
+          requestChannels={brief.channels ?? []}
+          notifiedIds={notifiedIds}
+          alreadySent={sentCount > 0}
+        />
+      ) : null}
+
+      {canReject ? <RejectPanel requestId={request.id} /> : null}
 
       <Card>
         <CardHeader>

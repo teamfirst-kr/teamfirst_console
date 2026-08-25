@@ -23,6 +23,7 @@ const STATUS_TABS: { value: RequestStatus | "all"; label: string }[] = [
   { value: "collecting", label: "지원 수집" },
   { value: "curating", label: "후보 선정" },
   { value: "closed_won", label: "성사" },
+  { value: "rejected", label: "반려" },
 ];
 
 export const dynamic = "force-dynamic";

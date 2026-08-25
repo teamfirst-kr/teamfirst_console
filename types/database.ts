@@ -102,7 +102,8 @@ export type RequestStatus =
   | "meeting_scheduled"
   | "closed_won"
   | "closed_lost"
-  | "cancelled";
+  | "cancelled"
+  | "rejected";
 
 export type StaffSize =
   | "1인 대행사"
@@ -509,6 +510,8 @@ export type Database = {
           submitted_at: string | null;
           rfp_sent_at: string | null;
           closed_at: string | null;
+          rejected_at: string | null;
+          reject_reason: string | null;
           admin_memo: string | null;
           created_at: string;
           updated_at: string;
@@ -525,6 +528,8 @@ export type Database = {
           submitted_at?: string | null;
           rfp_sent_at?: string | null;
           closed_at?: string | null;
+          rejected_at?: string | null;
+          reject_reason?: string | null;
           admin_memo?: string | null;
         };
         Update: Partial<{
@@ -537,6 +542,8 @@ export type Database = {
           submitted_at: string | null;
           rfp_sent_at: string | null;
           closed_at: string | null;
+          rejected_at: string | null;
+          reject_reason: string | null;
           admin_memo: string | null;
         }>;
         Relationships: [];
