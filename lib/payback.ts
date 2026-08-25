@@ -7,7 +7,7 @@ export type RateTable = {
   version: string; // "v1.0"
   tiers: RateTier[]; // D1
   modifiers: { allSolutions: number; consulting: number }; // {1, 2} (%p 차감)
-  consultingMinSpend: number; // 7_000_000
+  consultingMinSpend: number; // 예: 5_000_000
 };
 
 export type PaybackInput = {
@@ -34,8 +34,8 @@ export type PaybackResult = {
   totalPayout: number; // supplyValue + vat
 };
 
-// 만원 단위 라벨 (예: 7,000,000 → "700만")
-function manLabel(won: number): string {
+// 만원 단위 라벨 (예: 5,000,000 → "500만")
+export function manLabel(won: number): string {
   const man = Math.floor(won / 10_000);
   return `${man.toLocaleString("ko-KR")}만`;
 }
@@ -77,7 +77,7 @@ export function calcPayback(
   const baseRate = tier.rate;
 
   // 컨설팅 차감은 해당 월 옵션이 활성이면 광고비와 무관하게 적용 (§3 — 유예월 포함).
-  // 700만 조건은 옵션의 선택/유지 단계(D3)에서만 검증한다.
+  // 최소 광고비 조건은 옵션의 선택/유지 단계(D3)에서만 검증한다.
   // 프로모션 freeOptions면 옵션 차감을 면제하고, bonusRate를 가산한다.
   const modifierTotal = promo?.freeOptions
     ? 0

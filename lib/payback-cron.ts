@@ -73,7 +73,7 @@ async function applyDueOptionChanges(today: string): Promise<{ applied: number }
   for (const change of due ?? []) {
     const { data: agreement } = await admin
       .from("pb_agreements")
-      .select("id, client_id")
+      .select("id, client_id, rate_table_id")
       .eq("id", change.agreement_id)
       .maybeSingle();
     if (!agreement) continue;
@@ -131,10 +131,19 @@ async function applyDueOptionChanges(today: string): Promise<{ applied: number }
         .eq("id", agreement.client_id)
         .maybeSingle();
       if (client) {
+        const { data: rt } = await admin
+          .from("pb_rate_tables")
+          .select("consulting_min_spend")
+          .eq("id", agreement.rate_table_id)
+          .maybeSingle();
+        const minSpend = rt?.consulting_min_spend;
         const mail = pbConsultingTerminationEmail({
           companyName: client.company_name,
           mode: "final",
           effectiveDate: change.effective_from,
+          minSpendLabel: minSpend
+            ? `${Math.floor(minSpend / 10_000).toLocaleString("ko-KR")}만`
+            : undefined,
         });
         await sendPbEmail({ clientId: client.id, to: client.contact_email, type: "E8", ...mail });
       }

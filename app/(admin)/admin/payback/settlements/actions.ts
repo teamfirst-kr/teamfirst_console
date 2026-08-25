@@ -469,6 +469,7 @@ async function maybeScheduleConsultingTermination(
       companyName: client.company_name,
       mode: "notice",
       effectiveDate: effectiveFrom,
+      minSpendLabel: `${Math.floor(ctx.table.consultingMinSpend / 10_000).toLocaleString("ko-KR")}만`,
     });
     await sendPbEmail({ clientId, to: client.contact_email, type: "E8", ...mail });
   }

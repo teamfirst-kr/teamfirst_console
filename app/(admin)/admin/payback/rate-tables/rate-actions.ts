@@ -22,7 +22,7 @@ export async function createRateTable(
   const tiersRaw = String(formData.get("tiers") ?? "").trim();
   const allSolutions = Number(formData.get("mod_all") ?? 1);
   const consulting = Number(formData.get("mod_consulting") ?? 1);
-  const minSpend = Number(String(formData.get("min_spend") ?? "").replace(/\D/g, "")) || 7_000_000;
+  const minSpend = Number(String(formData.get("min_spend") ?? "").replace(/\D/g, "")) || 5_000_000;
   const publish = formData.get("published") === "on";
 
   if (!version) return { ok: false, error: "버전명을 입력해주세요. (예: v1.1)" };
