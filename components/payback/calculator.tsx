@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import {
   calcPayback,
   consultingEligible,
+  manLabel,
   type PaybackPromo,
   type RateTable,
 } from "@/lib/payback";
@@ -125,7 +126,7 @@ export function PaybackCalculator({
               title={
                 eligible
                   ? undefined
-                  : "월간 전문가 컨설팅 옵션은 월 광고비 700만 원 이상 구간에서 선택 가능합니다"
+                  : `월간 전문가 컨설팅 옵션은 월 광고비 ${manLabel(table.consultingMinSpend)} 원 이상 구간에서 선택 가능합니다`
               }
             >
               <input
@@ -142,7 +143,7 @@ export function PaybackCalculator({
                 </span>
                 {!eligible ? (
                   <span className="block text-xs text-muted-foreground">
-                    월 광고비 700만 원 이상 구간에서 선택 가능
+                    월 광고비 {manLabel(table.consultingMinSpend)} 원 이상 구간에서 선택 가능
                   </span>
                 ) : null}
               </span>

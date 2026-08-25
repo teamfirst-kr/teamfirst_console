@@ -10,15 +10,16 @@ export const metadata = {
 };
 
 const FALLBACK_TABLE: RateTable = {
-  version: "v1.2",
+  version: "v20260824",
   tiers: [
-    { min: 0, max: 3_000_000, rate: 7 },
-    { min: 3_000_000, max: 7_000_000, rate: 8 },
-    { min: 7_000_000, max: 20_000_000, rate: 10 },
-    { min: 20_000_000, max: null, rate: 11 },
+    { min: 0, max: 3_000_000, rate: 8 },
+    { min: 3_000_000, max: 5_000_000, rate: 9 },
+    { min: 5_000_000, max: 7_000_000, rate: 10 },
+    { min: 7_000_000, max: 20_000_000, rate: 11 },
+    { min: 20_000_000, max: null, rate: 12 },
   ],
   modifiers: { allSolutions: 1, consulting: 1 },
-  consultingMinSpend: 7_000_000,
+  consultingMinSpend: 5_000_000,
 };
 
 export default async function PaybackApplyPage() {

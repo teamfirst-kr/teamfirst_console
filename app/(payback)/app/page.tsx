@@ -181,8 +181,8 @@ export default async function PaybackDashboardPage() {
       ) : null}
       {autoTermPending ? (
         <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-          월 광고비 2개월 연속 700만 원 미만으로 <strong>컨설팅 옵션이 익월 1일 자동
-          해제될 예정</strong>입니다.
+          월 광고비 2개월 연속 컨설팅 이용 기준 미만으로 <strong>컨설팅 옵션이 익월
+          1일 자동 해제될 예정</strong>입니다.
         </div>
       ) : null}
 

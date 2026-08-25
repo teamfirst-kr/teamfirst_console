@@ -149,15 +149,26 @@ export async function submitPaybackApplication(
     }
   }
 
-  // 컨설팅 자격 (D3): 예상 광고비 700만 미만이면 서버에서도 거부
-  if (data.opt_consulting && (data.expected_budget ?? 0) < 7_000_000) {
-    return {
-      error: "월간 전문가 컨설팅 옵션은 월 광고비 700만 원 이상 구간에서 선택 가능합니다.",
-      fieldErrors: { opt_consulting: ["700만 원 이상 구간 전용 옵션입니다."] },
-    };
-  }
-
   const supabase = await createClient();
+
+  // 컨설팅 자격 (D3): 게시 요율표 기준 최소 광고비 미만이면 서버에서도 거부
+  if (data.opt_consulting) {
+    const { data: rt } = await supabase
+      .from("pb_rate_tables")
+      .select("consulting_min_spend")
+      .eq("published", true)
+      .order("effective_from", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const minSpend = rt?.consulting_min_spend ?? 5_000_000;
+    if ((data.expected_budget ?? 0) < minSpend) {
+      const label = `${Math.floor(minSpend / 10_000).toLocaleString("ko-KR")}만`;
+      return {
+        error: `월간 전문가 컨설팅 옵션은 월 광고비 ${label} 원 이상 구간에서 선택 가능합니다.`,
+        fieldErrors: { opt_consulting: [`${label} 원 이상 구간 전용 옵션입니다.`] },
+      };
+    }
+  }
 
   // 중복 안내 (D15): 기존 신청/고객사에 같은 사업자번호 존재 여부
   const [{ data: dupApp }, { data: dupClient }] = await Promise.all([

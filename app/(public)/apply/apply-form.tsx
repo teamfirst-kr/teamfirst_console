@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PB_MEDIA_OPTIONS } from "@/lib/schemas/payback-application";
-import { calcPayback, type PaybackPromo, type RateTable } from "@/lib/payback";
+import { calcPayback, manLabel, type PaybackPromo, type RateTable } from "@/lib/payback";
 import { trackConversion } from "@/components/analytics/track";
 
 import { submitPaybackApplication, type PbApplyState } from "./actions";
@@ -243,10 +243,11 @@ export function PaybackApplyForm({
               className="mt-0.5 h-4 w-4"
             />
             <span>
-              월간 전문가 컨설팅 <span className="text-muted-foreground">(−1%p)</span>
+              월간 전문가 컨설팅{" "}
+              <span className="text-muted-foreground">(−{table.modifiers.consulting}%p)</span>
               {!consultingEligible ? (
                 <span className="block text-xs text-muted-foreground">
-                  월 광고비 700만 원 이상 구간에서 선택 가능
+                  월 광고비 {manLabel(table.consultingMinSpend)} 원 이상 구간에서 선택 가능
                 </span>
               ) : null}
             </span>
