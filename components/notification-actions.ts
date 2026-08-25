@@ -17,9 +17,15 @@ export async function getMyNotifications(): Promise<{
   unread: number;
 }> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { items: [], unread: 0 };
+  // admin은 RLS로 전체 알림이 보이므로, 벨에는 본인 앞으로 온 알림만 명시 필터
   const { data } = await supabase
     .from("notifications")
     .select("id, type, title, body, link, read_at, created_at")
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(20);
   const items = (data ?? []) as NotificationItem[];
