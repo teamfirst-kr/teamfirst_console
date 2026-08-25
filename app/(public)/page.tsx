@@ -7,21 +7,22 @@ import { ApplyCtaLink } from "@/components/analytics/apply-cta";
 import { PaybackCalculator } from "@/components/payback/calculator";
 import { SolutionsShowcase } from "@/components/payback/solutions-showcase";
 import { createClient } from "@/lib/supabase/server";
-import { rateTableFromRow, tierLabelOf, type RateTable } from "@/lib/payback";
+import { manLabel, rateTableFromRow, tierLabelOf, type RateTable } from "@/lib/payback";
 
 export const dynamic = "force-dynamic";
 
-// v1.2 요율표와 동일 — DB 조회 실패 시 렌더 폴백 (계산·정산에는 사용하지 않음)
+// v20260824 요율표와 동일 — DB 조회 실패 시 렌더 폴백 (계산·정산에는 사용하지 않음)
 const FALLBACK_TABLE: RateTable = {
-  version: "v1.2",
+  version: "v20260824",
   tiers: [
-    { min: 0, max: 3_000_000, rate: 7 },
-    { min: 3_000_000, max: 7_000_000, rate: 8 },
-    { min: 7_000_000, max: 20_000_000, rate: 10 },
-    { min: 20_000_000, max: null, rate: 11 },
+    { min: 0, max: 3_000_000, rate: 8 },
+    { min: 3_000_000, max: 5_000_000, rate: 9 },
+    { min: 5_000_000, max: 7_000_000, rate: 10 },
+    { min: 7_000_000, max: 20_000_000, rate: 11 },
+    { min: 20_000_000, max: null, rate: 12 },
   ],
   modifiers: { allSolutions: 1, consulting: 1 },
-  consultingMinSpend: 7_000_000,
+  consultingMinSpend: 5_000_000,
 };
 
 const STEPS = [
@@ -38,7 +39,7 @@ const STEPS = [
   {
     no: "03",
     title: "매월 페이백",
-    body: "매체가 팀퍼스트에 지급하는 대행수수료를 재원으로, 광고비 구간에 따라 7~11%를 매월 현금으로 돌려드립니다.",
+    body: "매체가 팀퍼스트에 지급하는 대행수수료를 재원으로, 광고비 구간에 따라 8~12%를 매월 현금으로 돌려드립니다.",
   },
 ];
 
@@ -73,7 +74,7 @@ const FAQS = [
   },
   {
     q: "옵션(솔루션 전체·컨설팅)은 언제부터 적용되나요?",
-    a: "콘솔에서 신청하면 익월 1일부터 적용됩니다(당월 정산 미반영). 월간 전문가 컨설팅은 월 광고비 700만 원 이상 구간에서 선택할 수 있습니다.",
+    a: "콘솔에서 신청하면 익월 1일부터 적용됩니다(당월 정산 미반영). 월간 전문가 컨설팅은 월 광고비 500만 원 이상 구간에서 선택할 수 있습니다.",
   },
   {
     q: "광고 운영은 누가 하나요?",
@@ -93,7 +94,7 @@ const FOOTNOTES = [
   "④ 지급은 매체 수수료 정산 입금 확인 후 매월 지급일에 진행됩니다",
   "⑤ 당사가 매체로부터 수취하는 수수료율 변동 시 페이백률이 조정될 수 있습니다",
   "⑥ 파워콘텐츠·플레이스 광고 등 매체 수수료가 발생하지 않는 상품은 페이백 대상에서 제외됩니다",
-  "⑦ 월간 전문가 컨설팅 옵션은 월 광고비 700만 원 이상 구간에서 선택 가능합니다",
+  "⑦ 월간 전문가 컨설팅 옵션은 월 광고비 500만 원 이상 구간에서 선택 가능합니다",
   "⑧ 사업자등록 보유 광고주 대상이며, 세금계산서 발행이 불가한 사업자는 별도 절차로 안내됩니다",
   "⑨ 첫 달 프로모션(+1%p 추가 페이백, 솔루션·전문가 컨설팅 무료)은 고객사별 첫 정산월에 한해 적용되며, 별도 공지 시까지 운영됩니다",
 ];
@@ -137,9 +138,9 @@ export default async function PaybackLanding() {
             immediate
             className="mb-6 inline-flex max-w-full items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/70"
           >
-            <span className="sm:hidden">광고비 페이백 7~11% · 솔루션 무료</span>
+            <span className="sm:hidden">광고비 페이백 8~12% · 솔루션 무료</span>
             <span className="hidden sm:inline">
-              광고비 페이백 7~11% · 솔루션 무료 · 운영은 그대로 셀프
+              광고비 페이백 8~12% · 솔루션 무료 · 운영은 그대로 셀프
             </span>
           </Reveal>
           <Reveal delay={60} immediate>
@@ -285,7 +286,7 @@ export default async function PaybackLanding() {
                 <p>· 솔루션 전체 이용 시 −{table.modifiers.allSolutions}%p</p>
                 <p>
                   · 월간 전문가 컨설팅 이용 시 −{table.modifiers.consulting}%p (월
-                  광고비 700만 원 이상 구간에서 선택 가능)
+                  광고비 {manLabel(table.consultingMinSpend)} 원 이상 구간에서 선택 가능)
                 </p>
               </div>
             </div>

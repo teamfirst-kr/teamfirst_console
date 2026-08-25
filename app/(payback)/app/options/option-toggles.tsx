@@ -13,6 +13,7 @@ export function OptionToggles({
   nextConsulting,
   consultingEligible,
   lastSpendLabel,
+  minSpendLabel,
   rateNow,
   rateIfAll,
   rateIfConsulting,
@@ -23,6 +24,7 @@ export function OptionToggles({
   nextConsulting: boolean;
   consultingEligible: boolean;
   lastSpendLabel: string;
+  minSpendLabel: string;
   rateNow: number;
   rateIfAll: number;
   rateIfConsulting: number;
@@ -54,13 +56,13 @@ export function OptionToggles({
       />
       <OptionRow
         title="월간 전문가 컨설팅"
-        desc={`월간 주기로 전문가 컨설팅을 받습니다. 페이백률 −1%p. (월 광고비 700만 원 이상 구간 전용 · 최근 확정 정산: ${lastSpendLabel})`}
+        desc={`월간 주기로 전문가 컨설팅을 받습니다. 페이백률 −1%p. (월 광고비 ${minSpendLabel} 원 이상 구간 전용 · 최근 확정 정산: ${lastSpendLabel})`}
         current={currentConsulting}
         next={nextConsulting}
         disabled={pending || (!nextConsulting && !consultingEligible)}
         disabledNote={
           !nextConsulting && !consultingEligible
-            ? "월 광고비 700만 원 이상 구간에서 선택 가능합니다"
+            ? `월 광고비 ${minSpendLabel} 원 이상 구간에서 선택 가능합니다`
             : undefined
         }
         onToggle={(v) =>

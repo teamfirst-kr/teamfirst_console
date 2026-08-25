@@ -71,7 +71,7 @@ export function RateTableForm() {
         <Input
           id="rt-tiers"
           name="tiers"
-          defaultValue="0,3000000,7 / 3000000,7000000,8 / 7000000,20000000,9 / 20000000,,10"
+          defaultValue="0,3000000,8 / 3000000,5000000,9 / 5000000,7000000,10 / 7000000,20000000,11 / 20000000,,12"
           className="font-mono text-xs"
         />
       </div>
@@ -86,7 +86,7 @@ export function RateTableForm() {
         </div>
         <div>
           <Label htmlFor="rt-min">컨설팅 기준액 (원)</Label>
-          <Input id="rt-min" name="min_spend" defaultValue="7,000,000" />
+          <Input id="rt-min" name="min_spend" defaultValue="5,000,000" />
         </div>
       </div>
       <label className="flex items-center gap-2 text-sm">

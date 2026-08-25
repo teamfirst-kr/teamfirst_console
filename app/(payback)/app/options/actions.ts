@@ -50,7 +50,7 @@ export async function requestOptionChange(
     return { ok: false, error: "이미 해당 상태로 예약/적용되어 있습니다." };
   }
 
-  // 컨설팅 켜기: 최근 확정 정산의 광고비 700만 이상만 (D3)
+  // 컨설팅 켜기: 최근 확정 정산의 광고비가 요율표 기준 이상만 (D3)
   if (field === "consulting" && newValue) {
     const [{ data: recent }, { data: rt }] = await Promise.all([
       admin
@@ -66,7 +66,7 @@ export async function requestOptionChange(
         .eq("id", agreement.rate_table_id)
         .maybeSingle(),
     ]);
-    const minSpend = rt?.consulting_min_spend ?? 7_000_000;
+    const minSpend = rt?.consulting_min_spend ?? 5_000_000;
     const lastSpend = recent?.[0]?.ad_spend_total ?? 0;
     if (lastSpend < minSpend) {
       return {
