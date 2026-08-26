@@ -44,15 +44,19 @@ function ResultNote({ result }: { result: PbActionResult | null }) {
 export function ApplicationActions({
   applicationId,
   status,
+  initialBizno = "",
 }: {
   applicationId: string;
   status: string;
+  initialBizno?: string;
 }) {
   const [pending, start] = useTransition();
   const [result, setResult] = useState<PbActionResult | null>(null);
   const [glosign, setGlosign] = useState("");
+  const [bizno, setBizno] = useState(initialBizno);
   const [rejectMode, setRejectMode] = useState(false);
   const [reason, setReason] = useState("");
+  const biznoOk = bizno.replace(/\D/g, "").length === 10;
 
   return (
     <div className="mt-3 border-t pt-3">
@@ -68,6 +72,12 @@ export function ApplicationActions({
           </Button>
         ) : null}
         <Input
+          placeholder="사업자번호 10자리 (등록증 참조)"
+          value={bizno}
+          onChange={(e) => setBizno(e.target.value)}
+          className="h-9 w-44 text-xs"
+        />
+        <Input
           placeholder="글로싸인 URL"
           value={glosign}
           onChange={(e) => setGlosign(e.target.value)}
@@ -75,10 +85,10 @@ export function ApplicationActions({
         />
         <Button
           size="sm"
-          disabled={pending || !glosign.trim()}
+          disabled={pending || !glosign.trim() || !biznoOk}
           onClick={() =>
             start(async () =>
-              setResult(await pbConvertAndSendAgreement(applicationId, glosign)),
+              setResult(await pbConvertAndSendAgreement(applicationId, glosign, bizno)),
             )
           }
         >

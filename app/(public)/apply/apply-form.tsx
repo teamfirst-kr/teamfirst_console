@@ -35,7 +35,6 @@ export function PaybackApplyForm({
   const [budget, setBudget] = useState("");
   const [optAll, setOptAll] = useState(false);
   const [optConsulting, setOptConsulting] = useState(false);
-  const [invoiceCapable, setInvoiceCapable] = useState<"yes" | "no">("yes");
   const startedAt = useMemo(() => Date.now(), []);
 
   // 퍼널 가시화: 신청 폼 진입 (CTA 클릭 → 폼 도달 → 제출 완료 사이 이탈 측정용)
@@ -83,20 +82,6 @@ export function PaybackApplyForm({
             <FieldError messages={errors.company_name} />
           </div>
           <div>
-            <Label htmlFor="business_number">사업자등록번호 *</Label>
-            <Input
-              id="business_number"
-              name="business_number"
-              placeholder="000-00-00000"
-              required
-            />
-            <FieldError messages={errors.business_number} />
-          </div>
-          <div>
-            <Label htmlFor="ceo_name">대표자</Label>
-            <Input id="ceo_name" name="ceo_name" />
-          </div>
-          <div>
             <Label htmlFor="business_license">사업자등록증 첨부 *</Label>
             <Input
               id="business_license"
@@ -107,7 +92,8 @@ export function PaybackApplyForm({
               className="pt-1.5"
             />
             <p className="mt-1 text-xs text-muted-foreground">
-              세금계산서 발행 확인을 위해 필요합니다. (PDF/JPG/PNG, 10MB 이하)
+              사업자등록번호·대표자 정보는 등록증으로 확인합니다. (PDF/JPG/PNG,
+              10MB 이하)
             </p>
             <FieldError messages={errors.business_license} />
           </div>
@@ -133,6 +119,11 @@ export function PaybackApplyForm({
             <FieldError messages={errors.contact_phone} />
           </div>
         </div>
+        <p className="text-xs text-muted-foreground">
+          접수 즉시 위 이메일로 접수 확인 메일을 보내드리며, 계산서 발행
+          이메일·입금 계좌 등 나머지 정보는 메일 회신으로 편하게 전달해주시면
+          됩니다.
+        </p>
       </section>
 
       <section className="space-y-4">
@@ -296,144 +287,6 @@ export function PaybackApplyForm({
             </p>
           </div>
         ) : null}
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-base font-bold text-secondary">5. 솔루션 접속 계정 설정</h2>
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          모든 고객에게 팀퍼스트 솔루션(로그분석·자동리포트 등)이 제공됩니다.
-          솔루션 접속에 사용할 계정을 미리 정해주세요.{" "}
-          <strong>다른 서비스에서 쓰지 않는 비밀번호</strong>를 입력해주시고,
-          미입력 시 활성화 단계에서 별도 안내드립니다.
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="solution_login_id">솔루션 ID (영문·숫자)</Label>
-            <Input
-              id="solution_login_id"
-              name="solution_login_id"
-              autoComplete="off"
-              placeholder="예: teamfirst_brand"
-            />
-            <FieldError messages={errors.solution_login_id} />
-          </div>
-          <div>
-            <Label htmlFor="solution_login_pw">솔루션 비밀번호 (8자 이상)</Label>
-            <Input
-              id="solution_login_pw"
-              name="solution_login_pw"
-              type="password"
-              autoComplete="new-password"
-            />
-            <FieldError messages={errors.solution_login_pw} />
-          </div>
-        </div>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-base font-bold text-secondary">6. 페이백 수령 정보</h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div>
-            <Label htmlFor="bank_name">은행</Label>
-            <Input id="bank_name" name="bank_name" />
-          </div>
-          <div>
-            <Label htmlFor="bank_account">계좌번호</Label>
-            <Input id="bank_account" name="bank_account" />
-          </div>
-          <div>
-            <Label htmlFor="bank_holder">예금주</Label>
-            <Input id="bank_holder" name="bank_holder" />
-          </div>
-        </div>
-        <div>
-          <Label>세금계산서 발행 가능 여부 *</Label>
-          <div className="mt-2 flex gap-4 text-sm">
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="radio"
-                name="invoice_capable"
-                value="yes"
-                checked={invoiceCapable === "yes"}
-                onChange={() => setInvoiceCapable("yes")}
-                className="h-4 w-4"
-              />
-              발행 가능 (일반과세)
-            </label>
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="radio"
-                name="invoice_capable"
-                value="no"
-                checked={invoiceCapable === "no"}
-                onChange={() => setInvoiceCapable("no")}
-                className="h-4 w-4"
-              />
-              발행 불가 (간이·면세)
-            </label>
-          </div>
-          {invoiceCapable === "no" ? (
-            <p className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              세금계산서 발행이 불가한 사업자는 계산서 절차 없이 공급가액(페이백
-              금액)만 지급되며, 부가세는 지급되지 않습니다.
-            </p>
-          ) : (
-            <div className="mt-4 space-y-4">
-              <div>
-                <Label htmlFor="invoice_email">세금계산서 발행 이메일 *</Label>
-                <Input
-                  id="invoice_email"
-                  name="invoice_email"
-                  type="email"
-                  required
-                  placeholder="tax@company.co.kr"
-                  className="max-w-sm"
-                />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  정산서와 계산서 발행 안내를 받을 세무 담당 이메일을 입력해주세요.
-                </p>
-                <FieldError messages={errors.invoice_email} />
-              </div>
-              <div className="rounded-lg border border-primary/25 bg-primary/5 p-4">
-                <p className="text-sm font-semibold text-secondary">
-                  📋 세금계산서 발행 의무 안내
-                </p>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground">
-                  매월 팀퍼스트로부터 전달받는 페이백 금액은{" "}
-                  <strong>정산월 말일을 작성일자</strong>로,{" "}
-                  <strong>품목 &lsquo;판매촉진비&rsquo;</strong>로 세금계산서{" "}
-                  <strong>청구 발행</strong>을 해주셔야 합니다. (발행 기한: 익월
-                  10일 — 기한 내 미발행 시 지급이 발행 확인월로 순연됩니다)
-                </p>
-                <label className="mt-3 flex cursor-pointer items-start gap-2.5 text-sm font-medium">
-                  <input
-                    type="checkbox"
-                    name="agreed_invoice"
-                    required
-                    className="mt-0.5 h-4 w-4"
-                  />
-                  <span>위 내용을 이해하셨습니까? — 네, 이해했습니다. *</span>
-                </label>
-                <FieldError messages={errors.agreed_invoice} />
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <label className="flex cursor-pointer items-start gap-2.5 text-sm">
-          <input type="checkbox" name="agreed" required className="mt-0.5 h-4 w-4" />
-          <span>
-            서비스 약관 및 세무 고지에 동의합니다. *
-            <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-              페이백은 광고주가 발행하는 세금계산서(품목: 판매촉진비,
-              공급가액=페이백액) 확인 후 지급되며, 부가가치세는 페이백과 함께 별도
-              지급됩니다. 광고 운영과 매체 정책 준수 책임은 광고주에게 있습니다.
-            </span>
-          </span>
-        </label>
-        <FieldError messages={errors.agreed} />
       </section>
 
       {state && "error" in state ? (
