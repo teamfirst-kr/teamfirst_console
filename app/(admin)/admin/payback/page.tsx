@@ -153,6 +153,7 @@ export default async function PaybackPipelinePage() {
             { href: "/admin/payback/settlements", label: "월 정산" },
             { href: "/admin/payback/receipts", label: "입금 대사" },
             { href: "/admin/payback/rate-tables", label: "요율표" },
+            { href: "/admin/payback/surveys", label: "이탈 설문" },
             { href: "/admin/payback/settings", label: "설정" },
           ].map((l) => (
             <Link
@@ -374,8 +375,14 @@ export default async function PaybackPipelinePage() {
 
       {(surveyRows ?? []).length > 0 ? (
         <section>
-          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
-            신청 이탈 설문 ({(surveyRows ?? []).length})
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+            신청 이탈 설문 (최근 {(surveyRows ?? []).length})
+            <Link
+              href="/admin/payback/surveys"
+              className="font-normal text-primary hover:underline"
+            >
+              전체 보기 →
+            </Link>
           </h2>
           <div className="overflow-hidden rounded-xl border bg-card">
             <table className="w-full text-sm">
