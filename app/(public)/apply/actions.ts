@@ -190,8 +190,10 @@ export async function submitPaybackApplication(
   }
 
   // 경량 접수(021): 사업자번호·대표자는 등록증으로 대체, 계산서 이메일·계좌·
-  // 솔루션 계정은 접수 확인 메일(E1) 회신으로 후속 수집. 등록증 보유 = 계산서 발행 가능 간주.
-  const { error: insertError } = await supabase.from("pb_applications").insert({
+  // 솔루션 계정은 추가 정보 페이지(022 토큰 링크) 또는 메일 회신으로 후속 수집.
+  // 토큰은 서버에서 생성해 INSERT (anon은 SELECT/RETURNING 불가 — RLS).
+  let followupToken: string | null = crypto.randomUUID();
+  const basePayload = {
     business_license: licenseMeta as unknown as Json,
     company_name: data.company_name,
     business_number: null,
@@ -203,8 +205,16 @@ export async function submitPaybackApplication(
     opt_all_solutions: data.opt_all_solutions,
     opt_consulting: data.opt_consulting,
     invoice_capable: true,
-    status: "received",
-  });
+    status: "received" as const,
+  };
+  let { error: insertError } = await supabase
+    .from("pb_applications")
+    .insert({ ...basePayload, followup_token: followupToken });
+  if (insertError && /followup_token/.test(insertError.message)) {
+    // 022 마이그레이션 미실행 폴백 — 토큰 없이 접수 (E1은 회신 안내만)
+    followupToken = null;
+    ({ error: insertError } = await supabase.from("pb_applications").insert(basePayload));
+  }
   if (insertError) {
     await logApplyIssue("insert_failed", { message: insertError.message });
     // 고아 파일 정리
@@ -217,6 +227,7 @@ export async function submitPaybackApplication(
     companyName: data.company_name,
     contactName: data.contact_name,
     licenseAttached: licenseMeta !== null,
+    followupToken,
   });
   await sendPbEmail({ to: data.contact_email, type: "E1", ...mail });
 
@@ -247,5 +258,7 @@ export async function submitPaybackApplication(
   });
 
   // 전환 추적: 접수 완료 = 구매 전환, 전환값 = 월 예상 광고비
-  redirect(`/apply/success?v=${data.expected_budget ?? 0}`);
+  redirect(
+    `/apply/success?v=${data.expected_budget ?? 0}${followupToken ? `&t=${followupToken}` : ""}`,
+  );
 }
