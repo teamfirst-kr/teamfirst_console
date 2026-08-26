@@ -125,10 +125,11 @@ export function ApplyExitSurvey() {
                   <input
                     type="tel"
                     inputMode="tel"
+                    size={1}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="010-0000-0000"
-                    className="h-full min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm"
+                    className="h-full w-44 min-w-0 shrink rounded-md border border-input bg-background px-3 text-sm"
                   />
                   <button
                     type="button"
