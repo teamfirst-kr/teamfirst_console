@@ -69,7 +69,7 @@ export function SolutionDetailButton({
             <iframe
               title={`${title} 상세`}
               srcDoc={html}
-              sandbox="allow-scripts"
+              sandbox="allow-scripts allow-top-navigation-by-user-activation"
               className="h-full w-full flex-1 border-0 bg-white"
             />
             <div className="shrink-0 border-t bg-white px-4 py-3 text-center">
