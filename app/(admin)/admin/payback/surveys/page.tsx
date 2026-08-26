@@ -11,7 +11,7 @@ export default async function PaybackSurveysPage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("pb_apply_surveys")
-    .select("id, reason, phone, created_at")
+    .select("id, reason, phone, detail, created_at")
     .order("created_at", { ascending: false })
     .limit(500);
 
@@ -98,7 +98,14 @@ export default async function PaybackSurveysPage() {
                         {s.phone}
                       </a>
                     </td>
-                    <td className="px-4 py-2.5">{reasonLabel(s.reason)}</td>
+                    <td className="px-4 py-2.5">
+                      {reasonLabel(s.reason)}
+                      {s.detail ? (
+                        <span className="mt-0.5 block whitespace-pre-wrap break-keep text-xs text-muted-foreground">
+                          💬 {s.detail}
+                        </span>
+                      ) : null}
+                    </td>
                     <td className="px-4 py-2.5 text-muted-foreground">
                       <DateText value={s.created_at} />
                     </td>
@@ -132,7 +139,14 @@ export default async function PaybackSurveysPage() {
               <tbody className="divide-y">
                 {rows.map((s) => (
                   <tr key={s.id}>
-                    <td className="px-4 py-2.5">{reasonLabel(s.reason)}</td>
+                    <td className="px-4 py-2.5">
+                      {reasonLabel(s.reason)}
+                      {s.detail ? (
+                        <span className="mt-0.5 block whitespace-pre-wrap break-keep text-xs text-muted-foreground">
+                          💬 {s.detail}
+                        </span>
+                      ) : null}
+                    </td>
                     <td className="px-4 py-2.5">
                       {s.phone ? (
                         <span className="font-semibold text-primary">

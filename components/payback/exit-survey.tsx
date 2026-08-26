@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { SURVEY_REASONS, type SurveyReason } from "@/lib/apply-survey";
 import {
+  attachSurveyDetail,
   attachSurveyPhone,
   submitApplySurvey,
 } from "@/app/(public)/apply/survey-actions";
@@ -18,6 +19,8 @@ export function ApplyExitSurvey() {
   const [selected, setSelected] = useState<SurveyReason | null>(null);
   const [surveyId, setSurveyId] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
+  const [detail, setDetail] = useState("");
+  const [detailSent, setDetailSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -47,6 +50,15 @@ export function ApplyExitSurvey() {
     const res = await submitApplySurvey(reason);
     setBusy(false);
     if (res.ok) setSurveyId(res.id);
+  }
+
+  async function sendDetail() {
+    if (busy || detailSent) return;
+    if (detail.trim().length < 2) return;
+    setBusy(true);
+    if (surveyId) await attachSurveyDetail(surveyId, detail);
+    setBusy(false);
+    setDetailSent(true);
   }
 
   async function sendPhone() {
@@ -105,6 +117,39 @@ export function ApplyExitSurvey() {
             },
           )}
         </div>
+
+        {/* '기타' 선택 시: 상세 의견 작성란 (아코디언) */}
+        {selected === "other_question" && !done ? (
+          <div className="mt-3 border-t pt-3">
+            <p className="text-sm font-semibold text-secondary">
+              어떤 부분이 이해가 안 가는지 간략하게 설명 부탁드립니다.
+            </p>
+            {detailSent ? (
+              <p className="mt-2 rounded-md bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                ✓ 의견이 전달되었습니다. 감사합니다.
+              </p>
+            ) : (
+              <>
+                <textarea
+                  value={detail}
+                  onChange={(e) => setDetail(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                  placeholder="예: 페이백 재원이 어디서 나오는지 궁금해요"
+                  className="mt-2 w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  disabled={busy || detail.trim().length < 2}
+                  onClick={sendDetail}
+                  className="mt-1.5 h-9 w-full rounded-md border border-primary/40 bg-primary/5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+                >
+                  {busy ? "..." : "의견 보내기"}
+                </button>
+              </>
+            )}
+          </div>
+        ) : null}
 
         {/* 사유 선택 시 아래로 펼쳐지는 전화상담 문항 (세로 확장) */}
         {selected ? (

@@ -363,6 +363,7 @@ export type Database = {
         id: string;
         reason: string;
         phone: string | null;
+        detail: string | null; // 023: '기타' 상세 의견
         created_at: string;
       }>;
       pb_audit_logs: PbTable<{
