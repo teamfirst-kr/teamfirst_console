@@ -107,19 +107,23 @@ export async function submitPaybackApplication(
   }
   const data = parsed.data;
 
-  // 사업자등록증 첨부 (필수 — 사업자번호·대표자 정보를 등록증으로 대체 수집)
+  // 사업자등록증: 첨부 또는 '추후 제출'(접수 메일 회신으로 수집)
+  const licenseLater = formData.get("license_later") === "on";
   const licenseFile = formData.get("business_license");
-  if (!(licenseFile instanceof File) || licenseFile.size === 0) {
-    return {
-      error: "사업자등록증을 첨부해주세요. (필수)",
-      fieldErrors: { business_license: ["사업자등록증 첨부는 필수입니다."] },
-    };
+  const hasLicenseFile = licenseFile instanceof File && licenseFile.size > 0;
+  if (!licenseLater) {
+    if (!hasLicenseFile) {
+      return {
+        error: "사업자등록증을 첨부하거나 '추후 제출'을 선택해주세요.",
+        fieldErrors: { business_license: ["첨부 또는 추후 제출을 선택해주세요."] },
+      };
+    }
+    if (licenseFile.size > MAX_FILE_SIZE) {
+      return { error: "사업자등록증 파일은 10MB 이하여야 합니다." };
+    }
+    const licenseError = validateUploadFile(licenseFile);
+    if (licenseError) return { error: licenseError };
   }
-  if (licenseFile.size > MAX_FILE_SIZE) {
-    return { error: "사업자등록증 파일은 10MB 이하여야 합니다." };
-  }
-  const licenseError = validateUploadFile(licenseFile);
-  if (licenseError) return { error: licenseError };
 
   const supabase = await createClient();
 
@@ -166,24 +170,29 @@ export async function submitPaybackApplication(
     };
   }
 
-  // 사업자등록증 업로드 (private 버킷, service_role)
+  // 사업자등록증 업로드 (private 버킷, service_role) — 추후 제출이면 생략
   const admin = createAdminClient();
-  const licensePath = `applications/${Date.now()}_${crypto.randomUUID().slice(0, 8)}/${sanitizeFileName(licenseFile.name)}`;
-  const { error: uploadError } = await admin.storage
-    .from("pb-files")
-    .upload(licensePath, licenseFile, {
-      upsert: false,
-      contentType: licenseFile.type || undefined,
-    });
-  if (uploadError) {
-    await logApplyIssue("license_upload_failed", { message: uploadError.message });
-    return { error: `사업자등록증 업로드 실패: ${uploadError.message}` };
+  let licenseMeta: { name: string; path: string } | null = null;
+  if (!licenseLater && hasLicenseFile) {
+    const file = licenseFile as File;
+    const licensePath = `applications/${Date.now()}_${crypto.randomUUID().slice(0, 8)}/${sanitizeFileName(file.name)}`;
+    const { error: uploadError } = await admin.storage
+      .from("pb-files")
+      .upload(licensePath, file, {
+        upsert: false,
+        contentType: file.type || undefined,
+      });
+    if (uploadError) {
+      await logApplyIssue("license_upload_failed", { message: uploadError.message });
+      return { error: `사업자등록증 업로드 실패: ${uploadError.message}` };
+    }
+    licenseMeta = { name: file.name, path: licensePath };
   }
 
   // 경량 접수(021): 사업자번호·대표자는 등록증으로 대체, 계산서 이메일·계좌·
   // 솔루션 계정은 접수 확인 메일(E1) 회신으로 후속 수집. 등록증 보유 = 계산서 발행 가능 간주.
   const { error: insertError } = await supabase.from("pb_applications").insert({
-    business_license: { name: licenseFile.name, path: licensePath } as unknown as Json,
+    business_license: licenseMeta as unknown as Json,
     company_name: data.company_name,
     business_number: null,
     contact_name: data.contact_name,
@@ -199,7 +208,7 @@ export async function submitPaybackApplication(
   if (insertError) {
     await logApplyIssue("insert_failed", { message: insertError.message });
     // 고아 파일 정리
-    await admin.storage.from("pb-files").remove([licensePath]);
+    if (licenseMeta) await admin.storage.from("pb-files").remove([licenseMeta.path]);
     return { error: `접수 중 오류가 발생했습니다: ${insertError.message}` };
   }
 
@@ -207,6 +216,7 @@ export async function submitPaybackApplication(
   const mail = pbApplicationReceivedEmail({
     companyName: data.company_name,
     contactName: data.contact_name,
+    licenseAttached: licenseMeta !== null,
   });
   await sendPbEmail({ to: data.contact_email, type: "E1", ...mail });
 
@@ -217,6 +227,7 @@ export async function submitPaybackApplication(
     rows: [
       ["회사명", data.company_name],
       ["담당자", `${data.contact_name} (${data.contact_email})`],
+      ["사업자등록증", licenseMeta ? "첨부됨" : "추후 제출 (메일 회신 대기)"],
       [
         "월 예상 광고비",
         data.expected_budget ? `${data.expected_budget.toLocaleString()}원` : "미입력",
