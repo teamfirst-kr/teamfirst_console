@@ -1,31 +1,172 @@
 // 솔루션 상세 팝업 콘텐츠 (iframe srcDoc으로 격리 렌더링되는 독립 HTML 문서).
-// AUTO REPORT / AUTO BID: 사용자 제공 상세 페이지 원문 (내부 CTA만 /apply로 연결).
-// 로그분석은 상세 HTML 제공 시 교체 예정 — 임시 페이지 유지.
+// CatchLog / AUTO REPORT / AUTO BID: 사용자 제공 상세 페이지 원문.
+// 공통 수정: 내부 CTA를 /apply(페이백 신청)로 연결, CatchLog는 가입/무료체험
+// 단계를 페이백 온보딩 문맥으로 치환 (페이백 고객에게 솔루션은 무료 제공).
 
-const BASE_STYLE = `
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Apple SD Gothic Neo', Pretendard, system-ui, sans-serif; color: #0f172a; line-height: 1.7; word-break: keep-all; }
-    .wrap { max-width: 860px; margin: 0 auto; padding: 40px 24px 64px; }
-    .hero { background: #111E38; color: #fff; padding: 48px 24px; text-align: center; }
-    .hero h1 { font-size: 28px; }
-    .hero p { margin-top: 10px; color: rgba(255,255,255,.7); font-size: 15px; }
-    .badge { display: inline-block; background: rgba(56,189,248,.2); color: #7dd3fc; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px; margin-bottom: 14px; }
-    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-top: 12px; }
-    .card strong { color: #111E38; }
-    .card p { margin-top: 6px; font-size: 14px; color: #475569; }
-    .note { margin-top: 40px; font-size: 12px; color: #94a3b8; text-align: center; }
-  </style>
-`;
+// ── CatchLog (로그분석 프로그램) — 제공 원문 ──────────────────────────
+const CATCHLOG_HTML = `<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CatchLog 상세 소개</title>
+</head>
+<body style="margin:0;background:#0B1526;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:4vh 16px;font-family:Pretendard,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif">
 
-const LOG_ANALYTICS_HTML = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${BASE_STYLE}</head><body>
-  <div class="hero"><span class="badge">솔루션 1</span><h1>로그분석 프로그램</h1><p>광고비를 갉아먹는 악성 클릭은 막고, 고객의 발자취는 읽습니다.</p></div>
-  <div class="wrap">
-    <div class="card"><strong>🛡️ 악성 클릭 IP 차단</strong><p>악의적인 경쟁사 클릭을 탐지해 IP 단위로 차단합니다. 자사몰뿐 아니라 스마트스토어까지 보호됩니다.</p></div>
-    <div class="card"><strong>🔎 고객 로그 퍼널 분석</strong><p>고객 로그 패턴을 퍼널로 시각화해 어디서 이탈하고 어디서 전환이 발생하는지 정확히 짚어줍니다.</p></div>
-    <p class="note">상세 소개 페이지가 곧 업데이트됩니다. 문의: team1st2025@gmail.com</p>
+<style>
+  .clp-panel, .clp-panel *{ box-sizing:border-box; margin:0; padding:0; }
+  .clp-panel{
+    width:100%; max-width:760px; background:#0D1830; color:#E8EEF7;
+    border:1px solid rgba(120,160,220,.16); border-radius:18px;
+    box-shadow:0 24px 80px rgba(0,0,0,.55); overflow:hidden;
+    font-family:Pretendard,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
+    line-height:1.7;
+  }
+  .clp-head{ padding:34px 36px 26px; background:radial-gradient(90% 140% at 85% -20%, rgba(41,182,255,.16), transparent 55%), #0E1B33; border-bottom:1px solid rgba(120,160,220,.12); }
+  .clp-badge{ display:inline-block; background:#1D4ED8; color:#fff; font-size:12px; font-weight:700; letter-spacing:.06em; border-radius:999px; padding:4px 12px; margin-bottom:14px; }
+  .clp-head h2{ font-size:26px; font-weight:800; letter-spacing:-.01em; }
+  .clp-head h2 b{ color:#4FC7FF; }
+  .clp-head p{ margin-top:10px; color:#9DB0C9; font-size:14.5px; max-width:56ch; }
+  .clp-chips{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+  .clp-chip{ font-size:12px; font-weight:700; color:#4FC7FF; background:rgba(41,182,255,.10); border:1px solid rgba(41,182,255,.35); border-radius:999px; padding:4px 12px; }
+
+  .clp-body{ padding:28px 36px 34px; }
+  .clp-sec{ margin-bottom:30px; }
+  .clp-sec-t{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:800; letter-spacing:.08em; color:#4FC7FF; margin-bottom:14px; }
+  .clp-sec-t::after{ content:""; flex:1; height:1px; background:rgba(120,160,220,.14); }
+
+  .clp-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .clp-card{ background:#141F37; border:1px solid rgba(120,160,220,.12); border-radius:12px; padding:16px 18px; }
+  .clp-card h4{ font-size:14.5px; font-weight:700; margin-bottom:6px; }
+  .clp-card h4 span{ margin-right:6px; }
+  .clp-card p{ font-size:13px; color:#9DB0C9; }
+  .clp-card p b{ color:#C9DCF5; font-weight:600; }
+
+  .clp-step{ display:flex; gap:14px; padding:13px 0; border-bottom:1px dashed rgba(120,160,220,.12); }
+  .clp-step:last-child{ border-bottom:none; }
+  .clp-step-n{ flex-shrink:0; width:30px; height:30px; border-radius:9px; background:rgba(41,182,255,.14); color:#4FC7FF; font-weight:800; font-size:14px; display:flex; align-items:center; justify-content:center; }
+  .clp-step h4{ font-size:14.5px; font-weight:700; margin-bottom:3px; }
+  .clp-step p{ font-size:13px; color:#9DB0C9; }
+  .clp-step b{ color:#C9DCF5; font-weight:600; }
+
+  .clp-fx{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .clp-fx-card{ background:linear-gradient(180deg,#152442,#121D35); border:1px solid rgba(41,182,255,.22); border-radius:12px; padding:18px 16px; text-align:center; }
+  .clp-fx-card .v{ font-size:21px; font-weight:800; color:#4FC7FF; margin-bottom:4px; }
+  .clp-fx-card .l{ font-size:12.5px; color:#9DB0C9; line-height:1.55; }
+
+  .clp-cta-wrap{ margin-top:4px; text-align:center; background:#141F37; border:1px solid rgba(120,160,220,.12); border-radius:14px; padding:22px 20px; }
+  .clp-cta-wrap p{ font-size:13.5px; color:#9DB0C9; margin-bottom:12px; }
+  .clp-cta{ display:inline-block; background:#1BA9F5; color:#04101F; font-weight:800; font-size:15px; text-decoration:none; border-radius:10px; padding:13px 34px; transition:filter .15s; }
+  .clp-cta:hover{ filter:brightness(1.12); }
+
+  @media (max-width:640px){
+    .clp-head{ padding:26px 22px 20px; } .clp-body{ padding:22px 20px 26px; }
+    .clp-grid{ grid-template-columns:1fr; } .clp-fx{ grid-template-columns:1fr; }
+    .clp-head h2{ font-size:21px; }
+  }
+</style>
+
+<div class="clp-panel">
+
+  <div class="clp-head">
+    <span class="clp-badge">CATCHLOG</span>
+    <h2>광고비 누수,<br>숫자로 <b>진단</b>합니다</h2>
+    <p>방문부터 광고 클릭·부정클릭·전환·매출까지, 봇 트래픽을 제외한 실방문 기준으로 집계하는
+    광고 성과 분석 솔루션입니다. 어디서 광고비가 새는지 숫자로 짚어드립니다.</p>
+    <div class="clp-chips">
+      <span class="clp-chip">실시간 방문 분석</span>
+      <span class="clp-chip">부정클릭 방지</span>
+      <span class="clp-chip">네이버 광고 연동</span>
+      <span class="clp-chip">전환·매출 추적</span>
+    </div>
   </div>
-</body></html>`;
+
+  <div class="clp-body">
+
+    <div class="clp-sec">
+      <div class="clp-sec-t">상세 기능</div>
+      <div class="clp-grid">
+        <div class="clp-card">
+          <h4><span>👁</span>실시간 방문 분석</h4>
+          <p>지금 이 순간 사이트에 접속 중인 방문자까지 실시간으로 확인합니다. <b>유입 경로와 행동</b>을 광고 관리 화면을 오가지 않고 바로 파악합니다.</p>
+        </div>
+        <div class="clp-card">
+          <h4><span>🛡</span>부정클릭 자동 판정·차단</h4>
+          <p>유효·무효·의심 <b>3단계로 클릭을 자동 판정</b>하고, 환급 신청에 쓸 수 있도록 IP·시각·패턴 근거를 남깁니다. 의심 IP는 네이버 광고노출제한에 바로 연동됩니다.</p>
+        </div>
+        <div class="clp-card">
+          <h4><span>📊</span>네이버 광고 전 지면 성과</h4>
+          <p>파워링크·쇼핑검색·브랜드검색까지 <b>캠페인·키워드별 광고비 대비 성과</b>를 한 화면에 모읍니다. 흩어져 보던 성과를 한 곳에서 비교합니다.</p>
+        </div>
+        <div class="clp-card">
+          <h4><span>💳</span>전환·매출 추적</h4>
+          <p>클릭이 아니라 <b>주문·결제 기준</b>으로 광고 성과를 평가합니다. 스마트스토어처럼 스크립트가 안 되는 채널은 추적 URL로 집계합니다.</p>
+        </div>
+        <div class="clp-card">
+          <h4><span>🖱</span>히트맵·행동 분석</h4>
+          <p>방문자의 <b>클릭과 스크롤 흐름</b>을 한눈에 보여줘, 광고를 타고 들어온 뒤 어디서 이탈하는지 짚어냅니다.</p>
+        </div>
+        <div class="clp-card">
+          <h4><span>👥</span>광고주 다중 관리</h4>
+          <p>다수 광고주를 <b>단일 콘솔</b>에서 관리합니다. 광고주에게는 자기 사이트만 보이는 전용 콘솔을 발급해 직접 열람하게 할 수 있습니다.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="clp-sec">
+      <div class="clp-sec-t">실행 로직</div>
+      <div>
+        <div class="clp-step">
+          <div class="clp-step-n">1</div>
+          <div><h4>페이백 신청</h4>
+          <p>팀퍼스트 페이백을 신청하고 대행권 지정·활성화가 완료되면 <b>솔루션 계정이 무료로 발급</b>됩니다. 별도 결제가 없습니다.</p></div>
+        </div>
+        <div class="clp-step">
+          <div class="clp-step-n">2</div>
+          <div><h4>설치</h4>
+          <p>자사몰은 <b>스크립트 한 줄</b>을 &lt;head&gt;에 붙이면 끝입니다. 스마트스토어·카카오채널 등 스크립트가 안 되는 채널은 <b>추적 URL</b>로 등록합니다. 설치가 부담스러우면 운영팀이 대신 설치해 드립니다.</p></div>
+        </div>
+        <div class="clp-step">
+          <div class="clp-step-n">3</div>
+          <div><h4>광고 연동</h4>
+          <p><b>네이버 검색광고 API</b> 자격증명을 등록하면 캠페인·광고그룹·키워드·광고비·검색어 데이터가 매일 자동으로 수집됩니다.</p></div>
+        </div>
+        <div class="clp-step">
+          <div class="clp-step-n">4</div>
+          <div><h4>분석 시작</h4>
+          <p>설치 직후부터 수집이 시작돼 <b>5분 단위</b>로 대시보드에 반영됩니다. 진단·리포트는 메일로도 자동 발송됩니다.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="clp-sec">
+      <div class="clp-sec-t">도입 효과</div>
+      <div class="clp-fx">
+        <div class="clp-fx-card">
+          <div class="v">월 200만+</div>
+          <div class="l">분석하는 페이지뷰<br>최근 30일 실측 기준</div>
+        </div>
+        <div class="clp-fx-card">
+          <div class="v">80만+</div>
+          <div class="l">검증한 광고 클릭<br>누적 데이터</div>
+        </div>
+        <div class="clp-fx-card">
+          <div class="v">14만+</div>
+          <div class="l">탐지한 무효·의심<br>클릭</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="clp-cta-wrap">
+      <p>봇을 제외한 실방문 기준으로, 광고비가 새는 지점을 숫자로 짚어드립니다.</p>
+      <a class="clp-cta" href="/apply" target="_top">페이백 신청하고 무료로 이용하기</a>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>`;
 
 // ── AUTO REPORT (자동리포트) — 제공 원문 ──────────────────────────────
 const AUTO_REPORT_HTML = `<!doctype html>
@@ -348,7 +489,7 @@ const AUTO_BID_HTML = `<!doctype html>
 </html>`;
 
 export const SOLUTION_DETAILS: Record<string, string> = {
-  log: LOG_ANALYTICS_HTML,
+  log: CATCHLOG_HTML,
   report: AUTO_REPORT_HTML,
   bid: AUTO_BID_HTML,
 };
