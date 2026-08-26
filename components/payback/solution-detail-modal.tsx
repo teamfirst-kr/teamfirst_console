@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 // 솔루션 상세 팝업 — 화면의 약 80%를 차지하는 모달.
 // 상세 페이지 HTML은 iframe(srcDoc)으로 격리 렌더링해 랜딩 스타일과 충돌하지 않는다.
+// 주의: Reveal 등 transform 조상 안에서 fixed가 갇히므로 반드시 portal로 body에 붙인다.
 export function SolutionDetailButton({
   title,
   html,
@@ -38,9 +40,10 @@ export function SolutionDetailButton({
         솔루션 자세히 알아보기 <span aria-hidden>→</span>
       </button>
 
-      {open ? (
+      {open && typeof document !== "undefined"
+        ? createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-6"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-6"
           onClick={() => setOpen(false)}
           role="dialog"
           aria-modal="true"
@@ -68,8 +71,10 @@ export function SolutionDetailButton({
               className="h-full w-full flex-1 border-0 bg-white"
             />
           </div>
-        </div>
-      ) : null}
+        </div>,
+        document.body,
+      )
+        : null}
     </>
   );
 }
