@@ -35,6 +35,7 @@ export function PaybackApplyForm({
   const [budget, setBudget] = useState("");
   const [optAll, setOptAll] = useState(false);
   const [optConsulting, setOptConsulting] = useState(false);
+  const [licenseLater, setLicenseLater] = useState(false);
   const startedAt = useMemo(() => Date.now(), []);
 
   // 퍼널 가시화: 신청 폼 진입 (CTA 클릭 → 폼 도달 → 제출 완료 사이 이탈 측정용)
@@ -83,18 +84,38 @@ export function PaybackApplyForm({
           </div>
           <div>
             <Label htmlFor="business_license">사업자등록증 첨부 *</Label>
-            <Input
-              id="business_license"
-              name="business_license"
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
-              required
-              className="pt-1.5"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              사업자등록번호·대표자 정보는 등록증으로 확인합니다. (PDF/JPG/PNG,
-              10MB 이하)
-            </p>
+            {!licenseLater ? (
+              <Input
+                id="business_license"
+                name="business_license"
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                required
+                className="pt-1.5"
+              />
+            ) : (
+              <>
+                <input type="hidden" name="license_later" value="on" />
+                <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  접수 확인 메일에 <strong>회신으로 사업자등록증을 첨부</strong>
+                  해주시면 됩니다. 등록증 확인 후 검토가 시작됩니다.
+                </p>
+              </>
+            )}
+            <div className="mt-1.5 flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                {licenseLater
+                  ? "사업자등록번호·대표자 정보는 등록증으로 확인합니다."
+                  : "사업자등록번호·대표자 정보는 등록증으로 확인합니다. (PDF/JPG/PNG, 10MB 이하)"}
+              </p>
+              <button
+                type="button"
+                onClick={() => setLicenseLater((v) => !v)}
+                className="shrink-0 text-xs font-medium text-primary hover:underline"
+              >
+                {licenseLater ? "지금 첨부하기" : "추후 제출"}
+              </button>
+            </div>
             <FieldError messages={errors.business_license} />
           </div>
         </div>

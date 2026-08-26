@@ -27,7 +27,7 @@ function layout(title: string, bodyHtml: string): string {
           </tr>
         </table>
         <p style="margin:14px 0 0;color:#94a3b8;font-size:11px;">
-          본 메일은 발신 전용입니다. · © ${new Date().getFullYear()} 팀퍼스트(TeamFirst)
+          궁금하신 점은 본 메일 회신 또는 team1st2025@gmail.com 으로 문의해주세요. · © ${new Date().getFullYear()} 팀퍼스트(TeamFirst)
         </p>
       </div>
     </div>
@@ -40,11 +40,19 @@ function button(href: string, label: string): string {
 
 // ── 페이백 플랫폼 (E1~E9) ────────────────────────────────────────────
 
-// E1: 페이백 신청 접수 확인
+// E1: 페이백 신청 접수 확인 (+ 추가 정보 회신 요청)
+// licenseAttached=false → 신청 시 '추후 제출'을 선택한 경우로, 등록증 첨부를 회신 항목에 포함
 export function pbApplicationReceivedEmail(params: {
   companyName: string;
   contactName: string;
+  licenseAttached: boolean;
 }): { subject: string; html: string } {
+  const licenseItem = params.licenseAttached
+    ? ""
+    : `<li><strong>사업자등록증 사본 (필수)</strong> — PDF 또는 이미지 파일로 첨부해주세요. 등록증이 확인되어야 검토가 시작됩니다.</li>`;
+  const licenseNote = params.licenseAttached
+    ? `<p style="margin:8px 0 0;color:#92400e;font-size:13px;">사업자등록번호·대표자 정보는 제출해주신 사업자등록증으로 확인합니다.</p>`
+    : `<p style="margin:8px 0 0;color:#92400e;font-size:13px;">사업자등록번호·대표자 정보는 회신해주시는 사업자등록증으로 확인합니다.</p>`;
   return {
     subject: "[TeamFirst] 페이백 신청 접수 완료 — 추가 정보 회신 요청",
     html: layout(
@@ -54,11 +62,12 @@ export function pbApplicationReceivedEmail(params: {
        <div style="margin:16px 0;padding:16px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:14px;">
          <strong>📩 빠른 진행을 위해 아래 정보를 이 메일에 회신으로 보내주세요</strong>
          <ol style="margin:8px 0 0;padding-left:18px;">
+           ${licenseItem}
            <li><strong>세금계산서 발행 이메일</strong> — 정산서·계산서 안내를 받을 세무 담당 이메일</li>
            <li><strong>페이백 입금 계좌</strong> — 은행 / 계좌번호 / 예금주</li>
            <li><strong>솔루션 접속 희망 ID</strong> (선택) — 영문·숫자, 미회신 시 활성화 단계에서 안내드립니다</li>
          </ol>
-         <p style="margin:8px 0 0;color:#92400e;font-size:13px;">사업자등록번호·대표자 정보는 제출해주신 사업자등록증으로 확인합니다.</p>
+         ${licenseNote}
        </div>
        <div style="margin:16px 0;padding:16px;background:#f1f5f9;border-radius:8px;font-size:14px;">
          <strong>다음 절차</strong>
