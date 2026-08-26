@@ -1,4 +1,6 @@
 import { Reveal } from "@/components/reveal";
+import { SolutionDetailButton } from "./solution-detail-modal";
+import { SOLUTION_DETAILS } from "./solution-details";
 
 // 페이백 랜딩 — 자체 개발 솔루션 3종 상세 쇼케이스.
 // 스크린샷 대신 CSS로 그린 예시 화면(목업)을 사용한다 (외부 이미지 의존 없음).
@@ -225,6 +227,7 @@ function BidOptimizerMock() {
 
 const SOLUTIONS = [
   {
+    key: "log",
     no: "솔루션 1",
     name: "로그분석 프로그램",
     tagline: "광고비를 갉아먹는 악성 클릭은 막고, 고객의 발자취는 읽습니다.",
@@ -243,6 +246,7 @@ const SOLUTIONS = [
     mock: <LogAnalyticsMock />,
   },
   {
+    key: "report",
     no: "솔루션 2",
     name: "자동리포트",
     tagline: "매번 엑셀 붙잡던 성과 정리, 이제 자동으로 도착합니다.",
@@ -261,6 +265,7 @@ const SOLUTIONS = [
     mock: <AutoReportMock />,
   },
   {
+    key: "bid",
     no: "솔루션 3",
     name: "성과최적화 입찰조정",
     tagline: "목표만 정해두면, 입찰가 조정은 분석부터 실행까지 한 번에.",
@@ -302,6 +307,10 @@ export function SolutionsShowcase() {
                   <FeatureItem key={f.title} {...f} />
                 ))}
               </ul>
+              <SolutionDetailButton
+                title={s.name}
+                html={SOLUTION_DETAILS[s.key] ?? ""}
+              />
             </div>
             <div className={idx % 2 === 1 ? "md:order-1" : ""}>{s.mock}</div>
           </div>
