@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+
+import { ApplyCtaLink } from "@/components/analytics/apply-cta";
 
 // 솔루션 상세 팝업 — 화면의 약 80%를 차지하는 모달.
 // 상세 페이지 HTML은 iframe(srcDoc)으로 격리 렌더링해 랜딩 스타일과 충돌하지 않는다.
+// 주의: Reveal 등 transform 조상 안에서 fixed가 갇히므로 반드시 portal로 body에 붙인다.
 export function SolutionDetailButton({
   title,
   html,
@@ -38,16 +42,17 @@ export function SolutionDetailButton({
         솔루션 자세히 알아보기 <span aria-hidden>→</span>
       </button>
 
-      {open ? (
+      {open && typeof document !== "undefined"
+        ? createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-6"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-6"
           onClick={() => setOpen(false)}
           role="dialog"
           aria-modal="true"
           aria-label={`${title} 상세 소개`}
         >
           <div
-            className="flex h-[88vh] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:h-[85vh] sm:w-[80vw]"
+            className="flex h-[90vh] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:h-[88vh] sm:w-[94vw] xl:w-[90vw]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex shrink-0 items-center justify-between border-b bg-[#111E38] px-5 py-3">
@@ -67,9 +72,19 @@ export function SolutionDetailButton({
               sandbox="allow-scripts"
               className="h-full w-full flex-1 border-0 bg-white"
             />
+            <div className="shrink-0 border-t bg-white px-4 py-3 text-center">
+              <ApplyCtaLink
+                location="solution_modal"
+                className="w-full sm:w-auto sm:min-w-80"
+              >
+                🎁 페이백 신청하고 솔루션 무료 이용하기
+              </ApplyCtaLink>
+            </div>
           </div>
-        </div>
-      ) : null}
+        </div>,
+        document.body,
+      )
+        : null}
     </>
   );
 }
