@@ -91,14 +91,20 @@ export async function pbRejectApplication(
 }
 
 // 약정 발송 = 고객사 전환: pb_client + 매체계정 + 약정(요율표 스냅샷) 생성 (E2 발송)
+// 사업자번호는 신청 폼에서 수집하지 않으므로(021 — 등록증으로 대체) 전환 시 운영자가 입력
 export async function pbConvertAndSendAgreement(
   applicationId: string,
   glosignUrl: string,
+  businessNumber: string,
 ): Promise<PbActionResult> {
   const guard = await assertAdmin();
   if (guard) return { ok: false, error: guard };
   if (!glosignUrl.trim().startsWith("http")) {
     return { ok: false, error: "글로싸인 URL을 입력해주세요." };
+  }
+  const bizno = businessNumber.replace(/\D/g, "");
+  if (bizno.length !== 10) {
+    return { ok: false, error: "사업자등록번호 10자리를 입력해주세요. (첨부된 등록증 참조)" };
   }
   const admin = createAdminClient();
 
@@ -126,7 +132,7 @@ export async function pbConvertAndSendAgreement(
     .from("pb_clients")
     .insert({
       company_name: app.company_name,
-      business_number: app.business_number,
+      business_number: bizno,
       ceo_name: app.ceo_name,
       contact_name: app.contact_name,
       contact_email: app.contact_email,
@@ -171,7 +177,7 @@ export async function pbConvertAndSendAgreement(
 
   await admin
     .from("pb_applications")
-    .update({ status: "converted" })
+    .update({ status: "converted", business_number: bizno })
     .eq("id", applicationId);
 
   await pbAudit("client.create", "pb_clients", client.id, {

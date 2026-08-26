@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { DateText } from "@/components/date-text";
 import { createClient } from "@/lib/supabase/server";
 import { calcPayback, rateTableFromRow } from "@/lib/payback";
+import { SURVEY_REASONS } from "@/lib/apply-survey";
 
 import { ApplicationActions, ClientActions } from "./board-cards";
 
@@ -22,7 +23,7 @@ const CLIENT_STATUS_LABEL: Record<string, string> = {
 type AppRow = {
   id: string;
   company_name: string;
-  business_number: string;
+  business_number: string | null;
   contact_name: string;
   contact_email: string;
   contact_phone: string;
@@ -58,6 +59,7 @@ export default async function PaybackPipelinePage() {
     { data: clients, error: clientsError },
     { data: mediaRows },
     { data: rateRow },
+    { data: surveyRows },
   ] = await Promise.all([
       supabase
         .from("pb_applications")
@@ -82,6 +84,11 @@ export default async function PaybackPipelinePage() {
         .order("effective_from", { ascending: false })
         .limit(1)
         .maybeSingle(),
+      supabase
+        .from("pb_apply_surveys")
+        .select("id, reason, phone, detail, created_at")
+        .order("created_at", { ascending: false })
+        .limit(30),
   ]);
 
   const rateTable = rateRow ? rateTableFromRow(rateRow) : null;
@@ -146,6 +153,7 @@ export default async function PaybackPipelinePage() {
             { href: "/admin/payback/settlements", label: "월 정산" },
             { href: "/admin/payback/receipts", label: "입금 대사" },
             { href: "/admin/payback/rate-tables", label: "요율표" },
+            { href: "/admin/payback/surveys", label: "이탈 설문" },
             { href: "/admin/payback/settings", label: "설정" },
           ].map((l) => (
             <Link
@@ -186,7 +194,8 @@ export default async function PaybackPipelinePage() {
                   <div>
                     <p className="font-semibold text-foreground">{a.company_name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {a.business_number} · {a.contact_name} ({a.contact_email})
+                      {a.business_number ? `${a.business_number} · ` : ""}
+                      {a.contact_name} ({a.contact_email})
                     </p>
                   </div>
                   <Badge variant={a.status === "received" ? "default" : "muted"}>
@@ -248,7 +257,11 @@ export default async function PaybackPipelinePage() {
                   )}
                   {a.invoice_email ? <span>· 계산서 {a.invoice_email}</span> : null}
                 </p>
-                <ApplicationActions applicationId={a.id} status={a.status} />
+                <ApplicationActions
+                  applicationId={a.id}
+                  status={a.status}
+                  initialBizno={a.business_number ?? ""}
+                />
               </div>
             ))}
           </div>
@@ -359,6 +372,58 @@ export default async function PaybackPipelinePage() {
           </div>
         )}
       </section>
+
+      {(surveyRows ?? []).length > 0 ? (
+        <section>
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+            신청 이탈 설문 (최근 {(surveyRows ?? []).length})
+            <Link
+              href="/admin/payback/surveys"
+              className="font-normal text-primary hover:underline"
+            >
+              전체 보기 →
+            </Link>
+          </h2>
+          <div className="overflow-hidden rounded-xl border bg-card">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-2.5 font-medium">이유</th>
+                  <th className="px-4 py-2.5 font-medium">상담 요청 연락처</th>
+                  <th className="px-4 py-2.5 font-medium">응답 시각</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {(surveyRows ?? []).map((s) => (
+                  <tr key={s.id}>
+                    <td className="px-4 py-2.5">
+                      {SURVEY_REASONS[s.reason as keyof typeof SURVEY_REASONS] ??
+                        s.reason}
+                      {s.detail ? (
+                        <span className="mt-0.5 block whitespace-pre-wrap break-keep text-xs text-muted-foreground">
+                          💬 {s.detail}
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {s.phone ? (
+                        <span className="font-semibold text-primary">
+                          📞 {s.phone}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 text-muted-foreground">
+                      <DateText value={s.created_at} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
 
       {others.length > 0 ? (
         <section>

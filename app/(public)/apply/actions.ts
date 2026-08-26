@@ -85,24 +85,13 @@ export async function submitPaybackApplication(
 
   const parsed = paybackApplicationSchema.safeParse({
     company_name: String(formData.get("company_name") ?? "").trim(),
-    business_number: String(formData.get("business_number") ?? ""),
-    ceo_name: String(formData.get("ceo_name") ?? "").trim(),
     contact_name: String(formData.get("contact_name") ?? "").trim(),
     contact_email: String(formData.get("contact_email") ?? "").trim(),
     contact_phone: String(formData.get("contact_phone") ?? "").trim(),
     expected_budget: budgetRaw ? Number(budgetRaw) : null,
     opt_all_solutions: formData.get("opt_all_solutions") === "on",
     opt_consulting: formData.get("opt_consulting") === "on",
-    bank_name: String(formData.get("bank_name") ?? "").trim(),
-    bank_account: String(formData.get("bank_account") ?? "").trim(),
-    bank_holder: String(formData.get("bank_holder") ?? "").trim(),
-    invoice_capable: formData.get("invoice_capable") !== "no",
-    invoice_email: String(formData.get("invoice_email") ?? "").trim(),
-    agreed_invoice: formData.get("agreed_invoice") === "on",
-    solution_login_id: String(formData.get("solution_login_id") ?? "").trim(),
-    solution_login_pw: String(formData.get("solution_login_pw") ?? ""),
     media_accounts,
-    agreed: formData.get("agreed") === "on",
   });
 
   if (!parsed.success) {
@@ -118,35 +107,22 @@ export async function submitPaybackApplication(
   }
   const data = parsed.data;
 
-  // 사업자등록증 첨부 (필수 — 세금계산서 발행 검증용)
+  // 사업자등록증: 첨부 또는 '추후 제출'(접수 메일 회신으로 수집)
+  const licenseLater = formData.get("license_later") === "on";
   const licenseFile = formData.get("business_license");
-  if (!(licenseFile instanceof File) || licenseFile.size === 0) {
-    return {
-      error: "사업자등록증을 첨부해주세요. (필수)",
-      fieldErrors: { business_license: ["사업자등록증 첨부는 필수입니다."] },
-    };
-  }
-  if (licenseFile.size > MAX_FILE_SIZE) {
-    return { error: "사업자등록증 파일은 10MB 이하여야 합니다." };
-  }
-  const licenseError = validateUploadFile(licenseFile);
-  if (licenseError) return { error: licenseError };
-
-  // 계산서 발행 가능 사업자: 발행 이메일 + 발행 의무 이해 확인 필수
-  const invoiceCapable = formData.get("invoice_capable") !== "no";
-  if (invoiceCapable) {
-    if (!String(formData.get("invoice_email") ?? "").trim()) {
+  const hasLicenseFile = licenseFile instanceof File && licenseFile.size > 0;
+  if (!licenseLater) {
+    if (!hasLicenseFile) {
       return {
-        error: "세금계산서 발행 이메일을 입력해주세요. (필수)",
-        fieldErrors: { invoice_email: ["계산서 발행 이메일은 필수입니다."] },
+        error: "사업자등록증을 첨부하거나 '추후 제출'을 선택해주세요.",
+        fieldErrors: { business_license: ["첨부 또는 추후 제출을 선택해주세요."] },
       };
     }
-    if (formData.get("agreed_invoice") !== "on") {
-      return {
-        error: "세금계산서 발행 의무 안내를 확인하고 동의해주세요.",
-        fieldErrors: { agreed_invoice: ["발행 의무 이해 확인이 필요합니다."] },
-      };
+    if (licenseFile.size > MAX_FILE_SIZE) {
+      return { error: "사업자등록증 파일은 10MB 이하여야 합니다." };
     }
+    const licenseError = validateUploadFile(licenseFile);
+    if (licenseError) return { error: licenseError };
   }
 
   const supabase = await createClient();
@@ -170,51 +146,57 @@ export async function submitPaybackApplication(
     }
   }
 
-  // 중복 안내 (D15): 기존 신청/고객사에 같은 사업자번호 존재 여부
+  // 중복 안내 (D15): 진행 중 신청/기존 고객사에 같은 담당자 이메일 존재 여부
+  // (사업자번호는 등록증으로 대체 수집되어 접수 시점에는 이메일로 판별)
   const [{ data: dupApp }, { data: dupClient }] = await Promise.all([
     supabase
       .from("pb_applications")
       .select("id")
-      .eq("business_number", data.business_number)
+      .eq("contact_email", data.contact_email)
       .in("status", ["received", "reviewing", "agreement_sent"])
       .limit(1),
     supabase
       .from("pb_clients")
       .select("id")
-      .eq("business_number", data.business_number)
+      .eq("contact_email", data.contact_email)
       .limit(1),
   ]);
   if ((dupApp && dupApp.length > 0) || (dupClient && dupClient.length > 0)) {
-    await logApplyIssue("duplicate_bizno", {});
+    await logApplyIssue("duplicate_contact", {});
     return {
       error:
-        "이미 접수되었거나 등록된 사업자번호입니다. 진행 상황은 담당자 메일로 안내드리며, 문의는 team1st2025@gmail.com 으로 부탁드립니다.",
-      fieldErrors: { business_number: ["이미 접수된 사업자번호입니다."] },
+        "이미 접수 중이거나 등록된 담당자 이메일입니다. 진행 상황은 담당자 메일로 안내드리며, 문의는 team1st2025@gmail.com 으로 부탁드립니다.",
+      fieldErrors: { contact_email: ["이미 접수된 이메일입니다."] },
     };
   }
 
-  // 사업자등록증 업로드 (private 버킷, service_role)
+  // 사업자등록증 업로드 (private 버킷, service_role) — 추후 제출이면 생략
   const admin = createAdminClient();
-  const licensePath = `applications/${Date.now()}_${crypto.randomUUID().slice(0, 8)}/${sanitizeFileName(licenseFile.name)}`;
-  const { error: uploadError } = await admin.storage
-    .from("pb-files")
-    .upload(licensePath, licenseFile, {
-      upsert: false,
-      contentType: licenseFile.type || undefined,
-    });
-  if (uploadError) {
-    await logApplyIssue("license_upload_failed", { message: uploadError.message });
-    return { error: `사업자등록증 업로드 실패: ${uploadError.message}` };
+  let licenseMeta: { name: string; path: string } | null = null;
+  if (!licenseLater && hasLicenseFile) {
+    const file = licenseFile as File;
+    const licensePath = `applications/${Date.now()}_${crypto.randomUUID().slice(0, 8)}/${sanitizeFileName(file.name)}`;
+    const { error: uploadError } = await admin.storage
+      .from("pb-files")
+      .upload(licensePath, file, {
+        upsert: false,
+        contentType: file.type || undefined,
+      });
+    if (uploadError) {
+      await logApplyIssue("license_upload_failed", { message: uploadError.message });
+      return { error: `사업자등록증 업로드 실패: ${uploadError.message}` };
+    }
+    licenseMeta = { name: file.name, path: licensePath };
   }
 
-  const { error: insertError } = await supabase.from("pb_applications").insert({
-    business_license: { name: licenseFile.name, path: licensePath } as unknown as Json,
-    invoice_email: data.invoice_email || null,
-    agreed_invoice_at:
-      data.invoice_capable && data.agreed_invoice ? new Date().toISOString() : null,
+  // 경량 접수(021): 사업자번호·대표자는 등록증으로 대체, 계산서 이메일·계좌·
+  // 솔루션 계정은 추가 정보 페이지(022 토큰 링크) 또는 메일 회신으로 후속 수집.
+  // 토큰은 서버에서 생성해 INSERT (anon은 SELECT/RETURNING 불가 — RLS).
+  let followupToken: string | null = crypto.randomUUID();
+  const basePayload = {
+    business_license: licenseMeta as unknown as Json,
     company_name: data.company_name,
-    business_number: data.business_number,
-    ceo_name: data.ceo_name || null,
+    business_number: null,
     contact_name: data.contact_name,
     contact_email: data.contact_email,
     contact_phone: data.contact_phone,
@@ -222,33 +204,32 @@ export async function submitPaybackApplication(
     expected_budget: data.expected_budget,
     opt_all_solutions: data.opt_all_solutions,
     opt_consulting: data.opt_consulting,
-    bank_name: data.bank_name || null,
-    bank_account: data.bank_account || null,
-    bank_holder: data.bank_holder || null,
-    invoice_capable: data.invoice_capable,
-    solution_login_id: data.solution_login_id || null,
-    solution_login_pw: data.solution_login_pw || null,
-    agreed_terms_at: new Date().toISOString(),
-    status: "received",
-  });
+    invoice_capable: true,
+    status: "received" as const,
+  };
+  let { error: insertError } = await supabase
+    .from("pb_applications")
+    .insert({ ...basePayload, followup_token: followupToken });
+  if (insertError && /followup_token/.test(insertError.message)) {
+    // 022 마이그레이션 미실행 폴백 — 토큰 없이 접수 (E1은 회신 안내만)
+    followupToken = null;
+    ({ error: insertError } = await supabase.from("pb_applications").insert(basePayload));
+  }
   if (insertError) {
     await logApplyIssue("insert_failed", { message: insertError.message });
     // 고아 파일 정리
-    await admin.storage.from("pb-files").remove([licensePath]);
+    if (licenseMeta) await admin.storage.from("pb-files").remove([licenseMeta.path]);
     return { error: `접수 중 오류가 발생했습니다: ${insertError.message}` };
   }
 
-  // E1: 접수 확인 (광고주)
+  // E1: 접수 확인 + 추가 정보 회신 요청 (광고주)
   const mail = pbApplicationReceivedEmail({
     companyName: data.company_name,
     contactName: data.contact_name,
+    licenseAttached: licenseMeta !== null,
+    followupToken,
   });
-  await sendPbEmail({
-    to: data.contact_email,
-    type: "E1",
-    ...mail,
-    payload: { business_number: data.business_number } as unknown as Json,
-  });
+  await sendPbEmail({ to: data.contact_email, type: "E1", ...mail });
 
   // E9: 관리자 알림 (메일 + 인앱)
   await notifyAdmins({
@@ -256,8 +237,8 @@ export async function submitPaybackApplication(
     title: "새 페이백 신청",
     rows: [
       ["회사명", data.company_name],
-      ["사업자번호", data.business_number],
       ["담당자", `${data.contact_name} (${data.contact_email})`],
+      ["사업자등록증", licenseMeta ? "첨부됨" : "추후 제출 (메일 회신 대기)"],
       [
         "월 예상 광고비",
         data.expected_budget ? `${data.expected_budget.toLocaleString()}원` : "미입력",
@@ -277,5 +258,7 @@ export async function submitPaybackApplication(
   });
 
   // 전환 추적: 접수 완료 = 구매 전환, 전환값 = 월 예상 광고비
-  redirect(`/apply/success?v=${data.expected_budget ?? 0}`);
+  redirect(
+    `/apply/success?v=${data.expected_budget ?? 0}${followupToken ? `&t=${followupToken}` : ""}`,
+  );
 }

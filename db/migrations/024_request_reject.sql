@@ -1,6 +1,7 @@
 -- ============================================================================
--- TeamFirst Migration 021 — 매칭 요청 반려
--- Date: 2026-08-25
+-- TeamFirst Migration 024 — 매칭 요청 반려
+-- Date: 2026-08-26
+-- (원래 021로 작성했으나 021_payback_apply_light와 번호가 겹쳐 024로 재번호)
 --
 -- 접수된 매칭 요청을 운영자가 반려(rejected)할 수 있게 한다.
 --  - request_status enum에 'rejected' 추가 (광고주 취소 cancelled / 매칭 불발

@@ -27,7 +27,7 @@ function layout(title: string, bodyHtml: string): string {
           </tr>
         </table>
         <p style="margin:14px 0 0;color:#94a3b8;font-size:11px;">
-          본 메일은 발신 전용입니다. · © ${new Date().getFullYear()} 팀퍼스트(TeamFirst)
+          궁금하신 점은 본 메일 회신 또는 team1st2025@gmail.com 으로 문의해주세요. · © ${new Date().getFullYear()} 팀퍼스트(TeamFirst)
         </p>
       </div>
     </div>
@@ -40,26 +40,53 @@ function button(href: string, label: string): string {
 
 // ── 페이백 플랫폼 (E1~E9) ────────────────────────────────────────────
 
-// E1: 페이백 신청 접수 확인
+// E1: 페이백 신청 접수 확인 (+ 추가 정보 회신 요청)
+// licenseAttached=false → 신청 시 '추후 제출'을 선택한 경우로, 등록증 첨부를 회신 항목에 포함
 export function pbApplicationReceivedEmail(params: {
   companyName: string;
   contactName: string;
+  licenseAttached: boolean;
+  followupToken?: string | null; // 있으면 추가 정보 제출 페이지 버튼 노출
 }): { subject: string; html: string } {
+  const url = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const licenseItem = params.licenseAttached
+    ? ""
+    : `<li><strong>사업자등록증 사본 (필수)</strong> — PDF 또는 이미지 파일. 등록증이 확인되어야 검토가 시작됩니다.</li>`;
+  const licenseNote = params.licenseAttached
+    ? `<p style="margin:8px 0 0;color:#92400e;font-size:13px;">사업자등록번호·대표자 정보는 제출해주신 사업자등록증으로 확인합니다.</p>`
+    : `<p style="margin:8px 0 0;color:#92400e;font-size:13px;">사업자등록번호·대표자 정보는 제출해주시는 사업자등록증으로 확인합니다.</p>`;
+  const followupBlock = params.followupToken
+    ? `<div style="text-align:center;margin:16px 0 4px;">
+         ${button(`${url}/apply/complete/${params.followupToken}`, "📎 추가 정보 입력하기")}
+         <p style="margin:6px 0 0;color:#64748b;font-size:12px;">버튼이 열리지 않으면 이 메일에 회신으로 보내주셔도 됩니다.</p>
+       </div>`
+    : `<p style="margin:8px 0 0;font-size:13px;color:#475569;">위 정보는 이 메일에 <strong>회신</strong>으로 보내주시면 됩니다.</p>`;
   return {
-    subject: "[TeamFirst] 페이백 신청이 접수되었습니다",
+    subject: "[TeamFirst] 페이백 신청 접수 완료 — 추가 정보 입력 요청",
     html: layout(
       "페이백 신청 접수 완료",
       `<p>${esc(params.companyName)} ${esc(params.contactName)}님, 안녕하세요. 팀퍼스트입니다.</p>
        <p><strong>광고비 페이백 신청이 정상 접수</strong>되었습니다. 검토 후 영업일 기준 1~2일 내에 연락드리겠습니다.</p>
+       <div style="margin:16px 0;padding:16px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:14px;">
+         <strong>📩 빠른 진행을 위해 아래 정보를 입력해주세요</strong>
+         <ol style="margin:8px 0 0;padding-left:18px;">
+           ${licenseItem}
+           <li><strong>세금계산서 발행 이메일</strong> — 정산서·계산서 안내를 받을 세무 담당 이메일</li>
+           <li><strong>페이백 입금 계좌</strong> — 은행 / 계좌번호 / 예금주</li>
+           <li><strong>솔루션 접속 희망 ID</strong> (선택) — 영문·숫자, 미입력 시 활성화 단계에서 안내드립니다</li>
+         </ol>
+         ${licenseNote}
+         ${followupBlock}
+       </div>
        <div style="margin:16px 0;padding:16px;background:#f1f5f9;border-radius:8px;font-size:14px;">
          <strong>다음 절차</strong>
          <ol style="margin:8px 0 0;padding-left:18px;">
            <li>담당자 검토 및 약정서(전자계약) 발송</li>
            <li>매체 광고시스템에서 대행권 지정 (가이드 제공)</li>
-           <li>활성화 완료 — 솔루션 오픈 + 익월부터 페이백 산정</li>
+           <li>활성화 완료 — 솔루션 오픈 + 당일 광고비부터 페이백 산정</li>
          </ol>
        </div>
-       <p style="color:#64748b;font-size:13px;">본 메일은 발신 전용이 아니며, 궁금하신 점은 회신으로 문의해주세요.</p>`,
+       <p style="color:#64748b;font-size:13px;">본 메일은 발신 전용이 아니며, 궁금하신 점도 회신으로 문의해주세요.</p>`,
     ),
   };
 }
