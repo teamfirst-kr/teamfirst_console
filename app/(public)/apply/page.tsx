@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { rateTableFromRow, type RateTable } from "@/lib/payback";
 
+import { ApplyExitSurvey } from "@/components/payback/exit-survey";
+
 import { PaybackApplyForm } from "./apply-form";
 
 export const dynamic = "force-dynamic";
@@ -60,6 +62,7 @@ export default async function PaybackApplyPage() {
       <div className="mt-8 rounded-2xl border bg-card p-6 shadow-sm md:p-8">
         <PaybackApplyForm table={table} promo={promo} />
       </div>
+      <ApplyExitSurvey />
     </div>
   );
 }

@@ -46,20 +46,29 @@ export function pbApplicationReceivedEmail(params: {
   contactName: string;
 }): { subject: string; html: string } {
   return {
-    subject: "[TeamFirst] 페이백 신청이 접수되었습니다",
+    subject: "[TeamFirst] 페이백 신청 접수 완료 — 추가 정보 회신 요청",
     html: layout(
       "페이백 신청 접수 완료",
       `<p>${esc(params.companyName)} ${esc(params.contactName)}님, 안녕하세요. 팀퍼스트입니다.</p>
        <p><strong>광고비 페이백 신청이 정상 접수</strong>되었습니다. 검토 후 영업일 기준 1~2일 내에 연락드리겠습니다.</p>
+       <div style="margin:16px 0;padding:16px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:14px;">
+         <strong>📩 빠른 진행을 위해 아래 정보를 이 메일에 회신으로 보내주세요</strong>
+         <ol style="margin:8px 0 0;padding-left:18px;">
+           <li><strong>세금계산서 발행 이메일</strong> — 정산서·계산서 안내를 받을 세무 담당 이메일</li>
+           <li><strong>페이백 입금 계좌</strong> — 은행 / 계좌번호 / 예금주</li>
+           <li><strong>솔루션 접속 희망 ID</strong> (선택) — 영문·숫자, 미회신 시 활성화 단계에서 안내드립니다</li>
+         </ol>
+         <p style="margin:8px 0 0;color:#92400e;font-size:13px;">사업자등록번호·대표자 정보는 제출해주신 사업자등록증으로 확인합니다.</p>
+       </div>
        <div style="margin:16px 0;padding:16px;background:#f1f5f9;border-radius:8px;font-size:14px;">
          <strong>다음 절차</strong>
          <ol style="margin:8px 0 0;padding-left:18px;">
            <li>담당자 검토 및 약정서(전자계약) 발송</li>
            <li>매체 광고시스템에서 대행권 지정 (가이드 제공)</li>
-           <li>활성화 완료 — 솔루션 오픈 + 익월부터 페이백 산정</li>
+           <li>활성화 완료 — 솔루션 오픈 + 당일 광고비부터 페이백 산정</li>
          </ol>
        </div>
-       <p style="color:#64748b;font-size:13px;">본 메일은 발신 전용이 아니며, 궁금하신 점은 회신으로 문의해주세요.</p>`,
+       <p style="color:#64748b;font-size:13px;">본 메일은 발신 전용이 아니며, 궁금하신 점도 회신으로 문의해주세요.</p>`,
     ),
   };
 }

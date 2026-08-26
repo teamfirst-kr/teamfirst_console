@@ -195,7 +195,8 @@ export type PbClientRow = {
 export type PbApplicationRow = {
   id: string;
   company_name: string;
-  business_number: string;
+  business_number: string | null; // 021: 등록증으로 대체 수집, 전환 시 운영자 입력
+
   ceo_name: string | null;
   contact_name: string;
   contact_email: string;
@@ -356,6 +357,12 @@ export type Database = {
       pb_payouts: PbTable<PbPayoutRow>;
       pb_media_receipts: PbTable<PbMediaReceiptRow>;
       pb_app_settings: PbTable<{ key: string; value: Json }>;
+      pb_apply_surveys: PbTable<{
+        id: string;
+        reason: string;
+        phone: string | null;
+        created_at: string;
+      }>;
       pb_audit_logs: PbTable<{
         id: string;
         actor_id: string | null;
