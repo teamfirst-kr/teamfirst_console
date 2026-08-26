@@ -215,6 +215,8 @@ export type PbApplicationRow = {
   invoice_email: string | null;
   agreed_invoice_at: string | null;
   agreed_terms_at: string | null;
+  followup_token: string | null; // 022: 추가 정보 제출 링크 토큰
+  followup_submitted_at: string | null;
   status: PbApplicationStatus;
   memo: string | null;
   created_at: string;
