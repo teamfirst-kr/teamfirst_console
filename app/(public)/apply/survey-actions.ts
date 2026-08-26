@@ -38,6 +38,27 @@ export async function submitApplySurvey(reason: string): Promise<SurveyResult> {
   }
 }
 
+// '기타' 선택 시 상세 의견을 기존 응답에 첨부
+export async function attachSurveyDetail(
+  surveyId: string,
+  detail: string,
+): Promise<{ ok: boolean }> {
+  const cleaned = detail.trim().slice(0, 500);
+  if (cleaned.length < 2) return { ok: false };
+  if (!/^[0-9a-f-]{36}$/i.test(surveyId)) return { ok: false };
+  try {
+    const admin = createAdminClient();
+    const { error } = await admin
+      .from("pb_apply_surveys")
+      .update({ detail: cleaned })
+      .eq("id", surveyId)
+      .is("detail", null);
+    return { ok: !error };
+  } catch {
+    return { ok: false };
+  }
+}
+
 // 후속 문항: 1:1 전화상담 희망 연락처를 기존 응답에 첨부
 export async function attachSurveyPhone(
   surveyId: string,

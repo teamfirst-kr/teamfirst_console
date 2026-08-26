@@ -86,7 +86,7 @@ export default async function PaybackPipelinePage() {
         .maybeSingle(),
       supabase
         .from("pb_apply_surveys")
-        .select("id, reason, phone, created_at")
+        .select("id, reason, phone, detail, created_at")
         .order("created_at", { ascending: false })
         .limit(30),
   ]);
@@ -399,6 +399,11 @@ export default async function PaybackPipelinePage() {
                     <td className="px-4 py-2.5">
                       {SURVEY_REASONS[s.reason as keyof typeof SURVEY_REASONS] ??
                         s.reason}
+                      {s.detail ? (
+                        <span className="mt-0.5 block whitespace-pre-wrap break-keep text-xs text-muted-foreground">
+                          💬 {s.detail}
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-4 py-2.5">
                       {s.phone ? (
