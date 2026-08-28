@@ -16,6 +16,7 @@ import {
   submitApplySurvey,
 } from "@/app/(public)/apply/survey-actions";
 import { readCalcState } from "@/lib/calc-state";
+import { trackConversion } from "@/components/analytics/track";
 import { SolutionDetailButton } from "./solution-detail-modal";
 import { SOLUTION_DETAILS } from "./solution-details";
 
@@ -28,8 +29,11 @@ const HIDE_KEY = "tf_apply_survey_v1";
 // 제출 없이 닫았을 때 노출(랜딩). 세션당 1회는 두 경로 공통.
 export function ApplyExitSurvey({
   trigger = "delay",
+  source = "apply",
 }: {
   trigger?: "delay" | "cta-abandon";
+  // 응답이 어디서 입력됐는지 기록 (어드민 구분용)
+  source?: "apply" | "landing";
 }) {
   const [visible, setVisible] = useState(false);
   const [selected, setSelected] = useState<SurveyReason | null>(null);
@@ -92,7 +96,7 @@ export function ApplyExitSurvey({
     setSelected(reason);
     setBusy(true);
     try {
-      const res = await submitApplySurvey(reason);
+      const res = await submitApplySurvey(reason, source);
       if (res.ok) setSurveyId(res.id);
     } catch {
       // 기록 실패해도 콘텐츠는 보여준다 (후속 제출 시 오류 안내)
@@ -176,8 +180,18 @@ export function ApplyExitSurvey({
             })
           ).ok
         : false;
-      if (ok) finish();
-      else setErrMsg(SAVE_FAIL_MSG);
+      if (ok) {
+        // 연락처까지 제출한 리드 = 구매 전환
+        trackConversion(
+          "Purchase",
+          {
+            content_name: `survey_match_${source}`,
+            ...(readCalcState()?.b ? { value: readCalcState()?.b, currency: "KRW" } : {}),
+          },
+          "purchase",
+        );
+        finish();
+      } else setErrMsg(SAVE_FAIL_MSG);
     } catch {
       setErrMsg(SAVE_FAIL_MSG);
     } finally {
@@ -193,8 +207,18 @@ export function ApplyExitSurvey({
     setBusy(true);
     try {
       const ok = surveyId ? (await attachSurveyPhone(surveyId, phone)).ok : false;
-      if (ok) finish();
-      else setErrMsg(SAVE_FAIL_MSG);
+      if (ok) {
+        // 연락처까지 제출한 리드 = 구매 전환
+        trackConversion(
+          "Purchase",
+          {
+            content_name: `survey_consult_${source}`,
+            ...(readCalcState()?.b ? { value: readCalcState()?.b, currency: "KRW" } : {}),
+          },
+          "purchase",
+        );
+        finish();
+      } else setErrMsg(SAVE_FAIL_MSG);
     } catch {
       setErrMsg(SAVE_FAIL_MSG);
     } finally {

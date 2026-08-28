@@ -415,7 +415,7 @@ export default async function PaybackLanding() {
       </section>
 
       {/* 간편 신청 팝업을 제출 없이 닫으면 이탈 설문 노출 */}
-      <ApplyExitSurvey trigger="cta-abandon" />
+      <ApplyExitSurvey trigger="cta-abandon" source="landing" />
     </div>
   );
 }
