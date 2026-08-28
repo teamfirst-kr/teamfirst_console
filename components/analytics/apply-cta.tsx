@@ -6,7 +6,11 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { readCalcState } from "@/lib/calc-state";
-import { CTA_ABANDON_EVENT } from "@/lib/apply-survey";
+import {
+  CTA_CLOSE_EVENT,
+  CTA_CONVERTED_EVENT,
+  CTA_OPEN_EVENT,
+} from "@/lib/apply-survey";
 import { submitQuickLead } from "@/app/(public)/apply/lead-actions";
 import { trackConversion } from "./track";
 
@@ -51,20 +55,24 @@ export function ApplyCtaLink({
     return s ? `/apply?${s}` : "/apply";
   };
 
-  function openModal() {
-    trackConversion("AddToCart", { content_name: location }, "add_to_cart");
-    setOpen(true);
-  }
-
-  // 제출 없이 닫으면 이탈 설문을 띄운다 (랜딩에서 구독 중)
-  function closeModal() {
-    setOpen(false);
-    if (sent) return;
+  function fire(name: string) {
     try {
-      window.dispatchEvent(new Event(CTA_ABANDON_EVENT));
+      window.dispatchEvent(new Event(name));
     } catch {
       // 무시
     }
+  }
+
+  function openModal() {
+    trackConversion("AddToCart", { content_name: location }, "add_to_cart");
+    setOpen(true);
+    // 랜딩 이탈 설문이 구독 — 팝업이 열린 채로 잠시 후 함께 노출된다
+    fire(CTA_OPEN_EVENT);
+  }
+
+  function closeModal() {
+    setOpen(false);
+    fire(CTA_CLOSE_EVENT);
   }
 
   async function submit() {
@@ -90,6 +98,7 @@ export function ApplyCtaLink({
           },
           "purchase",
         );
+        fire(CTA_CONVERTED_EVENT); // 전환 완료 — 설문은 띄우지 않는다
       } else {
         setErrMsg(
           "일시적 오류로 접수되지 않았습니다. 잠시 후 다시 시도하시거나 '추가 정보 입력하기'로 신청해주세요.",
@@ -149,7 +158,7 @@ export function ApplyCtaLink({
                     </Button>
                     <button
                       type="button"
-                      onClick={() => setOpen(false)}
+                      onClick={closeModal}
                       className="mt-2.5 w-full text-center text-xs text-muted-foreground hover:underline"
                     >
                       나중에 할게요
