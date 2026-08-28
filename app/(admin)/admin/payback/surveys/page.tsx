@@ -11,7 +11,9 @@ export default async function PaybackSurveysPage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("pb_apply_surveys")
-    .select("id, reason, phone, detail, created_at")
+    .select(
+      "id, reason, phone, detail, match_interest, brand_name, monthly_budget, current_rate, created_at",
+    )
     .order("created_at", { ascending: false })
     .limit(500);
 
@@ -23,6 +25,22 @@ export default async function PaybackSurveysPage() {
   }
   const reasonLabel = (code: string) =>
     SURVEY_REASONS[code as keyof typeof SURVEY_REASONS] ?? code;
+  const matchInfo = (s: (typeof rows)[number]) =>
+    s.match_interest === null || s.match_interest === undefined ? null : (
+      <span
+        className={
+          "mt-0.5 block break-keep text-xs " +
+          (s.match_interest
+            ? "font-semibold text-emerald-600"
+            : "text-muted-foreground")
+        }
+      >
+        🤝 동일 % 매칭: {s.match_interest ? "예" : "아니오"}
+        {s.brand_name
+          ? ` — ${s.brand_name} · 월 ${Number(s.monthly_budget ?? 0).toLocaleString()}원 · 현재 ${s.current_rate}%`
+          : ""}
+      </span>
+    );
 
   return (
     <div className="space-y-8">
@@ -105,6 +123,7 @@ export default async function PaybackSurveysPage() {
                           💬 {s.detail}
                         </span>
                       ) : null}
+                      {matchInfo(s)}
                     </td>
                     <td className="px-4 py-2.5 text-muted-foreground">
                       <DateText value={s.created_at} />
@@ -146,6 +165,7 @@ export default async function PaybackSurveysPage() {
                           💬 {s.detail}
                         </span>
                       ) : null}
+                      {matchInfo(s)}
                     </td>
                     <td className="px-4 py-2.5">
                       {s.phone ? (
