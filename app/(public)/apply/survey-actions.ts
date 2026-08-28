@@ -32,16 +32,21 @@ async function attachRateLimited(): Promise<boolean> {
 }
 
 // 이탈 설문: 사유 버튼 클릭 즉시 기록 (익명 — RLS는 운영자 조회 전용, 쓰기는 서버 액션만)
-export async function submitApplySurvey(reason: string): Promise<SurveyResult> {
+// source — 'apply'(정식 신청 페이지) | 'landing'(랜딩 약식 팝업 이탈)
+export async function submitApplySurvey(
+  reason: string,
+  source?: string,
+): Promise<SurveyResult> {
   if (!(reason in SURVEY_REASONS)) return { ok: false };
   const ip =
     (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   if (surveyRateLimited(ip)) return { ok: false };
+  const src = source === "apply" || source === "landing" ? source : null;
   try {
     const admin = createAdminClient();
     const { data, error } = await admin
       .from("pb_apply_surveys")
-      .insert({ reason })
+      .insert({ reason, ...(src ? { source: src } : {}) })
       .select("id")
       .single();
     if (error || !data) return { ok: false };

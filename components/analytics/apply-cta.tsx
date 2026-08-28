@@ -81,7 +81,15 @@ export function ApplyCtaLink({
       });
       if (res.ok) {
         setSent(true);
-        trackConversion("Lead", { content_name: location }, "generate_lead");
+        // 연락처까지 제출한 리드 = 구매 전환 (전환값 = 계산기 월 광고비)
+        trackConversion(
+          "Purchase",
+          {
+            content_name: `quick_lead_${location}`,
+            ...(calc?.b ? { value: calc.b, currency: "KRW" } : {}),
+          },
+          "purchase",
+        );
       } else {
         setErrMsg(
           "일시적 오류로 접수되지 않았습니다. 잠시 후 다시 시도하시거나 '추가 정보 입력하기'로 신청해주세요.",

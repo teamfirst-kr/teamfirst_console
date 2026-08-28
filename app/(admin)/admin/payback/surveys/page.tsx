@@ -11,9 +11,8 @@ export default async function PaybackSurveysPage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("pb_apply_surveys")
-    .select(
-      "id, reason, phone, detail, match_interest, brand_name, monthly_budget, current_rate, created_at",
-    )
+    // 신규 컬럼 추가 마이그레이션 전에도 조회가 깨지지 않도록 * 사용
+    .select("*")
     .order("created_at", { ascending: false })
     .limit(500);
 
@@ -25,10 +24,19 @@ export default async function PaybackSurveysPage() {
   }
   const reasonLabel = (code: string) =>
     SURVEY_REASONS[code as keyof typeof SURVEY_REASONS] ?? code;
+  const sourceBadge = (src: string | null | undefined) =>
+    src === "landing" ? (
+      <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+        약식 팝업
+      </span>
+    ) : src === "apply" ? (
+      <span className="ml-1.5 rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800">
+        정식 신청
+      </span>
+    ) : null;
   const matchInfo = (s: (typeof rows)[number]) => {
     if (s.match_interest === null || s.match_interest === undefined) return null;
     const parts: string[] = [];
-    if (s.brand_name) parts.push(s.brand_name);
     if (s.current_rate) parts.push(`현재 ${s.current_rate}%`);
     if (s.monthly_budget)
       parts.push(`월 ${Number(s.monthly_budget).toLocaleString()}원`);
@@ -109,6 +117,7 @@ export default async function PaybackSurveysPage() {
               <thead className="bg-muted/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">연락처</th>
+                  <th className="px-4 py-2.5 font-medium">브랜드</th>
                   <th className="px-4 py-2.5 font-medium">망설인 이유</th>
                   <th className="px-4 py-2.5 font-medium">요청 시각</th>
                 </tr>
@@ -123,14 +132,19 @@ export default async function PaybackSurveysPage() {
                       >
                         {s.phone}
                       </a>
+                    </td>
+                    <td className="px-4 py-2.5">
                       {s.brand_name ? (
-                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">
                           {s.brand_name}
                         </span>
-                      ) : null}
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-2.5">
                       {reasonLabel(s.reason)}
+                      {sourceBadge(s.source)}
                       {s.detail ? (
                         <span className="mt-0.5 block whitespace-pre-wrap break-keep text-xs text-muted-foreground">
                           💬 {s.detail}
@@ -164,6 +178,7 @@ export default async function PaybackSurveysPage() {
               <thead className="bg-muted/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">이유</th>
+                  <th className="px-4 py-2.5 font-medium">브랜드</th>
                   <th className="px-4 py-2.5 font-medium">상담 요청</th>
                   <th className="px-4 py-2.5 font-medium">응답 시각</th>
                 </tr>
@@ -173,12 +188,22 @@ export default async function PaybackSurveysPage() {
                   <tr key={s.id}>
                     <td className="px-4 py-2.5">
                       {reasonLabel(s.reason)}
+                      {sourceBadge(s.source)}
                       {s.detail ? (
                         <span className="mt-0.5 block whitespace-pre-wrap break-keep text-xs text-muted-foreground">
                           💬 {s.detail}
                         </span>
                       ) : null}
                       {matchInfo(s)}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {s.brand_name ? (
+                        <span className="font-medium text-foreground">
+                          {s.brand_name}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-2.5">
                       {s.phone ? (

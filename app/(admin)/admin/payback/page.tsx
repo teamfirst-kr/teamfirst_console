@@ -87,7 +87,7 @@ export default async function PaybackPipelinePage() {
         .maybeSingle(),
       supabase
         .from("pb_apply_surveys")
-        .select("id, reason, phone, detail, match_interest, brand_name, monthly_budget, current_rate, created_at")
+        .select("*") // 신규 컬럼 마이그레이션 전에도 조회 유지
         .order("created_at", { ascending: false })
         .limit(30),
       supabase
@@ -444,6 +444,7 @@ export default async function PaybackPipelinePage() {
               <thead className="bg-muted/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">이유</th>
+                  <th className="px-4 py-2.5 font-medium">브랜드</th>
                   <th className="px-4 py-2.5 font-medium">상담 요청 연락처</th>
                   <th className="px-4 py-2.5 font-medium">응답 시각</th>
                 </tr>
@@ -454,6 +455,15 @@ export default async function PaybackPipelinePage() {
                     <td className="px-4 py-2.5">
                       {SURVEY_REASONS[s.reason as keyof typeof SURVEY_REASONS] ??
                         s.reason}
+                      {s.source === "landing" ? (
+                        <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                          약식 팝업
+                        </span>
+                      ) : s.source === "apply" ? (
+                        <span className="ml-1.5 rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800">
+                          정식 신청
+                        </span>
+                      ) : null}
                       {s.detail ? (
                         <span className="mt-0.5 block whitespace-pre-wrap break-keep text-xs text-muted-foreground">
                           💬 {s.detail}
@@ -469,19 +479,21 @@ export default async function PaybackPipelinePage() {
                           }
                         >
                           🤝 동일 % 매칭: {s.match_interest ? "예" : "아니오"}
-                          {[
-                            s.brand_name,
-                            s.current_rate ? `현재 ${s.current_rate}%` : null,
-                          ].filter(Boolean).length
-                            ? ` — ${[
-                                s.brand_name,
-                                s.current_rate ? `현재 ${s.current_rate}%` : null,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}`
+                          {s.current_rate ? ` — 현재 ${s.current_rate}%` : ""}
+                          {s.match_interest && s.current_rate && !s.brand_name
+                            ? " (신원 미입력)"
                             : ""}
                         </span>
                       ) : null}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {s.brand_name ? (
+                        <span className="font-medium text-foreground">
+                          {s.brand_name}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-2.5">
                       {s.phone ? (
