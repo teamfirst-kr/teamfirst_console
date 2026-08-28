@@ -11,9 +11,11 @@ import {
   attachSurveyDetail,
   attachSurveyMatchForm,
   attachSurveyMatchInterest,
+  attachSurveyMatchRate,
   attachSurveyPhone,
   submitApplySurvey,
 } from "@/app/(public)/apply/survey-actions";
+import { readCalcState } from "@/lib/calc-state";
 import { SolutionDetailButton } from "./solution-detail-modal";
 import { SOLUTION_DETAILS } from "./solution-details";
 
@@ -40,8 +42,8 @@ export function ApplyExitSurvey({
   // 동일 % 매칭 제안
   const [matchAnswer, setMatchAnswer] = useState<"yes" | "no" | null>(null);
   const [mBrand, setMBrand] = useState("");
-  const [mBudget, setMBudget] = useState("");
   const [mRate, setMRate] = useState("");
+  const [mRateSent, setMRateSent] = useState(false);
   const [mPhone, setMPhone] = useState("");
   // 전화상담
   const [phone, setPhone] = useState("");
@@ -131,16 +133,35 @@ export function ApplyExitSurvey({
     }
   }
 
-  const budgetNum = Number(mBudget.replace(/\D/g, ""));
   const rateNum = Number(mRate.replace(/[^\d.]/g, ""));
+  const rateValid = rateNum > 0 && rateNum <= 100;
   const matchFormValid =
-    mBrand.trim().length > 0 &&
-    budgetNum > 0 &&
-    budgetNum <= 10_000_000_000 &&
-    rateNum > 0 &&
-    rateNum <= 100 &&
-    mPhone.replace(/\D/g, "").length >= 9;
+    mBrand.trim().length > 0 && mPhone.replace(/\D/g, "").length >= 9;
 
+  // 숫자(+소수점 1개)만 허용 — 현재 페이백 요율 입력
+  function onRateChange(v: string) {
+    const cleaned = v.replace(/[^\d.]/g, "");
+    const [head, ...rest] = cleaned.split(".");
+    setMRate(rest.length ? `${head}.${rest.join("")}`.slice(0, 6) : head.slice(0, 5));
+  }
+
+  // 1단계: 요율만 먼저 저장 (신원 입력 전 이탈해도 요율은 남는다)
+  async function sendMatchRate() {
+    if (busy || !rateValid) return;
+    setErrMsg(null);
+    setBusy(true);
+    try {
+      const ok = surveyId ? (await attachSurveyMatchRate(surveyId, mRate)).ok : false;
+      if (ok) setMRateSent(true);
+      else setErrMsg(SAVE_FAIL_MSG);
+    } catch {
+      setErrMsg(SAVE_FAIL_MSG);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // 2단계: 브랜드명 + 연락처 (계산기 예산이 있으면 참고값으로 함께 저장)
   async function sendMatchForm() {
     if (busy || !matchFormValid) return;
     setErrMsg(null);
@@ -150,9 +171,8 @@ export function ApplyExitSurvey({
         ? (
             await attachSurveyMatchForm(surveyId, {
               brand: mBrand,
-              budget: mBudget,
-              rate: mRate,
               phone: mPhone,
+              budget: readCalcState()?.b ?? null,
             })
           ).ok
         : false;
@@ -348,11 +368,51 @@ export function ApplyExitSurvey({
                     알겠습니다. 그래도 조건 비교가 궁금해지시면 아래에 연락처를
                     남겨주세요 — 부담 없이 안내드릴게요.
                   </p>
-                ) : matchAnswer === "yes" ? (
+                ) : matchAnswer === "yes" && !mRateSent ? (
                   <>
                     <p className="break-keep text-sm font-semibold text-secondary">
-                      좋습니다! 아래 정보를 남겨주시면 담당자가 동일 % 조건으로
-                      바로 안내드립니다.
+                      현재 받고 계신 페이백 요율이 몇 %인가요?
+                    </p>
+                    <p className="break-keep text-xs text-muted-foreground">
+                      숫자만 입력해주세요. (예: 7 또는 7.5)
+                    </p>
+                    <div className="flex h-10 items-stretch gap-2">
+                      <div className="relative w-28 shrink-0">
+                        <input
+                          inputMode="decimal"
+                          value={mRate}
+                          onChange={(e) => onRateChange(e.target.value)}
+                          placeholder="7"
+                          aria-label="현재 페이백 요율"
+                          className="h-full w-full rounded-md border border-input bg-background pl-3 pr-7 text-right text-sm"
+                        />
+                        <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                          %
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={busy || !rateValid}
+                        onClick={sendMatchRate}
+                        className="h-full flex-1 rounded-md bg-primary text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-50"
+                      >
+                        {busy ? "..." : "다음"}
+                      </button>
+                    </div>
+                    {mRate && !rateValid ? (
+                      <p className="text-xs text-destructive">
+                        0 초과 100 이하의 숫자로 입력해주세요.
+                      </p>
+                    ) : null}
+                  </>
+                ) : matchAnswer === "yes" ? (
+                  <>
+                    <p className="break-keep text-sm font-semibold leading-relaxed text-secondary">
+                      <span className="text-primary">{rateNum}%</span> 요율로 검토해서
+                      연락드리겠습니다.
+                    </p>
+                    <p className="break-keep text-xs text-muted-foreground">
+                      브랜드명과 연락처를 남겨주시면 담당자가 확인 후 안내드릴게요.
                     </p>
                     <div className="space-y-2">
                       <input
@@ -361,42 +421,21 @@ export function ApplyExitSurvey({
                         placeholder="브랜드명 *"
                         className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                       />
-                      <div className="flex gap-2">
-                        <input
-                          inputMode="numeric"
-                          value={mBudget}
-                          onChange={(e) => setMBudget(e.target.value)}
-                          placeholder="월 광고비 예산(원) *"
-                          className="h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm"
-                        />
-                        <input
-                          inputMode="decimal"
-                          value={mRate}
-                          onChange={(e) => setMRate(e.target.value)}
-                          placeholder="현재 페이백 % *"
-                          className="h-10 w-32 rounded-md border border-input bg-background px-3 text-sm"
-                        />
-                      </div>
                       <input
                         type="tel"
                         inputMode="tel"
                         value={mPhone}
                         onChange={(e) => setMPhone(e.target.value)}
-                        placeholder="연락처 *"
+                        placeholder="연락처 * (010-0000-0000)"
                         className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                       />
-                      {rateNum > 100 ? (
-                        <p className="text-xs text-destructive">
-                          현재 페이백 %는 100 이하로 입력해주세요.
-                        </p>
-                      ) : null}
                       <button
                         type="button"
                         disabled={busy || !matchFormValid}
                         onClick={sendMatchForm}
                         className="h-10 w-full rounded-md bg-primary text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-50"
                       >
-                        {busy ? "..." : "동일 % 매칭 신청"}
+                        {busy ? "..." : "검토 요청하기"}
                       </button>
                     </div>
                   </>
