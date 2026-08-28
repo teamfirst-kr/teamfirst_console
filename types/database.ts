@@ -364,6 +364,10 @@ export type Database = {
         reason: string;
         phone: string | null;
         detail: string | null; // 023: '기타' 상세 의견
+        match_interest: boolean | null; // 024: 동일 % 매칭 제안 예/아니오
+        brand_name: string | null;
+        monthly_budget: number | null;
+        current_rate: number | null;
         created_at: string;
       }>;
       pb_audit_logs: PbTable<{

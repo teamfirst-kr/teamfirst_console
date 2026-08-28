@@ -86,7 +86,7 @@ export default async function PaybackPipelinePage() {
         .maybeSingle(),
       supabase
         .from("pb_apply_surveys")
-        .select("id, reason, phone, detail, created_at")
+        .select("id, reason, phone, detail, match_interest, brand_name, monthly_budget, current_rate, created_at")
         .order("created_at", { ascending: false })
         .limit(30),
   ]);
@@ -402,6 +402,21 @@ export default async function PaybackPipelinePage() {
                       {s.detail ? (
                         <span className="mt-0.5 block whitespace-pre-wrap break-keep text-xs text-muted-foreground">
                           💬 {s.detail}
+                        </span>
+                      ) : null}
+                      {s.match_interest !== null && s.match_interest !== undefined ? (
+                        <span
+                          className={
+                            "mt-0.5 block break-keep text-xs " +
+                            (s.match_interest
+                              ? "font-semibold text-emerald-600"
+                              : "text-muted-foreground")
+                          }
+                        >
+                          🤝 동일 % 매칭: {s.match_interest ? "예" : "아니오"}
+                          {s.brand_name
+                            ? ` — ${s.brand_name} · 월 ${Number(s.monthly_budget ?? 0).toLocaleString()}원 · 현재 ${s.current_rate}%`
+                            : ""}
                         </span>
                       ) : null}
                     </td>
