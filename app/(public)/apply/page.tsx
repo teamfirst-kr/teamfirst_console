@@ -24,7 +24,12 @@ const FALLBACK_TABLE: RateTable = {
   consultingMinSpend: 5_000_000,
 };
 
-export default async function PaybackApplyPage() {
+export default async function PaybackApplyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ brand?: string; phone?: string }>;
+}) {
+  const sp = await searchParams;
   const supabase = await createClient();
   const [{ data: row }, { data: promoRow }] = await Promise.all([
     supabase
@@ -60,7 +65,14 @@ export default async function PaybackApplyPage() {
         기준 1~2일 내 담당자가 연락드립니다.
       </p>
       <div className="mt-8 rounded-2xl border bg-card p-6 shadow-sm md:p-8">
-        <PaybackApplyForm table={table} promo={promo} />
+        <PaybackApplyForm
+          table={table}
+          promo={promo}
+          initial={{
+            brand: (sp.brand ?? "").slice(0, 100),
+            phone: (sp.phone ?? "").slice(0, 20),
+          }}
+        />
       </div>
       <ApplyExitSurvey />
     </div>

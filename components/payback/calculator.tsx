@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { saveCalcState } from "@/lib/calc-state";
 
 import {
   calcPayback,
@@ -29,6 +31,11 @@ export function PaybackCalculator({
   const [adSpend, setAdSpend] = useState(5_000_000);
   const [allSolutions, setAllSolutions] = useState(false);
   const [consulting, setConsulting] = useState(false);
+
+  // 입력값을 세션에 공유 — 간편 신청 팝업(예산)·상세 신청 폼(예산+옵션) 프리필용
+  useEffect(() => {
+    saveCalcState({ b: adSpend, a: allSolutions ? 1 : 0, c: consulting ? 1 : 0 });
+  }, [adSpend, allSolutions, consulting]);
 
   const eligible = consultingEligible(table, adSpend);
   const effectiveConsulting = consulting && eligible;
