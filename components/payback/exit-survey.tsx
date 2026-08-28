@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-import { SURVEY_REASONS, type SurveyReason } from "@/lib/apply-survey";
+import {
+  CTA_ABANDON_EVENT,
+  SURVEY_REASONS,
+  type SurveyReason,
+} from "@/lib/apply-survey";
 import {
   attachSurveyDetail,
   attachSurveyMatchForm,
@@ -15,10 +19,16 @@ import { SOLUTION_DETAILS } from "./solution-details";
 
 const HIDE_KEY = "tf_apply_survey_v1";
 
-// /apply 이탈 설문 — PC: 우측 하단 카드 / 모바일: 하단 시트.
+// 이탈 설문 — PC: 우측 하단 카드 / 모바일: 하단 시트.
 // 사유 버튼 클릭 즉시 기록·고정 후, 같은 팝업이 세로 확장되며 사유별 맞춤
 // 콘텐츠(설득/솔루션 상세/동일 % 매칭 제안/의견 작성)가 펼쳐진다.
-export function ApplyExitSurvey() {
+// trigger — delay: 진입 N초 뒤 노출(/apply) / cta-abandon: 간편 신청 팝업을
+// 제출 없이 닫았을 때 노출(랜딩). 세션당 1회는 두 경로 공통.
+export function ApplyExitSurvey({
+  trigger = "delay",
+}: {
+  trigger?: "delay" | "cta-abandon";
+}) {
   const [visible, setVisible] = useState(false);
   const [selected, setSelected] = useState<SurveyReason | null>(null);
   const [surveyId, setSurveyId] = useState<string | null>(null);
@@ -38,14 +48,25 @@ export function ApplyExitSurvey() {
   const [errMsg, setErrMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      if (sessionStorage.getItem(HIDE_KEY)) return;
-    } catch {
-      // sessionStorage 불가 환경 — 그냥 노출
+    function alreadyDone(): boolean {
+      try {
+        return sessionStorage.getItem(HIDE_KEY) !== null;
+      } catch {
+        return false; // sessionStorage 불가 환경 — 그냥 노출
+      }
+    }
+    if (alreadyDone()) return;
+
+    if (trigger === "cta-abandon") {
+      const onAbandon = () => {
+        if (!alreadyDone()) setVisible(true);
+      };
+      window.addEventListener(CTA_ABANDON_EVENT, onAbandon);
+      return () => window.removeEventListener(CTA_ABANDON_EVENT, onAbandon);
     }
     const t = setTimeout(() => setVisible(true), 3500);
     return () => clearTimeout(t);
-  }, []);
+  }, [trigger]);
 
   function dismiss() {
     setVisible(false);

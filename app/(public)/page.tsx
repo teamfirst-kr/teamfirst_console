@@ -6,6 +6,7 @@ import { SectionHeader } from "@/components/section-header";
 import { ApplyCtaLink } from "@/components/analytics/apply-cta";
 import { PaybackCalculator } from "@/components/payback/calculator";
 import { SolutionsShowcase } from "@/components/payback/solutions-showcase";
+import { ApplyExitSurvey } from "@/components/payback/exit-survey";
 import { createClient } from "@/lib/supabase/server";
 import { manLabel, rateTableFromRow, tierLabelOf, type RateTable } from "@/lib/payback";
 
@@ -412,6 +413,9 @@ export default async function PaybackLanding() {
           </ol>
         </div>
       </section>
+
+      {/* 간편 신청 팝업을 제출 없이 닫으면 이탈 설문 노출 */}
+      <ApplyExitSurvey trigger="cta-abandon" />
     </div>
   );
 }

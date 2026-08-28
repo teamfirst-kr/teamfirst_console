@@ -7,3 +7,6 @@ export const SURVEY_REASONS = {
 } as const;
 
 export type SurveyReason = keyof typeof SURVEY_REASONS;
+
+// 간편 신청 팝업을 제출 없이 닫았을 때 발화 — 랜딩 이탈 설문 트리거
+export const CTA_ABANDON_EVENT = "tf:cta-abandoned";

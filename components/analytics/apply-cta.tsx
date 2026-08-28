@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { readCalcState } from "@/lib/calc-state";
+import { CTA_ABANDON_EVENT } from "@/lib/apply-survey";
 import { submitQuickLead } from "@/app/(public)/apply/lead-actions";
 import { trackConversion } from "./track";
 
@@ -31,11 +32,13 @@ export function ApplyCtaLink({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") closeModal();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
+    // closeModal은 함수 선언(호이스팅)이라 콜백 시점에 최신 sent를 읽는다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, sent]);
 
   const valid = brand.trim().length > 0 && phone.replace(/\D/g, "").length >= 9;
 
@@ -51,6 +54,17 @@ export function ApplyCtaLink({
   function openModal() {
     trackConversion("AddToCart", { content_name: location }, "add_to_cart");
     setOpen(true);
+  }
+
+  // 제출 없이 닫으면 이탈 설문을 띄운다 (랜딩에서 구독 중)
+  function closeModal() {
+    setOpen(false);
+    if (sent) return;
+    try {
+      window.dispatchEvent(new Event(CTA_ABANDON_EVENT));
+    } catch {
+      // 무시
+    }
   }
 
   async function submit() {
@@ -91,8 +105,8 @@ export function ApplyCtaLink({
       {open && typeof document !== "undefined"
         ? createPortal(
             <div
-              className="fixed inset-0 z-[110] flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-6"
-              onClick={() => setOpen(false)}
+              className="fixed inset-0 z-[110] flex items-end justify-center bg-black/60 p-0 backdrop-blur-[2px] sm:items-center sm:p-6"
+              onClick={closeModal}
               role="dialog"
               aria-modal="true"
               aria-label="페이백 간편 신청"
@@ -107,7 +121,7 @@ export function ApplyCtaLink({
                   </p>
                   <button
                     type="button"
-                    onClick={() => setOpen(false)}
+                    onClick={closeModal}
                     aria-label="닫기"
                     className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                   >
