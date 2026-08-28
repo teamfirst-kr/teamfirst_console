@@ -53,7 +53,7 @@ export function SolutionDetailButton({
       {open && typeof document !== "undefined"
         ? createPortal(
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-6"
+          className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-6"
           onClick={() => setOpen(false)}
           role="dialog"
           aria-modal="true"

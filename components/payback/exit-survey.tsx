@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import {
-  CTA_ABANDON_EVENT,
+  CTA_CLOSE_EVENT,
+  CTA_CONVERTED_EVENT,
+  CTA_OPEN_EVENT,
   SURVEY_REASONS,
   type SurveyReason,
 } from "@/lib/apply-survey";
@@ -25,13 +28,13 @@ const HIDE_KEY = "tf_apply_survey_v1";
 // 이탈 설문 — PC: 우측 하단 카드 / 모바일: 하단 시트.
 // 사유 버튼 클릭 즉시 기록·고정 후, 같은 팝업이 세로 확장되며 사유별 맞춤
 // 콘텐츠(설득/솔루션 상세/동일 % 매칭 제안/의견 작성)가 펼쳐진다.
-// trigger — delay: 진입 N초 뒤 노출(/apply) / cta-abandon: 간편 신청 팝업을
-// 제출 없이 닫았을 때 노출(랜딩). 세션당 1회는 두 경로 공통.
+// trigger — delay: 진입 N초 뒤 노출(/apply) / cta: 간편 신청 팝업이 열리면
+// 1.5초 뒤 팝업과 나란히 노출(랜딩). 세션당 1회는 두 경로 공통.
 export function ApplyExitSurvey({
   trigger = "delay",
   source = "apply",
 }: {
-  trigger?: "delay" | "cta-abandon";
+  trigger?: "delay" | "cta";
   // 응답이 어디서 입력됐는지 기록 (어드민 구분용)
   source?: "apply" | "landing";
 }) {
@@ -52,6 +55,7 @@ export function ApplyExitSurvey({
   // 전화상담
   const [phone, setPhone] = useState("");
   const [errMsg, setErrMsg] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     function alreadyDone(): boolean {
@@ -63,12 +67,36 @@ export function ApplyExitSurvey({
     }
     if (alreadyDone()) return;
 
-    if (trigger === "cta-abandon") {
-      const onAbandon = () => {
-        if (!alreadyDone()) setVisible(true);
+    if (trigger === "cta") {
+      let timer: ReturnType<typeof setTimeout> | null = null;
+      const onOpen = () => {
+        setModalOpen(true);
+        if (alreadyDone() || timer) return;
+        // 팝업이 열린 상태에서 곧바로(1.5초 뒤) 설문을 함께 노출
+        timer = setTimeout(() => setVisible(true), 1500);
       };
-      window.addEventListener(CTA_ABANDON_EVENT, onAbandon);
-      return () => window.removeEventListener(CTA_ABANDON_EVENT, onAbandon);
+      const onClose = () => setModalOpen(false);
+      const onConverted = () => {
+        // 리드 제출 완료 — 설문은 띄우지 않고 세션 내 재노출도 막는다
+        setModalOpen(false);
+        if (timer) clearTimeout(timer);
+        timer = null;
+        setVisible(false);
+        try {
+          sessionStorage.setItem(HIDE_KEY, "1");
+        } catch {
+          // 무시
+        }
+      };
+      window.addEventListener(CTA_OPEN_EVENT, onOpen);
+      window.addEventListener(CTA_CLOSE_EVENT, onClose);
+      window.addEventListener(CTA_CONVERTED_EVENT, onConverted);
+      return () => {
+        if (timer) clearTimeout(timer);
+        window.removeEventListener(CTA_OPEN_EVENT, onOpen);
+        window.removeEventListener(CTA_CLOSE_EVENT, onClose);
+        window.removeEventListener(CTA_CONVERTED_EVENT, onConverted);
+      };
     }
     const t = setTimeout(() => setVisible(true), 3500);
     return () => clearTimeout(t);
@@ -235,9 +263,24 @@ export function ApplyExitSurvey({
     (selected === "existing_payback" && matchAnswer === "no") ||
     (selected === "other_question" && detailSent);
 
-  return (
-    <div className="fixed inset-x-0 bottom-0 z-40 sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-80 sm:data-[wide=true]:w-[26rem]" data-wide={selected !== null}>
-      <div className="max-h-[85vh] overflow-y-auto rounded-t-2xl border bg-card p-5 shadow-2xl sm:rounded-2xl">
+  // 간편 신청 팝업(z-110)과 함께 떠야 하므로 body 포털 + 상위 z-index.
+  // 모바일에서는 팝업이 하단을 쓰므로 설문을 상단으로 올려 겹치지 않게 한다.
+  const card = (
+    <div
+      className={
+        "fixed z-[120] sm:inset-x-auto sm:bottom-6 sm:right-6 sm:top-auto sm:w-80 sm:data-[wide=true]:w-[26rem] " +
+        (modalOpen ? "inset-x-0 top-0" : "inset-x-0 bottom-0")
+      }
+      data-wide={selected !== null}
+    >
+      <div
+        className={
+          "overflow-y-auto border bg-card p-5 shadow-2xl sm:max-h-[85vh] sm:rounded-2xl " +
+          (modalOpen
+            ? "max-h-[44vh] rounded-b-2xl"
+            : "max-h-[85vh] rounded-t-2xl")
+        }
+      >
         <div className="flex items-start justify-between gap-3">
           <p className="break-keep text-sm font-bold leading-snug text-secondary">
             잠깐만요 — 오늘 신청을 망설이게 하는 이유가 있나요?
@@ -549,4 +592,8 @@ export function ApplyExitSurvey({
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(card, document.body)
+    : null;
 }

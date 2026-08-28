@@ -8,5 +8,7 @@ export const SURVEY_REASONS = {
 
 export type SurveyReason = keyof typeof SURVEY_REASONS;
 
-// 간편 신청 팝업을 제출 없이 닫았을 때 발화 — 랜딩 이탈 설문 트리거
-export const CTA_ABANDON_EVENT = "tf:cta-abandoned";
+// 간편 신청 팝업 상태 이벤트 — 랜딩 이탈 설문 트리거/위치 제어용
+export const CTA_OPEN_EVENT = "tf:cta-opened"; // 팝업 열림 → 잠시 후 설문 노출
+export const CTA_CLOSE_EVENT = "tf:cta-closed"; // 팝업 닫힘 → 설문 위치 복귀
+export const CTA_CONVERTED_EVENT = "tf:cta-converted"; // 리드 제출 완료 → 설문 숨김
