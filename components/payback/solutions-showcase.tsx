@@ -330,19 +330,8 @@ export function SolutionsShowcase() {
           </p>
         </div>
       </Reveal>
-      <Reveal>
-        <div className="mx-auto max-w-2xl rounded-2xl border border-dashed border-white/20 p-6 text-center">
-          <p className="text-2xl">🧪</p>
-          <p className="mt-2 font-semibold text-white">
-            새로운 솔루션을 계속 고민하고 개발하고 있습니다
-          </p>
-          <p className="mt-1 text-sm leading-relaxed text-white/65">
-            솔루션이 추가되어도 이용 비용은 추가되지 않습니다.
-          </p>
-        </div>
-      </Reveal>
-      <p className="text-center text-xs text-white/65">
-        위 화면은 이해를 돕기 위한 예시 화면입니다. 실제 화면은 서비스에서 확인하실 수 있습니다.
+      <p className="text-center text-xs text-white/55">
+        🧪 새로운 솔루션을 계속 고민하고 개발하고 있습니다
       </p>
     </div>
   );
