@@ -25,8 +25,14 @@ export default async function PaybackSurveysPage() {
   }
   const reasonLabel = (code: string) =>
     SURVEY_REASONS[code as keyof typeof SURVEY_REASONS] ?? code;
-  const matchInfo = (s: (typeof rows)[number]) =>
-    s.match_interest === null || s.match_interest === undefined ? null : (
+  const matchInfo = (s: (typeof rows)[number]) => {
+    if (s.match_interest === null || s.match_interest === undefined) return null;
+    const parts: string[] = [];
+    if (s.brand_name) parts.push(s.brand_name);
+    if (s.current_rate) parts.push(`현재 ${s.current_rate}%`);
+    if (s.monthly_budget)
+      parts.push(`월 ${Number(s.monthly_budget).toLocaleString()}원`);
+    return (
       <span
         className={
           "mt-0.5 block break-keep text-xs " +
@@ -36,11 +42,13 @@ export default async function PaybackSurveysPage() {
         }
       >
         🤝 동일 % 매칭: {s.match_interest ? "예" : "아니오"}
-        {s.brand_name
-          ? ` — ${s.brand_name} · 월 ${Number(s.monthly_budget ?? 0).toLocaleString()}원 · 현재 ${s.current_rate}%`
+        {parts.length ? ` — ${parts.join(" · ")}` : ""}
+        {s.match_interest && s.current_rate && !s.brand_name
+          ? " (신원 미입력)"
           : ""}
       </span>
     );
+  };
 
   return (
     <div className="space-y-8">
@@ -115,6 +123,11 @@ export default async function PaybackSurveysPage() {
                       >
                         {s.phone}
                       </a>
+                      {s.brand_name ? (
+                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                          {s.brand_name}
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-4 py-2.5">
                       {reasonLabel(s.reason)}

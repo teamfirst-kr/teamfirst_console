@@ -93,24 +93,45 @@ export async function attachSurveyMatchInterest(
   }
 }
 
-// 동일 % 매칭 간이양식: 브랜드명 / 월 예산 / 현재 페이백 % / 연락처
+// 1단계: 현재 받고 있는 페이백 요율만 먼저 기록 (신원 입력 전 이탈해도 남도록)
+export async function attachSurveyMatchRate(
+  surveyId: string,
+  rateInput: string,
+): Promise<{ ok: boolean }> {
+  if (!/^[0-9a-f-]{36}$/i.test(surveyId)) return { ok: false };
+  if (await attachRateLimited()) return { ok: false };
+  const rate = Number(String(rateInput).replace(/[^\d.]/g, ""));
+  if (!Number.isFinite(rate) || rate <= 0 || rate > 100) return { ok: false };
+  try {
+    const admin = createAdminClient();
+    const { error } = await admin
+      .from("pb_apply_surveys")
+      .update({ match_interest: true, current_rate: rate })
+      .eq("id", surveyId)
+      .is("current_rate", null); // write-once
+    return { ok: !error };
+  } catch {
+    return { ok: false };
+  }
+}
+
+// 2단계: 브랜드명 + 연락처 (계산기 예산이 있으면 함께 기록) — 검토 후 연락용
 export async function attachSurveyMatchForm(
   surveyId: string,
-  form: { brand: string; budget: string; rate: string; phone: string },
+  form: { brand: string; phone: string; budget?: number | null },
 ): Promise<{ ok: boolean }> {
   if (!/^[0-9a-f-]{36}$/i.test(surveyId)) return { ok: false };
   if (await attachRateLimited()) return { ok: false };
   const brand = form.brand.trim().slice(0, 100);
-  const budget = Number(String(form.budget).replace(/\D/g, ""));
-  const rate = Number(String(form.rate).replace(/[^\d.]/g, ""));
   const phone = String(form.phone).replace(/[^\d+-]/g, "").slice(0, 20);
   if (!brand) return { ok: false };
-  // 월 예산 상한 100억 원 (비현실 값·오버플로 방지)
-  if (!Number.isSafeInteger(budget) || budget <= 0 || budget > 10_000_000_000) {
-    return { ok: false };
-  }
-  if (!Number.isFinite(rate) || rate <= 0 || rate > 100) return { ok: false };
   if (phone.replace(/\D/g, "").length < 9) return { ok: false };
+  // 월 예산은 계산기에서 넘어온 참고값 (상한 100억 — 비현실 값·오버플로 방지)
+  const budgetNum = Number(form.budget);
+  const budget =
+    Number.isSafeInteger(budgetNum) && budgetNum > 0 && budgetNum <= 10_000_000_000
+      ? budgetNum
+      : null;
   try {
     const admin = createAdminClient();
     // write-once: 최초 제출만 기록 (임의 UUID로의 덮어쓰기 방지)
@@ -119,9 +140,8 @@ export async function attachSurveyMatchForm(
       .update({
         match_interest: true,
         brand_name: brand,
-        monthly_budget: budget,
-        current_rate: rate,
         phone,
+        ...(budget !== null ? { monthly_budget: budget } : {}),
       })
       .eq("id", surveyId)
       .is("brand_name", null);

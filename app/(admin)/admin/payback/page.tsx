@@ -469,8 +469,16 @@ export default async function PaybackPipelinePage() {
                           }
                         >
                           🤝 동일 % 매칭: {s.match_interest ? "예" : "아니오"}
-                          {s.brand_name
-                            ? ` — ${s.brand_name} · 월 ${Number(s.monthly_budget ?? 0).toLocaleString()}원 · 현재 ${s.current_rate}%`
+                          {[
+                            s.brand_name,
+                            s.current_rate ? `현재 ${s.current_rate}%` : null,
+                          ].filter(Boolean).length
+                            ? ` — ${[
+                                s.brand_name,
+                                s.current_rate ? `현재 ${s.current_rate}%` : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}`
                             : ""}
                         </span>
                       ) : null}
