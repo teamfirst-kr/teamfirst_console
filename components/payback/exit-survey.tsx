@@ -35,6 +35,7 @@ export function ApplyExitSurvey() {
   const [mPhone, setMPhone] = useState("");
   // 전화상담
   const [phone, setPhone] = useState("");
+  const [errMsg, setErrMsg] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -60,63 +61,104 @@ export function ApplyExitSurvey() {
     setTimeout(dismiss, 2500);
   }
 
+  const SAVE_FAIL_MSG =
+    "일시적 오류로 접수되지 않았습니다. 잠시 후 다시 시도하시거나 team1st2025@gmail.com 으로 연락주세요.";
+
   async function pickReason(reason: SurveyReason) {
     if (busy || selected) return; // 최초 1회만 기록·고정
     setSelected(reason);
     setBusy(true);
-    const res = await submitApplySurvey(reason);
-    setBusy(false);
-    if (res.ok) setSurveyId(res.id);
+    try {
+      const res = await submitApplySurvey(reason);
+      if (res.ok) setSurveyId(res.id);
+    } catch {
+      // 기록 실패해도 콘텐츠는 보여준다 (후속 제출 시 오류 안내)
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function sendDetail() {
     if (busy || detailSent) return;
     if (detail.trim().length < 1) return;
+    setErrMsg(null);
     setBusy(true);
-    if (surveyId) await attachSurveyDetail(surveyId, detail);
-    setBusy(false);
-    setDetailSent(true);
+    try {
+      const ok = surveyId
+        ? (await attachSurveyDetail(surveyId, detail)).ok
+        : false;
+      if (ok) setDetailSent(true);
+      else setErrMsg(SAVE_FAIL_MSG);
+    } catch {
+      setErrMsg(SAVE_FAIL_MSG);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function answerMatch(yes: boolean) {
     if (busy || matchAnswer) return;
     setMatchAnswer(yes ? "yes" : "no");
-    if (surveyId) {
-      setBusy(true);
+    if (!surveyId) return;
+    setBusy(true);
+    try {
       await attachSurveyMatchInterest(surveyId, yes);
+    } catch {
+      // 예/아니오 자체는 분석용 — 실패해도 흐름 유지 (yes는 폼 제출 시 재기록)
+    } finally {
       setBusy(false);
     }
   }
 
+  const budgetNum = Number(mBudget.replace(/\D/g, ""));
+  const rateNum = Number(mRate.replace(/[^\d.]/g, ""));
   const matchFormValid =
     mBrand.trim().length > 0 &&
-    Number(mBudget.replace(/\D/g, "")) > 0 &&
-    Number(mRate.replace(/[^\d.]/g, "")) > 0 &&
+    budgetNum > 0 &&
+    budgetNum <= 10_000_000_000 &&
+    rateNum > 0 &&
+    rateNum <= 100 &&
     mPhone.replace(/\D/g, "").length >= 9;
 
   async function sendMatchForm() {
     if (busy || !matchFormValid) return;
+    setErrMsg(null);
     setBusy(true);
-    if (surveyId) {
-      await attachSurveyMatchForm(surveyId, {
-        brand: mBrand,
-        budget: mBudget,
-        rate: mRate,
-        phone: mPhone,
-      });
+    try {
+      const ok = surveyId
+        ? (
+            await attachSurveyMatchForm(surveyId, {
+              brand: mBrand,
+              budget: mBudget,
+              rate: mRate,
+              phone: mPhone,
+            })
+          ).ok
+        : false;
+      if (ok) finish();
+      else setErrMsg(SAVE_FAIL_MSG);
+    } catch {
+      setErrMsg(SAVE_FAIL_MSG);
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
-    finish();
   }
 
   async function sendPhone() {
     if (busy) return;
     const digits = phone.replace(/\D/g, "");
     if (digits.length < 9) return;
+    setErrMsg(null);
     setBusy(true);
-    if (surveyId) await attachSurveyPhone(surveyId, phone);
-    setBusy(false);
-    finish();
+    try {
+      const ok = surveyId ? (await attachSurveyPhone(surveyId, phone)).ok : false;
+      if (ok) finish();
+      else setErrMsg(SAVE_FAIL_MSG);
+    } catch {
+      setErrMsg(SAVE_FAIL_MSG);
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (!visible) return null;
@@ -280,6 +322,11 @@ export function ApplyExitSurvey() {
                       </button>
                     </div>
                   </>
+                ) : matchAnswer === "no" ? (
+                  <p className="break-keep text-xs leading-relaxed text-muted-foreground">
+                    알겠습니다. 그래도 조건 비교가 궁금해지시면 아래에 연락처를
+                    남겨주세요 — 부담 없이 안내드릴게요.
+                  </p>
                 ) : matchAnswer === "yes" ? (
                   <>
                     <p className="break-keep text-sm font-semibold text-secondary">
@@ -317,6 +364,11 @@ export function ApplyExitSurvey() {
                         placeholder="연락처 *"
                         className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                       />
+                      {rateNum > 100 ? (
+                        <p className="text-xs text-destructive">
+                          현재 페이백 %는 100 이하로 입력해주세요.
+                        </p>
+                      ) : null}
                       <button
                         type="button"
                         disabled={busy || !matchFormValid}
@@ -393,6 +445,12 @@ export function ApplyExitSurvey() {
                   </button>
                 </div>
               </div>
+            ) : null}
+
+            {errMsg ? (
+              <p className="mt-3 break-keep rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                {errMsg}
+              </p>
             ) : null}
 
             <button

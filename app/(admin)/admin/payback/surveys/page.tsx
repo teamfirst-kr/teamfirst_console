@@ -64,7 +64,7 @@ export default async function PaybackSurveysPage() {
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
           조회 실패: {error.message}
           <span className="block text-xs">
-            021 마이그레이션(pb_apply_surveys) 실행 여부를 확인하세요.
+            최신 마이그레이션(021·023·024 — pb_apply_surveys) 실행 여부를 확인하세요.
           </span>
         </div>
       ) : null}

@@ -18,6 +18,19 @@ function surveyRateLimited(ip: string): boolean {
   return false;
 }
 
+// 후속 attach 액션용 (한 응답 흐름에 여러 attach가 있어 한도를 높게)
+const attachByIp = new Map<string, number[]>();
+async function attachRateLimited(): Promise<boolean> {
+  const ip =
+    (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const now = Date.now();
+  const list = (attachByIp.get(ip) ?? []).filter((t) => now - t < 10 * 60_000);
+  if (list.length >= 30) return true;
+  list.push(now);
+  attachByIp.set(ip, list);
+  return false;
+}
+
 // 이탈 설문: 사유 버튼 클릭 즉시 기록 (익명 — RLS는 운영자 조회 전용, 쓰기는 서버 액션만)
 export async function submitApplySurvey(reason: string): Promise<SurveyResult> {
   if (!(reason in SURVEY_REASONS)) return { ok: false };
@@ -46,6 +59,7 @@ export async function attachSurveyDetail(
   const cleaned = detail.trim().slice(0, 500);
   if (cleaned.length < 1) return { ok: false };
   if (!/^[0-9a-f-]{36}$/i.test(surveyId)) return { ok: false };
+  if (await attachRateLimited()) return { ok: false };
   try {
     const admin = createAdminClient();
     const { error } = await admin
@@ -65,6 +79,7 @@ export async function attachSurveyMatchInterest(
   interest: boolean,
 ): Promise<{ ok: boolean }> {
   if (!/^[0-9a-f-]{36}$/i.test(surveyId)) return { ok: false };
+  if (await attachRateLimited()) return { ok: false };
   try {
     const admin = createAdminClient();
     const { error } = await admin
@@ -84,16 +99,21 @@ export async function attachSurveyMatchForm(
   form: { brand: string; budget: string; rate: string; phone: string },
 ): Promise<{ ok: boolean }> {
   if (!/^[0-9a-f-]{36}$/i.test(surveyId)) return { ok: false };
+  if (await attachRateLimited()) return { ok: false };
   const brand = form.brand.trim().slice(0, 100);
   const budget = Number(String(form.budget).replace(/\D/g, ""));
   const rate = Number(String(form.rate).replace(/[^\d.]/g, ""));
   const phone = String(form.phone).replace(/[^\d+-]/g, "").slice(0, 20);
   if (!brand) return { ok: false };
-  if (!Number.isFinite(budget) || budget <= 0) return { ok: false };
+  // 월 예산 상한 100억 원 (비현실 값·오버플로 방지)
+  if (!Number.isSafeInteger(budget) || budget <= 0 || budget > 10_000_000_000) {
+    return { ok: false };
+  }
   if (!Number.isFinite(rate) || rate <= 0 || rate > 100) return { ok: false };
   if (phone.replace(/\D/g, "").length < 9) return { ok: false };
   try {
     const admin = createAdminClient();
+    // write-once: 최초 제출만 기록 (임의 UUID로의 덮어쓰기 방지)
     const { error } = await admin
       .from("pb_apply_surveys")
       .update({
@@ -103,7 +123,8 @@ export async function attachSurveyMatchForm(
         current_rate: rate,
         phone,
       })
-      .eq("id", surveyId);
+      .eq("id", surveyId)
+      .is("brand_name", null);
     return { ok: !error };
   } catch {
     return { ok: false };
@@ -118,6 +139,7 @@ export async function attachSurveyPhone(
   const cleaned = phone.replace(/[^\d+-]/g, "").slice(0, 20);
   if (cleaned.replace(/\D/g, "").length < 9) return { ok: false };
   if (!/^[0-9a-f-]{36}$/i.test(surveyId)) return { ok: false };
+  if (await attachRateLimited()) return { ok: false };
   try {
     const admin = createAdminClient();
     const { error } = await admin
