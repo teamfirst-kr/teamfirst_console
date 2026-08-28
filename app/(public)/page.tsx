@@ -44,11 +44,11 @@ const STEPS = [
 ];
 
 const AGENCY_SIGNS = [
-  "대행사를 지정해두고, 어쩌다 한 번 요청만 하고 있다 (또는 아예 요청하지 않는다)",
-  "대행사 담당자가 전략을 먼저 제안하지 않고, 지시한 업무만 처리한다",
-  "대표나 인하우스 마케터가 대행사 담당자보다 훨씬 역량이 뛰어나다",
-  "리포트만 겨우 받아보고 있다 — 그마저도 숫자 나열뿐이다",
-  "기존 담당자가 퇴사한 뒤, 애매하게 대행권만 유지되고 있다",
+  "대행사를 지정해두고 어쩌다 한 번 요청만 한다 (또는 아예 요청하지 않는다)",
+  "담당자가 전략을 먼저 제안하지 않고, 지시한 업무만 처리한다",
+  "대표나 인하우스 마케터가 대행사 담당자보다 역량이 뛰어나다",
+  "리포트만 겨우 받아본다 — 그마저도 숫자 나열뿐이다",
+  "담당자가 퇴사한 뒤 애매하게 대행권만 유지되고 있다",
 ];
 
 const EXPERT_POINTS = [
@@ -159,18 +159,20 @@ export default async function PaybackLanding() {
     <div className="overflow-hidden">
       {/* 1. 히어로 */}
       <section className="tf-hero-spotlight bg-secondary text-secondary-foreground">
-        <div className="mx-auto max-w-5xl px-5 py-20 text-center sm:px-6 md:py-36">
+        <div className="mx-auto max-w-5xl px-5 py-14 text-center sm:px-6 sm:py-16 md:py-24">
           <Reveal
             immediate
-            className="mb-6 inline-flex max-w-full items-center gap-2 rounded-full border border-white/20 bg-white/[0.07] px-5 py-2 text-sm font-semibold text-white/85 sm:px-6 sm:py-2.5 sm:text-base"
+            className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full border border-white/20 bg-white/[0.07] px-4 py-1.5 text-[13px] font-semibold text-white/85 sm:px-5 sm:py-2 sm:text-[15px]"
           >
-            <span className="sm:hidden">광고비 페이백 10~12% · 솔루션 무료</span>
+            <span className="sm:hidden">
+              페이백 10~12% · 솔루션 · 전문가 컨설팅
+            </span>
             <span className="hidden sm:inline">
-              광고비 페이백 <strong className="text-white">10~12%</strong> · 솔루션 무료 · 운영은 그대로 셀프
+              광고비 페이백 <strong className="text-white">10~12%</strong> · 솔루션 무료 · 카테고리 전문 마케터 컨설팅
             </span>
           </Reveal>
           <Reveal delay={60} immediate>
-            <h1 className="break-keep text-[30px] font-extrabold leading-[1.25] tracking-[-0.02em] sm:text-4xl sm:leading-[1.2] md:text-6xl md:leading-[1.18] md:tracking-[-0.03em]">
+            <h1 className="break-keep text-[26px] font-extrabold leading-[1.28] tracking-[-0.02em] sm:text-[32px] sm:leading-[1.22] md:text-5xl md:leading-[1.2] md:tracking-[-0.03em]">
               대행권만 지정하면
               <br />
               <span className="bg-gradient-to-r from-white to-sky-200 bg-clip-text text-transparent">
@@ -179,13 +181,15 @@ export default async function PaybackLanding() {
             </h1>
           </Reveal>
           <Reveal delay={140} immediate>
-            <p className="mx-auto mt-5 max-w-[19rem] break-keep text-[15px] leading-relaxed text-white/75 sm:mt-6 sm:max-w-2xl sm:text-base md:text-lg">
+            <p className="mx-auto mt-4 max-w-[19rem] break-keep text-[15px] leading-relaxed text-white/75 sm:mt-5 sm:max-w-2xl sm:text-base">
               광고는 지금처럼 직접 운영하세요. 팀퍼스트를 대행사로 지정하는
-              것만으로 매체 대행수수료의 일부를{" "}
+              것만으로
+              <br className="hidden sm:block" />{" "}
+              매체 대행수수료의 일부를{" "}
               <strong className="text-white">매월 현금으로</strong> 돌려드립니다.
             </p>
           </Reveal>
-          <Reveal delay={220} immediate className="mt-10 flex flex-wrap justify-center gap-3">
+          <Reveal delay={220} immediate className="mt-8 flex flex-wrap justify-center gap-3">
             <ApplyCtaLink
               location="hero"
               className="bg-white text-secondary shadow-lg shadow-black/20 hover:bg-white/90"
@@ -233,44 +237,33 @@ export default async function PaybackLanding() {
       </section>
 
       {/* 1.6 무의미한 대행 유지 진단 (계산기 직후 — 전환 설득) */}
-      <section className="bg-muted/40 py-24">
-        <div className="mx-auto max-w-5xl px-6">
+      <section className="bg-muted/40 py-14">
+        <div className="mx-auto max-w-6xl px-6">
           <SectionHeader
             eyebrow="AGENCY REALITY CHECK"
-            heading="혹시, 대행권만 남아 있진 않나요?"
-            sub="아래 중 하나라도 해당된다면 그 대행수수료는 성과가 아니라 관성입니다."
+            heading="더 이상 무의미한 대행은 유지하지 마세요."
           />
-          <div className="mt-12 grid gap-3 md:grid-cols-2">
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {AGENCY_SIGNS.map((t, i) => (
               <Reveal key={t} delay={i * 60}>
-                <div className="flex h-full items-start gap-3 rounded-xl border bg-card p-5 shadow-sm">
-                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-xs font-bold text-destructive">
-                    ✓
+                <div className="flex h-full flex-col rounded-xl border bg-card p-4 shadow-sm">
+                  <span className="text-[11px] font-extrabold tracking-wider text-destructive">
+                    CASE {i + 1}
                   </span>
-                  <p className="break-keep text-sm leading-relaxed text-foreground">
+                  <p className="mt-2 break-keep text-[13px] leading-relaxed text-foreground">
                     {t}
                   </p>
                 </div>
               </Reveal>
             ))}
           </div>
-          <Reveal delay={120} className="mt-10">
-            <div className="rounded-2xl border border-primary/25 bg-primary/5 p-7 text-center md:p-9">
-              <p className="break-keep text-lg font-extrabold leading-relaxed text-secondary md:text-2xl">
-                더 이상 무의미한 대행은 유지하지 마세요.
-              </p>
-              <p className="mx-auto mt-3 max-w-2xl break-keep text-sm leading-relaxed text-muted-foreground md:text-base">
-                같은 광고비로 <strong className="text-foreground">광고비의 10~12%를 현금으로</strong>{" "}
-                돌려받고, <strong className="text-foreground">자동 성과분석 &amp; 최적화 솔루션</strong>을
-                무료로 쓰고, <strong className="text-foreground">카테고리에 딱 맞는 전문가</strong>에게
-                주기적으로 세팅을 받으세요. 운영 주도권은 그대로 브랜드에 있습니다.
-              </p>
-              <div className="mt-7">
-                <ApplyCtaLink location="agency_check">
-                  💸 지금 페이백으로 전환하기
-                </ApplyCtaLink>
-              </div>
-            </div>
+          <Reveal delay={120}>
+            <p className="mx-auto mt-8 max-w-3xl break-keep text-center text-sm leading-relaxed text-muted-foreground md:text-base">
+              <strong className="text-foreground">광고비의 최대 12%를 현금으로</strong>{" "}
+              돌려받고,{" "}
+              <strong className="text-foreground">성과분석 &amp; 최적화 솔루션</strong>{" "}
+              지원받으세요.
+            </p>
           </Reveal>
         </div>
       </section>
@@ -280,7 +273,8 @@ export default async function PaybackLanding() {
         <div className="mx-auto max-w-5xl px-6">
           <SectionHeader
             eyebrow="TEAMFIRST SOLUTIONS"
-            heading={<span className="text-white">팀퍼스트 자체 개발 솔루션</span>}
+            tone="dark"
+            heading="팀퍼스트 자체 개발 솔루션"
             sub={
               <span className="text-white/70">
                 대행권을 지정한 광고주에게 무료로 제공되는 성과 도구입니다.
@@ -296,11 +290,8 @@ export default async function PaybackLanding() {
         <div className="mx-auto max-w-5xl px-6">
           <SectionHeader
             eyebrow="MONTHLY EXPERT CONSULTING"
-            heading={
-              <span className="text-white">
-                브랜드에 딱 맞는 전문가가 매달 붙습니다
-              </span>
-            }
+            tone="dark"
+            heading="브랜드에 딱 맞는 전문가가 매달 붙습니다"
             sub={
               <span className="text-white/70">
                 브랜드 카테고리와 마케팅 상황에 최적화된 최고의 전문가가
