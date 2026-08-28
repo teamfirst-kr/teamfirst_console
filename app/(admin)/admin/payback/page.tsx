@@ -60,6 +60,7 @@ export default async function PaybackPipelinePage() {
     { data: mediaRows },
     { data: rateRow },
     { data: surveyRows },
+    { data: leadRows },
   ] = await Promise.all([
       supabase
         .from("pb_applications")
@@ -87,6 +88,11 @@ export default async function PaybackPipelinePage() {
       supabase
         .from("pb_apply_surveys")
         .select("id, reason, phone, detail, match_interest, brand_name, monthly_budget, current_rate, created_at")
+        .order("created_at", { ascending: false })
+        .limit(30),
+      supabase
+        .from("pb_leads")
+        .select("id, brand_name, phone, expected_budget, source, created_at")
         .order("created_at", { ascending: false })
         .limit(30),
   ]);
@@ -372,6 +378,55 @@ export default async function PaybackPipelinePage() {
           </div>
         )}
       </section>
+
+      {(leadRows ?? []).length > 0 ? (
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
+            ⚡ 간편 신청 리드 (최근 {(leadRows ?? []).length}) — 빠른 연락 필요
+          </h2>
+          <div className="overflow-hidden rounded-xl border bg-card">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-2.5 font-medium">브랜드</th>
+                  <th className="px-4 py-2.5 font-medium">연락처</th>
+                  <th className="px-4 py-2.5 font-medium">월 예상 광고비</th>
+                  <th className="px-4 py-2.5 font-medium">유입</th>
+                  <th className="px-4 py-2.5 font-medium">접수 시각</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {(leadRows ?? []).map((l) => (
+                  <tr key={l.id} className="bg-amber-50/40">
+                    <td className="px-4 py-2.5 font-semibold text-foreground">
+                      {l.brand_name}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <a
+                        href={`tel:${l.phone.replace(/[^\d+]/g, "")}`}
+                        className="font-semibold text-primary hover:underline"
+                      >
+                        📞 {l.phone}
+                      </a>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {l.expected_budget
+                        ? `${Number(l.expected_budget).toLocaleString()}원`
+                        : "—"}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                      {l.source ?? "-"}
+                    </td>
+                    <td className="px-4 py-2.5 text-muted-foreground">
+                      <DateText value={l.created_at} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
 
       {(surveyRows ?? []).length > 0 ? (
         <section>

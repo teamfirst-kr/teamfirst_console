@@ -359,6 +359,14 @@ export type Database = {
       pb_payouts: PbTable<PbPayoutRow>;
       pb_media_receipts: PbTable<PbMediaReceiptRow>;
       pb_app_settings: PbTable<{ key: string; value: Json }>;
+      pb_leads: PbTable<{
+        id: string;
+        brand_name: string;
+        phone: string;
+        expected_budget: number | null;
+        source: string | null;
+        created_at: string;
+      }>;
       pb_apply_surveys: PbTable<{
         id: string;
         reason: string;
