@@ -330,43 +330,31 @@ export function ApplyExitSurvey({
           </div>
         ) : (
           <>
-            {/* ① 대행사와 관계 때문에 — 논리적 설득 */}
+            {/* ① 대행사와 관계 때문에 — 케이스 1·2·3 자문 유도 (줄글) */}
             {selected === "agency_relationship" ? (
-              <div className="mt-3 space-y-2.5 border-t pt-3">
-                <p className="break-keep text-sm font-semibold text-secondary">
-                  충분히 이해합니다. 그래도 한 번만 따져보세요.
+              <div className="mt-3 border-t pt-3">
+                <p className="break-keep text-sm font-semibold leading-relaxed text-secondary">
+                  충분히 이해합니다. 그런데 혹시, 이렇지 않나요?
                 </p>
-                <ul className="space-y-2 break-keep text-xs leading-relaxed text-muted-foreground">
-                  <li className="rounded-lg bg-muted/60 px-3 py-2">
-                    대행사와의 유대감도 중요하지만, 결국{" "}
-                    <strong className="text-foreground">
-                      비즈니스에 도움이 되어야 하는 관계
-                    </strong>
-                    입니다.
-                  </li>
-                  <li className="rounded-lg bg-muted/60 px-3 py-2">
-                    요청한 것만 처리하고 능동적인 마케팅 가이드를 제시하지 못하는
-                    대행사라면, 지금 시대에{" "}
-                    <strong className="text-foreground">
-                      실질적인 도움이 되기 어렵습니다.
-                    </strong>
-                  </li>
-                  <li className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-foreground">
-                    월 광고비 500만 원이면 페이백은{" "}
-                    <strong className="text-primary">
-                      월 50만 원, 연 600만 원
-                    </strong>
-                    입니다. 지금의 대행사는 그만큼의 사업적 이득을 만들어주고
-                    있나요?
-                  </li>
-                  <li className="rounded-lg bg-muted/60 px-3 py-2">
-                    전환 후 &lsquo;솔루션+직접 운영+페이백&rsquo;이 더 불편하다면{" "}
-                    <strong className="text-foreground">
-                      하루 만에도 종료할 수 있습니다.
-                    </strong>{" "}
-                    위험 부담이 없습니다.
-                  </li>
-                </ul>
+                <p className="mt-2 break-keep text-[13px] leading-relaxed text-muted-foreground">
+                  대행사를 지정해두고{" "}
+                  <strong className="text-foreground">어쩌다 한 번 요청만</strong>{" "}
+                  하고 있진 않나요. 담당자가 전략을 먼저 제안하기보다{" "}
+                  <strong className="text-foreground">지시한 업무만 처리</strong>
+                  하고 있진 않나요. 어쩌면{" "}
+                  <strong className="text-foreground">
+                    대표님이 담당자보다 마케팅을 더 잘
+                  </strong>{" "}
+                  알고 계시진 않나요.
+                </p>
+                <p className="mt-2 break-keep text-[13px] leading-relaxed text-muted-foreground">
+                  하나라도 해당된다면 지금의 대행수수료는 성과가 아니라
+                  관성입니다. 페이백으로 바꾸면{" "}
+                  <strong className="text-primary">
+                    월 광고비 500만 원 기준 연 600만 원
+                  </strong>
+                  을 돌려받고, 불편하면 하루 만에도 종료할 수 있습니다.
+                </p>
               </div>
             ) : null}
 
