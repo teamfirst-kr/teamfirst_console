@@ -26,10 +26,19 @@ export function SolutionDetailButton({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
+    // 상세 HTML(iframe) 안의 CTA는 /apply 직행 대신 postMessage를 보낸다 —
+    // 정식 신청은 반드시 간편 신청(약식) 팝업을 거치게 하기 위함.
+    const onMsg = (e: MessageEvent) => {
+      if ((e.data as { type?: string } | null)?.type === "tf-open-apply") {
+        document.getElementById("solution-modal-apply-cta")?.click();
+      }
+    };
     document.addEventListener("keydown", onKey);
+    window.addEventListener("message", onMsg);
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
+      window.removeEventListener("message", onMsg);
       document.body.style.overflow = "";
     };
   }, [open]);
@@ -82,6 +91,7 @@ export function SolutionDetailButton({
             />
             <div className="shrink-0 border-t bg-white px-4 py-3 text-center">
               <ApplyCtaLink
+                id="solution-modal-apply-cta"
                 location="solution_modal"
                 className="w-full sm:w-auto sm:min-w-80"
               >
