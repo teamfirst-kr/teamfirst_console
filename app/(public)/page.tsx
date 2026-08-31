@@ -157,7 +157,7 @@ export default async function PaybackLanding() {
       {/* 1. 히어로 — 좌: 메시지·CTA / 우: 컴팩트 페이백 계산기 */}
       <section className="tf-hero-spotlight bg-secondary text-secondary-foreground">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-14 sm:px-6 sm:py-16 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-14 lg:py-24">
-          <div className="text-center lg:text-left">
+          <div className="text-center">
             <Reveal
               immediate
               className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full border border-white/20 bg-white/[0.07] px-4 py-1.5 text-[13px] font-semibold text-white/85 sm:px-5 sm:py-2 sm:text-[15px]"
@@ -179,7 +179,7 @@ export default async function PaybackLanding() {
               </h1>
             </Reveal>
             <Reveal delay={140} immediate>
-              <p className="mx-auto mt-4 max-w-[19rem] break-keep text-[15px] leading-relaxed text-white/75 sm:mt-5 sm:max-w-2xl lg:mx-0 lg:max-w-xl sm:text-base">
+              <p className="mx-auto mt-4 max-w-[19rem] break-keep text-[15px] leading-relaxed text-white/75 sm:mt-5 sm:max-w-2xl lg:max-w-xl sm:text-base">
                 광고는 지금처럼 직접 운영하세요. 팀퍼스트를 대행사로 지정하는
                 것만으로{" "}
                 매체 대행수수료의 일부를{" "}
@@ -189,7 +189,7 @@ export default async function PaybackLanding() {
             <Reveal
               delay={220}
               immediate
-              className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start"
+              className="mt-8 flex flex-wrap justify-center gap-3"
             >
               <ApplyCtaLink
                 location="hero"
