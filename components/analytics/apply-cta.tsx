@@ -66,7 +66,7 @@ export function ApplyCtaLink({
   function openModal() {
     trackConversion("AddToCart", { content_name: location }, "add_to_cart");
     setOpen(true);
-    // 랜딩 이탈 설문이 구독 — 팝업이 열린 채로 잠시 후 함께 노출된다
+    // 이탈 설문이 구독 — 팝업 열림 시 설문 위치(모바일 상단) 제어용
     fire(CTA_OPEN_EVENT);
   }
 

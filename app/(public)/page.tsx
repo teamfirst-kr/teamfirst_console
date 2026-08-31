@@ -485,8 +485,8 @@ export default async function PaybackLanding() {
         </div>
       </section>
 
-      {/* 간편 신청 팝업을 제출 없이 닫으면 이탈 설문 노출 */}
-      <ApplyExitSurvey trigger="cta" source="landing" />
+      {/* 이탈 설문 — 접속 0.5초 뒤 노출 (세션당 1회) */}
+      <ApplyExitSurvey source="landing" />
     </div>
   );
 }

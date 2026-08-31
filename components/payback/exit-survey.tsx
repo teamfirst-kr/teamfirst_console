@@ -17,6 +17,7 @@ import {
   attachSurveyMatchRate,
   attachSurveyPhone,
   submitApplySurvey,
+  updateSurveyReason,
 } from "@/app/(public)/apply/survey-actions";
 import { readCalcState } from "@/lib/calc-state";
 import { trackConversion } from "@/components/analytics/track";
@@ -26,15 +27,12 @@ import { SOLUTION_DETAILS } from "./solution-details";
 const HIDE_KEY = "tf_apply_survey_v1";
 
 // 이탈 설문 — PC: 우측 하단 카드 / 모바일: 하단 시트.
-// 사유 버튼 클릭 즉시 기록·고정 후, 같은 팝업이 세로 확장되며 사유별 맞춤
-// 콘텐츠(설득/솔루션 상세/동일 % 매칭 제안/의견 작성)가 펼쳐진다.
-// trigger — delay: 진입 N초 뒤 노출(/apply) / cta: 간편 신청 팝업이 열리면
-// 1.5초 뒤 팝업과 나란히 노출(랜딩). 세션당 1회는 두 경로 공통.
+// 랜딩·정식 신청 페이지 공통으로 접속 0.5초 뒤 바로 노출 (세션당 1회).
+// 사유 클릭 즉시 기록 후 같은 팝업이 세로 확장되며 사유별 맞춤 콘텐츠가 펼쳐진다.
+// 간편 신청 팝업 이벤트는 위치 제어(모바일 상단 이동)와 전환 완료 시 숨김에 사용.
 export function ApplyExitSurvey({
-  trigger = "delay",
   source = "apply",
 }: {
-  trigger?: "delay" | "cta";
   // 응답이 어디서 입력됐는지 기록 (어드민 구분용)
   source?: "apply" | "landing";
 }) {
@@ -67,40 +65,32 @@ export function ApplyExitSurvey({
     }
     if (alreadyDone()) return;
 
-    if (trigger === "cta") {
-      let timer: ReturnType<typeof setTimeout> | null = null;
-      const onOpen = () => {
-        setModalOpen(true);
-        if (alreadyDone() || timer) return;
-        // 팝업이 열린 상태에서 곧바로(1.5초 뒤) 설문을 함께 노출
-        timer = setTimeout(() => setVisible(true), 1500);
-      };
-      const onClose = () => setModalOpen(false);
-      const onConverted = () => {
-        // 리드 제출 완료 — 설문은 띄우지 않고 세션 내 재노출도 막는다
-        setModalOpen(false);
-        if (timer) clearTimeout(timer);
-        timer = null;
-        setVisible(false);
-        try {
-          sessionStorage.setItem(HIDE_KEY, "1");
-        } catch {
-          // 무시
-        }
-      };
-      window.addEventListener(CTA_OPEN_EVENT, onOpen);
-      window.addEventListener(CTA_CLOSE_EVENT, onClose);
-      window.addEventListener(CTA_CONVERTED_EVENT, onConverted);
-      return () => {
-        if (timer) clearTimeout(timer);
-        window.removeEventListener(CTA_OPEN_EVENT, onOpen);
-        window.removeEventListener(CTA_CLOSE_EVENT, onClose);
-        window.removeEventListener(CTA_CONVERTED_EVENT, onConverted);
-      };
-    }
-    const t = setTimeout(() => setVisible(true), 3500);
-    return () => clearTimeout(t);
-  }, [trigger]);
+    // 접속 0.5초 뒤 바로 노출 (약식 팝업·정식 신청 페이지 공통)
+    const t = setTimeout(() => setVisible(true), 500);
+
+    // 간편 신청 팝업 상태 구독 — 모바일 위치 제어 + 리드 전환 완료 시 숨김
+    const onOpen = () => setModalOpen(true);
+    const onClose = () => setModalOpen(false);
+    const onConverted = () => {
+      setModalOpen(false);
+      clearTimeout(t);
+      setVisible(false);
+      try {
+        sessionStorage.setItem(HIDE_KEY, "1");
+      } catch {
+        // 무시
+      }
+    };
+    window.addEventListener(CTA_OPEN_EVENT, onOpen);
+    window.addEventListener(CTA_CLOSE_EVENT, onClose);
+    window.addEventListener(CTA_CONVERTED_EVENT, onConverted);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener(CTA_OPEN_EVENT, onOpen);
+      window.removeEventListener(CTA_CLOSE_EVENT, onClose);
+      window.removeEventListener(CTA_CONVERTED_EVENT, onConverted);
+    };
+  }, []);
 
   function dismiss() {
     setVisible(false);
@@ -120,12 +110,28 @@ export function ApplyExitSurvey({
     "일시적 오류로 접수되지 않았습니다. 잠시 후 다시 시도하시거나 team1st2025@gmail.com 으로 연락주세요.";
 
   async function pickReason(reason: SurveyReason) {
-    if (busy || selected) return; // 최초 1회만 기록·고정
+    if (busy || done || selected === reason) return;
+    const isSwitch = selected !== null;
     setSelected(reason);
+    if (isSwitch) {
+      // 답변 변경 — 이전 사유의 하위 입력을 초기화 (최종 답변만 기록)
+      setDetail("");
+      setDetailSent(false);
+      setMatchAnswer(null);
+      setMRate("");
+      setMRateSent(false);
+      setMBrand("");
+      setMPhone("");
+      setErrMsg(null);
+    }
     setBusy(true);
     try {
-      const res = await submitApplySurvey(reason, source);
-      if (res.ok) setSurveyId(res.id);
+      if (surveyId) {
+        await updateSurveyReason(surveyId, reason);
+      } else {
+        const res = await submitApplySurvey(reason, source);
+        if (res.ok) setSurveyId(res.id);
+      }
     } catch {
       // 기록 실패해도 콘텐츠는 보여준다 (후속 제출 시 오류 안내)
     } finally {
@@ -303,15 +309,13 @@ export function ApplyExitSurvey({
                 <button
                   key={code}
                   type="button"
-                  disabled={busy || (selected !== null && !isSelected)}
+                  disabled={busy || done}
                   onClick={() => pickReason(code)}
                   className={
                     "w-full rounded-lg border px-3 py-2.5 text-left text-sm transition-colors " +
                     (isSelected
                       ? "border-primary bg-primary/10 font-semibold text-primary"
-                      : selected
-                        ? "bg-background opacity-40"
-                        : "bg-background hover:border-primary/50 hover:bg-primary/5")
+                      : "bg-background hover:border-primary/50 hover:bg-primary/5")
                   }
                 >
                   {isSelected ? "✓ " : ""}
@@ -330,43 +334,39 @@ export function ApplyExitSurvey({
           </div>
         ) : (
           <>
-            {/* ① 대행사와 관계 때문에 — 논리적 설득 */}
+            {/* ① 대행사와 관계 때문에 — 케이스 1·2·3 자문 유도 (줄글) */}
             {selected === "agency_relationship" ? (
-              <div className="mt-3 space-y-2.5 border-t pt-3">
-                <p className="break-keep text-sm font-semibold text-secondary">
-                  충분히 이해합니다. 그래도 한 번만 따져보세요.
+              <div className="mt-3 border-t pt-3">
+                <p className="break-keep text-sm font-semibold leading-relaxed text-secondary">
+                  충분히 이해합니다. 그런데 혹시, 이렇지 않나요?
                 </p>
-                <ul className="space-y-2 break-keep text-xs leading-relaxed text-muted-foreground">
-                  <li className="rounded-lg bg-muted/60 px-3 py-2">
-                    대행사와의 유대감도 중요하지만, 결국{" "}
+                <div className="mt-2 space-y-1.5 break-keep text-[13px] leading-relaxed text-muted-foreground">
+                  <p>
+                    대행사를 지정해두고{" "}
+                    <strong className="text-foreground">어쩌다 한 번 요청만</strong>{" "}
+                    하고 있진 않나요?
+                  </p>
+                  <p>
+                    담당자가 전략을 먼저 제안하기보다{" "}
+                    <strong className="text-foreground">지시한 업무만 처리</strong>
+                    하고 있진 않나요?
+                  </p>
+                  <p>
+                    어쩌면{" "}
                     <strong className="text-foreground">
-                      비즈니스에 도움이 되어야 하는 관계
-                    </strong>
-                    입니다.
-                  </li>
-                  <li className="rounded-lg bg-muted/60 px-3 py-2">
-                    요청한 것만 처리하고 능동적인 마케팅 가이드를 제시하지 못하는
-                    대행사라면, 지금 시대에{" "}
-                    <strong className="text-foreground">
-                      실질적인 도움이 되기 어렵습니다.
-                    </strong>
-                  </li>
-                  <li className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-foreground">
-                    월 광고비 500만 원이면 페이백은{" "}
-                    <strong className="text-primary">
-                      월 50만 원, 연 600만 원
-                    </strong>
-                    입니다. 지금의 대행사는 그만큼의 사업적 이득을 만들어주고
-                    있나요?
-                  </li>
-                  <li className="rounded-lg bg-muted/60 px-3 py-2">
-                    전환 후 &lsquo;솔루션+직접 운영+페이백&rsquo;이 더 불편하다면{" "}
-                    <strong className="text-foreground">
-                      하루 만에도 종료할 수 있습니다.
+                      대표님이 담당자보다 마케팅을 더 잘
                     </strong>{" "}
-                    위험 부담이 없습니다.
-                  </li>
-                </ul>
+                    알고 계시진 않나요?
+                  </p>
+                </div>
+                <p className="mt-2 break-keep text-[13px] leading-relaxed text-muted-foreground">
+                  하나라도 해당된다면 지금의 대행수수료는 성과가 아니라
+                  관성입니다. 페이백으로 바꾸면{" "}
+                  <strong className="text-primary">
+                    월 광고비 500만 원 기준 연 600만 원
+                  </strong>
+                  을 돌려받고, 불편하면 하루 만에도 종료할 수 있습니다.
+                </p>
               </div>
             ) : null}
 
