@@ -317,18 +317,21 @@ export function SolutionsShowcase() {
         </Reveal>
       ))}
       <Reveal>
-        <div className="mx-auto max-w-2xl rounded-2xl border border-dashed border-white/20 p-6 text-center">
-          <p className="text-2xl">🧪</p>
-          <p className="mt-2 font-semibold text-white">
-            새로운 솔루션을 계속 고민하고 개발하고 있습니다
+        <div className="mx-auto max-w-3xl rounded-2xl border border-sky-400/30 bg-sky-400/[0.07] p-7 text-center">
+          <p className="text-2xl">🤝</p>
+          <p className="mt-2 break-keep text-lg font-extrabold text-white">
+            솔루션 설정, 어렵지 않습니다
           </p>
-          <p className="mt-1 text-sm leading-relaxed text-white/65">
-            솔루션이 추가되어도 이용 비용은 추가되지 않습니다.
+          <p className="mt-2 break-keep text-sm leading-relaxed text-white/75">
+            초기 브랜드 상황에 맞춰{" "}
+            <strong className="text-sky-200">전문가가 직접 AI 최적화 세팅을 설명하고
+            진행</strong>
+            해드립니다. 세팅부터 해석까지 혼자 하실 필요 없습니다.
           </p>
         </div>
       </Reveal>
-      <p className="text-center text-xs text-white/65">
-        위 화면은 이해를 돕기 위한 예시 화면입니다. 실제 화면은 서비스에서 확인하실 수 있습니다.
+      <p className="text-center text-xs text-white/55">
+        🧪 새로운 솔루션을 계속 고민하고 개발하고 있습니다
       </p>
     </div>
   );

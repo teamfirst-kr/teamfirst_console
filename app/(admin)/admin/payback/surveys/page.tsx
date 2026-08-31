@@ -11,7 +11,8 @@ export default async function PaybackSurveysPage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("pb_apply_surveys")
-    .select("id, reason, phone, detail, created_at")
+    // 신규 컬럼 추가 마이그레이션 전에도 조회가 깨지지 않도록 * 사용
+    .select("*")
     .order("created_at", { ascending: false })
     .limit(500);
 
@@ -23,6 +24,39 @@ export default async function PaybackSurveysPage() {
   }
   const reasonLabel = (code: string) =>
     SURVEY_REASONS[code as keyof typeof SURVEY_REASONS] ?? code;
+  const sourceBadge = (src: string | null | undefined) =>
+    src === "landing" ? (
+      <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+        약식 팝업
+      </span>
+    ) : src === "apply" ? (
+      <span className="ml-1.5 rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800">
+        정식 신청
+      </span>
+    ) : null;
+  const matchInfo = (s: (typeof rows)[number]) => {
+    if (s.match_interest === null || s.match_interest === undefined) return null;
+    const parts: string[] = [];
+    if (s.current_rate) parts.push(`현재 ${s.current_rate}%`);
+    if (s.monthly_budget)
+      parts.push(`월 ${Number(s.monthly_budget).toLocaleString()}원`);
+    return (
+      <span
+        className={
+          "mt-0.5 block break-keep text-xs " +
+          (s.match_interest
+            ? "font-semibold text-emerald-600"
+            : "text-muted-foreground")
+        }
+      >
+        🤝 동일 % 매칭: {s.match_interest ? "예" : "아니오"}
+        {parts.length ? ` — ${parts.join(" · ")}` : ""}
+        {s.match_interest && s.current_rate && !s.brand_name
+          ? " (신원 미입력)"
+          : ""}
+      </span>
+    );
+  };
 
   return (
     <div className="space-y-8">
@@ -46,7 +80,7 @@ export default async function PaybackSurveysPage() {
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
           조회 실패: {error.message}
           <span className="block text-xs">
-            021 마이그레이션(pb_apply_surveys) 실행 여부를 확인하세요.
+            최신 마이그레이션(021·023·024 — pb_apply_surveys) 실행 여부를 확인하세요.
           </span>
         </div>
       ) : null}
@@ -83,6 +117,7 @@ export default async function PaybackSurveysPage() {
               <thead className="bg-muted/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">연락처</th>
+                  <th className="px-4 py-2.5 font-medium">브랜드</th>
                   <th className="px-4 py-2.5 font-medium">망설인 이유</th>
                   <th className="px-4 py-2.5 font-medium">요청 시각</th>
                 </tr>
@@ -99,12 +134,23 @@ export default async function PaybackSurveysPage() {
                       </a>
                     </td>
                     <td className="px-4 py-2.5">
+                      {s.brand_name ? (
+                        <span className="font-medium text-foreground">
+                          {s.brand_name}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5">
                       {reasonLabel(s.reason)}
+                      {sourceBadge(s.source)}
                       {s.detail ? (
                         <span className="mt-0.5 block whitespace-pre-wrap break-keep text-xs text-muted-foreground">
                           💬 {s.detail}
                         </span>
                       ) : null}
+                      {matchInfo(s)}
                     </td>
                     <td className="px-4 py-2.5 text-muted-foreground">
                       <DateText value={s.created_at} />
@@ -132,6 +178,7 @@ export default async function PaybackSurveysPage() {
               <thead className="bg-muted/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">이유</th>
+                  <th className="px-4 py-2.5 font-medium">브랜드</th>
                   <th className="px-4 py-2.5 font-medium">상담 요청</th>
                   <th className="px-4 py-2.5 font-medium">응답 시각</th>
                 </tr>
@@ -141,11 +188,22 @@ export default async function PaybackSurveysPage() {
                   <tr key={s.id}>
                     <td className="px-4 py-2.5">
                       {reasonLabel(s.reason)}
+                      {sourceBadge(s.source)}
                       {s.detail ? (
                         <span className="mt-0.5 block whitespace-pre-wrap break-keep text-xs text-muted-foreground">
                           💬 {s.detail}
                         </span>
                       ) : null}
+                      {matchInfo(s)}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {s.brand_name ? (
+                        <span className="font-medium text-foreground">
+                          {s.brand_name}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-2.5">
                       {s.phone ? (

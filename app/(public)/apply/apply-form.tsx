@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PB_MEDIA_OPTIONS } from "@/lib/schemas/payback-application";
 import { calcPayback, manLabel, type PaybackPromo, type RateTable } from "@/lib/payback";
+import { readCalcState } from "@/lib/calc-state";
 import { trackConversion } from "@/components/analytics/track";
 
 import { submitPaybackApplication, type PbApplyState } from "./actions";
@@ -21,9 +22,12 @@ type MediaRow = { media: string; account_id: string };
 export function PaybackApplyForm({
   table,
   promo = null,
+  initial,
 }: {
   table: RateTable;
   promo?: PaybackPromo | null;
+  // 간편 신청 팝업/쿼리에서 넘어온 프리필 값
+  initial?: { brand?: string; phone?: string };
 }) {
   const [state, formAction, pending] = useActionState<PbApplyState, FormData>(
     submitPaybackApplication,
@@ -36,6 +40,15 @@ export function PaybackApplyForm({
   const [optAll, setOptAll] = useState(false);
   const [optConsulting, setOptConsulting] = useState(false);
   const [licenseLater, setLicenseLater] = useState(false);
+
+  // 계산기에서 입력한 예산·옵션을 프리필 (마운트 시 1회)
+  useEffect(() => {
+    const calc = readCalcState();
+    if (!calc) return;
+    setBudget(Number(calc.b).toLocaleString("ko-KR"));
+    if (calc.a === 1) setOptAll(true);
+    if (calc.c === 1) setOptConsulting(true);
+  }, []);
   const startedAt = useMemo(() => Date.now(), []);
 
   // 퍼널 가시화: 신청 폼 진입 (CTA 클릭 → 폼 도달 → 제출 완료 사이 이탈 측정용)
@@ -79,7 +92,12 @@ export function PaybackApplyForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="company_name">회사명 *</Label>
-            <Input id="company_name" name="company_name" required />
+            <Input
+              id="company_name"
+              name="company_name"
+              defaultValue={initial?.brand ?? ""}
+              required
+            />
             <FieldError messages={errors.company_name} />
           </div>
           <div>
@@ -136,7 +154,12 @@ export function PaybackApplyForm({
           </div>
           <div>
             <Label htmlFor="contact_phone">연락처 *</Label>
-            <Input id="contact_phone" name="contact_phone" required />
+            <Input
+              id="contact_phone"
+              name="contact_phone"
+              defaultValue={initial?.phone ?? ""}
+              required
+            />
             <FieldError messages={errors.contact_phone} />
           </div>
         </div>

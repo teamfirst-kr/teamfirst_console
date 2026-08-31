@@ -11,9 +11,13 @@ import { ApplyCtaLink } from "@/components/analytics/apply-cta";
 export function SolutionDetailButton({
   title,
   html,
+  label,
+  variant = "dark",
 }: {
   title: string;
   html: string;
+  label?: string; // 기본: "솔루션 자세히 알아보기"
+  variant?: "dark" | "light"; // dark: 네이비 섹션용 / light: 밝은 카드(설문 등)용
 }) {
   const [open, setOpen] = useState(false);
 
@@ -37,15 +41,19 @@ export function SolutionDetailButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-6 inline-flex items-center gap-1.5 rounded-lg border border-white/25 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:border-sky-300/60 hover:bg-sky-400/10 hover:text-sky-200"
+        className={
+          variant === "dark"
+            ? "mt-6 inline-flex items-center gap-1.5 rounded-lg border border-white/25 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:border-sky-300/60 hover:bg-sky-400/10 hover:text-sky-200"
+            : "inline-flex w-full items-center justify-between gap-1.5 rounded-lg border bg-background px-3 py-2.5 text-sm font-medium transition-colors hover:border-primary/50 hover:bg-primary/5"
+        }
       >
-        솔루션 자세히 알아보기 <span aria-hidden>→</span>
+        {label ?? "솔루션 자세히 알아보기"} <span aria-hidden>→</span>
       </button>
 
       {open && typeof document !== "undefined"
         ? createPortal(
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-6"
+          className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-6"
           onClick={() => setOpen(false)}
           role="dialog"
           aria-modal="true"

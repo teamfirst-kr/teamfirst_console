@@ -7,12 +7,15 @@ export function SectionHeader({
   heading,
   sub,
   align = "center",
+  tone = "light",
   className,
 }: {
   eyebrow?: string;
   heading: React.ReactNode;
   sub?: React.ReactNode;
   align?: "center" | "left";
+  // dark: 네이비 배경 섹션 — eyebrow/heading을 밝게 (기본 primary는 배경에 묻힘)
+  tone?: "light" | "dark";
   className?: string;
 }) {
   return (
@@ -23,11 +26,21 @@ export function SectionHeader({
       )}
     >
       {eyebrow ? (
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
+        <p
+          className={cn(
+            "text-xs font-bold uppercase tracking-[0.18em]",
+            tone === "dark" ? "text-white/85" : "text-primary",
+          )}
+        >
           {eyebrow}
         </p>
       ) : null}
-      <h2 className="mt-3 break-keep text-2xl font-extrabold leading-snug tracking-[-0.02em] text-secondary sm:text-[26px] md:text-[34px]">
+      <h2
+        className={cn(
+          "mt-3 break-keep text-2xl font-extrabold leading-snug tracking-[-0.02em] sm:text-[26px] md:text-[34px]",
+          tone === "dark" ? "text-white" : "text-secondary",
+        )}
+      >
         {heading}
       </h2>
       {sub ? (

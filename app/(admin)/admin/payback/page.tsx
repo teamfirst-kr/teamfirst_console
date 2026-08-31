@@ -60,6 +60,7 @@ export default async function PaybackPipelinePage() {
     { data: mediaRows },
     { data: rateRow },
     { data: surveyRows },
+    { data: leadRows },
   ] = await Promise.all([
       supabase
         .from("pb_applications")
@@ -86,7 +87,12 @@ export default async function PaybackPipelinePage() {
         .maybeSingle(),
       supabase
         .from("pb_apply_surveys")
-        .select("id, reason, phone, detail, created_at")
+        .select("*") // 신규 컬럼 마이그레이션 전에도 조회 유지
+        .order("created_at", { ascending: false })
+        .limit(30),
+      supabase
+        .from("pb_leads")
+        .select("id, brand_name, phone, expected_budget, source, created_at")
         .order("created_at", { ascending: false })
         .limit(30),
   ]);
@@ -373,6 +379,55 @@ export default async function PaybackPipelinePage() {
         )}
       </section>
 
+      {(leadRows ?? []).length > 0 ? (
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
+            ⚡ 간편 신청 리드 (최근 {(leadRows ?? []).length}) — 빠른 연락 필요
+          </h2>
+          <div className="overflow-hidden rounded-xl border bg-card">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-2.5 font-medium">브랜드</th>
+                  <th className="px-4 py-2.5 font-medium">연락처</th>
+                  <th className="px-4 py-2.5 font-medium">월 예상 광고비</th>
+                  <th className="px-4 py-2.5 font-medium">유입</th>
+                  <th className="px-4 py-2.5 font-medium">접수 시각</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {(leadRows ?? []).map((l) => (
+                  <tr key={l.id} className="bg-amber-50/40">
+                    <td className="px-4 py-2.5 font-semibold text-foreground">
+                      {l.brand_name}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <a
+                        href={`tel:${l.phone.replace(/[^\d+]/g, "")}`}
+                        className="font-semibold text-primary hover:underline"
+                      >
+                        📞 {l.phone}
+                      </a>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {l.expected_budget
+                        ? `${Number(l.expected_budget).toLocaleString()}원`
+                        : "—"}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                      {l.source ?? "-"}
+                    </td>
+                    <td className="px-4 py-2.5 text-muted-foreground">
+                      <DateText value={l.created_at} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
       {(surveyRows ?? []).length > 0 ? (
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
@@ -389,6 +444,7 @@ export default async function PaybackPipelinePage() {
               <thead className="bg-muted/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">이유</th>
+                  <th className="px-4 py-2.5 font-medium">브랜드</th>
                   <th className="px-4 py-2.5 font-medium">상담 요청 연락처</th>
                   <th className="px-4 py-2.5 font-medium">응답 시각</th>
                 </tr>
@@ -399,11 +455,45 @@ export default async function PaybackPipelinePage() {
                     <td className="px-4 py-2.5">
                       {SURVEY_REASONS[s.reason as keyof typeof SURVEY_REASONS] ??
                         s.reason}
+                      {s.source === "landing" ? (
+                        <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                          약식 팝업
+                        </span>
+                      ) : s.source === "apply" ? (
+                        <span className="ml-1.5 rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800">
+                          정식 신청
+                        </span>
+                      ) : null}
                       {s.detail ? (
                         <span className="mt-0.5 block whitespace-pre-wrap break-keep text-xs text-muted-foreground">
                           💬 {s.detail}
                         </span>
                       ) : null}
+                      {s.match_interest !== null && s.match_interest !== undefined ? (
+                        <span
+                          className={
+                            "mt-0.5 block break-keep text-xs " +
+                            (s.match_interest
+                              ? "font-semibold text-emerald-600"
+                              : "text-muted-foreground")
+                          }
+                        >
+                          🤝 동일 % 매칭: {s.match_interest ? "예" : "아니오"}
+                          {s.current_rate ? ` — 현재 ${s.current_rate}%` : ""}
+                          {s.match_interest && s.current_rate && !s.brand_name
+                            ? " (신원 미입력)"
+                            : ""}
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {s.brand_name ? (
+                        <span className="font-medium text-foreground">
+                          {s.brand_name}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-2.5">
                       {s.phone ? (
