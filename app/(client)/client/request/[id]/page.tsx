@@ -40,7 +40,9 @@ export default async function ClientRequestDetailPage({
 
   const { data: request } = await supabase
     .from("matching_requests")
-    .select("id, title, brief, budget_monthly, status, submitted_at, created_at")
+    .select(
+      "id, title, brief, budget_monthly, status, submitted_at, created_at, reject_reason, rejected_at",
+    )
     .eq("id", id)
     .single();
 
@@ -156,6 +158,27 @@ export default async function ClientRequestDetailPage({
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
           매칭 요청이 제출되었습니다. 운영팀 검토 후 검증된 대행사에게 RFP가
           발송됩니다.
+        </div>
+      ) : null}
+
+      {status === "rejected" ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          <p className="font-semibold">
+            매칭 요청이 반려되었습니다
+            {request.rejected_at
+              ? ` (${format(new Date(request.rejected_at), "yyyy.MM.dd")})`
+              : ""}
+          </p>
+          <p className="mt-1 whitespace-pre-wrap">
+            사유: {request.reject_reason || "-"}
+          </p>
+          <p className="mt-2">
+            내용을 보완해{" "}
+            <Link href="/client/request/new" className="font-medium underline">
+              새 매칭 요청
+            </Link>
+            을 제출하시면 다시 검토해드립니다.
+          </p>
         </div>
       ) : null}
 

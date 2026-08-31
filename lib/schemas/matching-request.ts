@@ -152,6 +152,7 @@ export const REQUEST_STATUS_LABEL: Record<
   closed_won: { label: "성사", variant: "success" },
   closed_lost: { label: "종료", variant: "muted" },
   cancelled: { label: "취소", variant: "destructive" },
+  rejected: { label: "반려", variant: "destructive" },
 };
 
 // 광고주/운영자가 공통으로 보는 단일 파이프라인 단계 정의 (진행바·보드 기준).

@@ -616,6 +616,28 @@ export function partnerWonEmail(params: {
   };
 }
 
+// 광고주에게: 매칭 요청 반려 안내
+export function matchingRequestRejectedEmail(params: {
+  brandName: string;
+  reason: string;
+  requestUrl: string;
+}): { subject: string; html: string } {
+  return {
+    subject: "[TeamFirst] 매칭 요청 검토 결과 안내",
+    html: layout(
+      "매칭 요청 검토 결과 안내",
+      `<p>${esc(params.brandName)} 담당자님, 안녕하세요. 팀퍼스트입니다.</p>
+       <p>제출해주신 매칭 요청을 검토한 결과, 아쉽게도 이번에는 진행이 어려워
+       <strong>반려</strong> 처리되었습니다.</p>
+       <div style="margin:16px 0;padding:16px;background:#f1f5f9;border-radius:8px;font-size:14px;">
+         <strong>반려 사유</strong><br/>${esc(params.reason)}
+       </div>
+       <p>내용을 보완하신 뒤 새 매칭 요청을 제출해주시면 다시 검토해드리겠습니다.</p>
+       ${button(params.requestUrl, "요청 상세 확인")}`,
+    ),
+  };
+}
+
 export function partnerRejectedEmail(params: {
   companyName: string;
   reason?: string;

@@ -5,8 +5,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentRole } from "@/lib/auth";
 import { sendEmail } from "@/lib/email/resend";
-import { rfpArrivedEmail } from "@/lib/email/templates";
-import { notifyMany } from "@/lib/notifications";
+import { matchingRequestRejectedEmail, rfpArrivedEmail } from "@/lib/email/templates";
+import { notify, notifyMany } from "@/lib/notifications";
 import {
   REQUEST_MEDIA,
   type MatchingBrief,
@@ -50,6 +50,9 @@ export async function sendRfp(
 
   if (reqError || !request) {
     return { ok: false, error: "요청을 찾을 수 없습니다." };
+  }
+  if (["rejected", "cancelled", "closed_won", "closed_lost"].includes(request.status)) {
+    return { ok: false, error: "종료(반려·취소·마감)된 요청에는 RFP를 발송할 수 없습니다." };
   }
 
   // 입점 완료(contracted) 대행사 중, 운영자가 선택한 대행사에게만 발송.
@@ -180,4 +183,88 @@ export async function setRequestStatus(
   revalidatePath(`/admin/requests/${requestId}`);
   revalidatePath("/admin/requests");
   return { ok: true, message: "상태를 변경했습니다.", count: 0 };
+}
+
+// 접수된 매칭 요청 반려: 후보를 광고주에게 전달하기 전 단계에서만 허용.
+// 반려 시 사유를 저장하고 광고주에게 메일·인앱 알림을 보낸다.
+const REJECTABLE_STATUSES: RequestStatus[] = [
+  "submitted",
+  "rfp_sent",
+  "collecting",
+  "curating",
+];
+
+export async function rejectRequest(
+  requestId: string,
+  reason: string,
+): Promise<RfpResult> {
+  await assertAdmin();
+
+  const trimmed = reason.trim();
+  if (!trimmed) {
+    return { ok: false, error: "반려 사유를 입력해주세요." };
+  }
+
+  const supabase = await createClient();
+
+  const { data: request } = await supabase
+    .from("matching_requests")
+    .select("id, title, brief, status, client_id")
+    .eq("id", requestId)
+    .single<{
+      id: string;
+      title: string;
+      brief: MatchingBrief | null;
+      status: RequestStatus;
+      client_id: string;
+    }>();
+  if (!request) return { ok: false, error: "요청을 찾을 수 없습니다." };
+
+  if (!REJECTABLE_STATUSES.includes(request.status)) {
+    return {
+      ok: false,
+      error: "후보 전달 전 단계(검수 대기~후보 선정 중)에서만 반려할 수 있습니다.",
+    };
+  }
+
+  const { error } = await supabase
+    .from("matching_requests")
+    .update({
+      status: "rejected" satisfies RequestStatus,
+      reject_reason: trimmed,
+      rejected_at: new Date().toISOString(),
+    })
+    .eq("id", requestId);
+  if (error) return { ok: false, error: error.message };
+
+  // 광고주 통보 (메일 + 인앱). 통보 실패가 반려 자체를 되돌리지는 않는다.
+  const brief = (request.brief ?? {}) as MatchingBrief;
+  const brandName = brief.brand_name ?? request.title;
+  try {
+    if (brief.email) {
+      const mail = matchingRequestRejectedEmail({
+        brandName,
+        reason: trimmed,
+        requestUrl: `${appUrl()}/client/request/${requestId}`,
+      });
+      await sendEmail({ to: brief.email, ...mail });
+    }
+    const { data: client } = await supabase
+      .from("clients")
+      .select("user_id")
+      .eq("id", request.client_id)
+      .maybeSingle<{ user_id: string | null }>();
+    await notify(client?.user_id, {
+      type: "request_rejected",
+      title: "매칭 요청이 반려되었습니다",
+      body: `${brandName} · 사유: ${trimmed}`,
+      link: `/client/request/${requestId}`,
+    });
+  } catch {
+    // 통보 실패 무시 (반려 상태는 이미 반영됨)
+  }
+
+  revalidatePath(`/admin/requests/${requestId}`);
+  revalidatePath("/admin/requests");
+  return { ok: true, message: "요청을 반려하고 광고주에게 통보했습니다.", count: 0 };
 }
