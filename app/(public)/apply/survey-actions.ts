@@ -56,6 +56,35 @@ export async function submitApplySurvey(
   }
 }
 
+// 답변 변경: 같은 응답 행의 사유를 최종 선택으로 갱신.
+// 이전 사유에서 입력하던 하위 값(의견/매칭 요율 등)은 초기화해 데이터를 일관되게 유지.
+// (상담 연락처 phone은 사유와 무관한 공통 항목이라 유지)
+export async function updateSurveyReason(
+  surveyId: string,
+  reason: string,
+): Promise<{ ok: boolean }> {
+  if (!(reason in SURVEY_REASONS)) return { ok: false };
+  if (!/^[0-9a-f-]{36}$/i.test(surveyId)) return { ok: false };
+  if (await attachRateLimited()) return { ok: false };
+  try {
+    const admin = createAdminClient();
+    const { error } = await admin
+      .from("pb_apply_surveys")
+      .update({
+        reason,
+        detail: null,
+        match_interest: null,
+        current_rate: null,
+        brand_name: null,
+        monthly_budget: null,
+      })
+      .eq("id", surveyId);
+    return { ok: !error };
+  } catch {
+    return { ok: false };
+  }
+}
+
 // '기타' 선택 시 상세 의견을 기존 응답에 첨부
 export async function attachSurveyDetail(
   surveyId: string,

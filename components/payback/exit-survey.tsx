@@ -17,6 +17,7 @@ import {
   attachSurveyMatchRate,
   attachSurveyPhone,
   submitApplySurvey,
+  updateSurveyReason,
 } from "@/app/(public)/apply/survey-actions";
 import { readCalcState } from "@/lib/calc-state";
 import { trackConversion } from "@/components/analytics/track";
@@ -120,12 +121,28 @@ export function ApplyExitSurvey({
     "일시적 오류로 접수되지 않았습니다. 잠시 후 다시 시도하시거나 team1st2025@gmail.com 으로 연락주세요.";
 
   async function pickReason(reason: SurveyReason) {
-    if (busy || selected) return; // 최초 1회만 기록·고정
+    if (busy || done || selected === reason) return;
+    const isSwitch = selected !== null;
     setSelected(reason);
+    if (isSwitch) {
+      // 답변 변경 — 이전 사유의 하위 입력을 초기화 (최종 답변만 기록)
+      setDetail("");
+      setDetailSent(false);
+      setMatchAnswer(null);
+      setMRate("");
+      setMRateSent(false);
+      setMBrand("");
+      setMPhone("");
+      setErrMsg(null);
+    }
     setBusy(true);
     try {
-      const res = await submitApplySurvey(reason, source);
-      if (res.ok) setSurveyId(res.id);
+      if (surveyId) {
+        await updateSurveyReason(surveyId, reason);
+      } else {
+        const res = await submitApplySurvey(reason, source);
+        if (res.ok) setSurveyId(res.id);
+      }
     } catch {
       // 기록 실패해도 콘텐츠는 보여준다 (후속 제출 시 오류 안내)
     } finally {
@@ -303,15 +320,13 @@ export function ApplyExitSurvey({
                 <button
                   key={code}
                   type="button"
-                  disabled={busy || (selected !== null && !isSelected)}
+                  disabled={busy || done}
                   onClick={() => pickReason(code)}
                   className={
                     "w-full rounded-lg border px-3 py-2.5 text-left text-sm transition-colors " +
                     (isSelected
                       ? "border-primary bg-primary/10 font-semibold text-primary"
-                      : selected
-                        ? "bg-background opacity-40"
-                        : "bg-background hover:border-primary/50 hover:bg-primary/5")
+                      : "bg-background hover:border-primary/50 hover:bg-primary/5")
                   }
                 >
                   {isSelected ? "✓ " : ""}
@@ -336,17 +351,25 @@ export function ApplyExitSurvey({
                 <p className="break-keep text-sm font-semibold leading-relaxed text-secondary">
                   충분히 이해합니다. 그런데 혹시, 이렇지 않나요?
                 </p>
-                <p className="mt-2 break-keep text-[13px] leading-relaxed text-muted-foreground">
-                  대행사를 지정해두고{" "}
-                  <strong className="text-foreground">어쩌다 한 번 요청만</strong>{" "}
-                  하고 있진 않나요. 담당자가 전략을 먼저 제안하기보다{" "}
-                  <strong className="text-foreground">지시한 업무만 처리</strong>
-                  하고 있진 않나요. 어쩌면{" "}
-                  <strong className="text-foreground">
-                    대표님이 담당자보다 마케팅을 더 잘
-                  </strong>{" "}
-                  알고 계시진 않나요.
-                </p>
+                <div className="mt-2 space-y-1.5 break-keep text-[13px] leading-relaxed text-muted-foreground">
+                  <p>
+                    대행사를 지정해두고{" "}
+                    <strong className="text-foreground">어쩌다 한 번 요청만</strong>{" "}
+                    하고 있진 않나요?
+                  </p>
+                  <p>
+                    담당자가 전략을 먼저 제안하기보다{" "}
+                    <strong className="text-foreground">지시한 업무만 처리</strong>
+                    하고 있진 않나요?
+                  </p>
+                  <p>
+                    어쩌면{" "}
+                    <strong className="text-foreground">
+                      대표님이 담당자보다 마케팅을 더 잘
+                    </strong>{" "}
+                    알고 계시진 않나요?
+                  </p>
+                </div>
                 <p className="mt-2 break-keep text-[13px] leading-relaxed text-muted-foreground">
                   하나라도 해당된다면 지금의 대행수수료는 성과가 아니라
                   관성입니다. 페이백으로 바꾸면{" "}
