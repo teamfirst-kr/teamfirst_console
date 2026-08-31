@@ -27,15 +27,12 @@ import { SOLUTION_DETAILS } from "./solution-details";
 const HIDE_KEY = "tf_apply_survey_v1";
 
 // 이탈 설문 — PC: 우측 하단 카드 / 모바일: 하단 시트.
-// 사유 버튼 클릭 즉시 기록·고정 후, 같은 팝업이 세로 확장되며 사유별 맞춤
-// 콘텐츠(설득/솔루션 상세/동일 % 매칭 제안/의견 작성)가 펼쳐진다.
-// trigger — delay: 진입 N초 뒤 노출(/apply) / cta: 간편 신청 팝업이 열리면
-// 1.5초 뒤 팝업과 나란히 노출(랜딩). 세션당 1회는 두 경로 공통.
+// 랜딩·정식 신청 페이지 공통으로 접속 0.5초 뒤 바로 노출 (세션당 1회).
+// 사유 클릭 즉시 기록 후 같은 팝업이 세로 확장되며 사유별 맞춤 콘텐츠가 펼쳐진다.
+// 간편 신청 팝업 이벤트는 위치 제어(모바일 상단 이동)와 전환 완료 시 숨김에 사용.
 export function ApplyExitSurvey({
-  trigger = "delay",
   source = "apply",
 }: {
-  trigger?: "delay" | "cta";
   // 응답이 어디서 입력됐는지 기록 (어드민 구분용)
   source?: "apply" | "landing";
 }) {
@@ -68,40 +65,32 @@ export function ApplyExitSurvey({
     }
     if (alreadyDone()) return;
 
-    if (trigger === "cta") {
-      let timer: ReturnType<typeof setTimeout> | null = null;
-      const onOpen = () => {
-        setModalOpen(true);
-        if (alreadyDone() || timer) return;
-        // 팝업이 열린 상태에서 곧바로(1.5초 뒤) 설문을 함께 노출
-        timer = setTimeout(() => setVisible(true), 1500);
-      };
-      const onClose = () => setModalOpen(false);
-      const onConverted = () => {
-        // 리드 제출 완료 — 설문은 띄우지 않고 세션 내 재노출도 막는다
-        setModalOpen(false);
-        if (timer) clearTimeout(timer);
-        timer = null;
-        setVisible(false);
-        try {
-          sessionStorage.setItem(HIDE_KEY, "1");
-        } catch {
-          // 무시
-        }
-      };
-      window.addEventListener(CTA_OPEN_EVENT, onOpen);
-      window.addEventListener(CTA_CLOSE_EVENT, onClose);
-      window.addEventListener(CTA_CONVERTED_EVENT, onConverted);
-      return () => {
-        if (timer) clearTimeout(timer);
-        window.removeEventListener(CTA_OPEN_EVENT, onOpen);
-        window.removeEventListener(CTA_CLOSE_EVENT, onClose);
-        window.removeEventListener(CTA_CONVERTED_EVENT, onConverted);
-      };
-    }
-    const t = setTimeout(() => setVisible(true), 3500);
-    return () => clearTimeout(t);
-  }, [trigger]);
+    // 접속 0.5초 뒤 바로 노출 (약식 팝업·정식 신청 페이지 공통)
+    const t = setTimeout(() => setVisible(true), 500);
+
+    // 간편 신청 팝업 상태 구독 — 모바일 위치 제어 + 리드 전환 완료 시 숨김
+    const onOpen = () => setModalOpen(true);
+    const onClose = () => setModalOpen(false);
+    const onConverted = () => {
+      setModalOpen(false);
+      clearTimeout(t);
+      setVisible(false);
+      try {
+        sessionStorage.setItem(HIDE_KEY, "1");
+      } catch {
+        // 무시
+      }
+    };
+    window.addEventListener(CTA_OPEN_EVENT, onOpen);
+    window.addEventListener(CTA_CLOSE_EVENT, onClose);
+    window.addEventListener(CTA_CONVERTED_EVENT, onConverted);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener(CTA_OPEN_EVENT, onOpen);
+      window.removeEventListener(CTA_CLOSE_EVENT, onClose);
+      window.removeEventListener(CTA_CONVERTED_EVENT, onConverted);
+    };
+  }, []);
 
   function dismiss() {
     setVisible(false);
