@@ -114,7 +114,7 @@ export default function AboutPage() {
           <p>상호: 팀퍼스트 · 대표자: 정기윤</p>
           <p>사업자등록번호: 102-16-97516</p>
           <p>주소: 20, Yonghae-ro, Seo-gu, Incheon, Republic of Korea</p>
-          <p>Tel: 010-2668-2675 · Email: team1st2025@gmail.com</p>
+          <p>Tel: 010-9543-2625 · Email: team1st2025@gmail.com</p>
         </Reveal>
 
         <Reveal delay={140}>
