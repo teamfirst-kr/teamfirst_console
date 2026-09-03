@@ -20,7 +20,7 @@ function layout(title: string, bodyHtml: string): string {
             </td>
             <td style="vertical-align:top;color:#64748b;font-size:12px;line-height:1.7;padding-left:8px;">
               <strong style="color:#0f172a;">팀퍼스트</strong> 신뢰기반 대행사 &amp; 마케터 매칭 플랫폼<br/>
-              TEL. +82 10-2668-2675<br/>
+              TEL. +82 10-9543-2625<br/>
               SNS. @teamfirst_kr<br/>
               E-mail. <a href="mailto:team1st2025@gmail.com" style="color:#64748b;">team1st2025@gmail.com</a>
             </td>
