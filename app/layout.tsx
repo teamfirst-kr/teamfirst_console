@@ -28,6 +28,17 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
         />
+        {/* 광고 분석 트래킹 스크립트 (AdLog).
+            React가 async 외부 스크립트를 head 상단으로 호이스팅해 config보다 먼저
+            실행될 수 있으므로, config 설정 후 로더(t.js)를 동적 삽입해 순서를 보장한다. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'window.__adlog_config = { site: "AL-37AD4A23FFF3", collect: "https://tk.newment.co.kr" };' +
+              "window.adlog = window.adlog || function () { (window.adlog.q = window.adlog.q || []).push(arguments) };" +
+              '(function(){var s=document.createElement("script");s.async=true;s.src="https://tk.newment.co.kr/t.js";document.head.appendChild(s);})();',
+          }}
+        />
       </head>
       <body className="antialiased">
         <GtmNoScript />
