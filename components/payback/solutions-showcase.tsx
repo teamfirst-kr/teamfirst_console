@@ -1,9 +1,11 @@
 import { Reveal } from "@/components/reveal";
 import { SolutionDetailButton } from "./solution-detail-modal";
 import { SOLUTION_DETAILS } from "./solution-details";
+import { YouTubeEmbed } from "./youtube-embed";
 
 // 페이백 랜딩 — 자체 개발 솔루션 3종 상세 쇼케이스.
-// 스크린샷 대신 CSS로 그린 예시 화면(목업)을 사용한다 (외부 이미지 의존 없음).
+// 각 솔루션의 비주얼은 유튜브 소개 영상 썸네일(클릭 시 인라인 재생)로 보여준다.
+// 이전의 CSS 목업(예시 화면)은 영상으로 대체 — 필요 시 git 이력(#60 이전)에서 복원.
 
 function WindowFrame({
   title,
@@ -20,7 +22,7 @@ function WindowFrame({
         <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
         <span className="ml-2 text-[11px] font-medium text-white/50">{title}</span>
       </div>
-      <div className="p-4">{children}</div>
+      {children}
     </div>
   );
 }
@@ -47,189 +49,15 @@ function FeatureItem({
   );
 }
 
-// ── 예시 화면 1: 로그분석 — 차단 로그 + 퍼널 ─────────────────────────
-function LogAnalyticsMock() {
-  const funnel = [
-    { label: "광고 유입", pct: 100 },
-    { label: "상품 조회", pct: 62 },
-    { label: "장바구니", pct: 31 },
-    { label: "구매 전환", pct: 12 },
-  ];
-  return (
-    <WindowFrame title="로그분석 — 실시간 차단 · 퍼널">
-      <div className="space-y-3">
-        <div className="rounded-lg bg-white/5 p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/50">
-            악성 클릭 차단 로그
-          </p>
-          <div className="mt-2 space-y-1.5 font-mono text-[11px]">
-            {[
-              ["211.34.***.12", "동일 IP 47회 클릭", "차단"],
-              ["118.220.***.88", "전환 0 · 반복 유입", "차단"],
-              ["175.113.***.5", "심야 집중 클릭", "감시"],
-            ].map(([ip, reason, act]) => (
-              <div key={ip} className="flex items-center justify-between gap-2">
-                <span className="text-white/80">{ip}</span>
-                <span className="hidden flex-1 truncate text-white/40 sm:block">
-                  {reason}
-                </span>
-                <span
-                  className={
-                    "rounded px-1.5 py-0.5 text-[10px] font-bold " +
-                    (act === "차단"
-                      ? "bg-red-400/20 text-red-300"
-                      : "bg-amber-400/20 text-amber-300")
-                  }
-                >
-                  {act}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-lg bg-white/5 p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/50">
-            전환 퍼널
-          </p>
-          <div className="mt-2 space-y-1.5">
-            {funnel.map((f, i) => (
-              <div key={f.label} className="flex items-center gap-2 text-[11px]">
-                <span className="w-14 shrink-0 text-white/60">{f.label}</span>
-                <div className="h-4 flex-1 overflow-hidden rounded bg-white/10">
-                  <div
-                    className={
-                      "h-full rounded " +
-                      (i === funnel.length - 1 ? "bg-sky-400" : "bg-sky-400/50")
-                    }
-                    style={{ width: `${f.pct}%` }}
-                  />
-                </div>
-                <span className="w-9 text-right font-semibold text-white/80">
-                  {f.pct}%
-                </span>
-              </div>
-            ))}
-          </div>
-          <p className="mt-2 text-[10px] text-amber-300/90">
-            ▲ 장바구니 → 구매 구간 이탈 집중 — 개선 포인트
-          </p>
-        </div>
-      </div>
-    </WindowFrame>
-  );
-}
-
-// ── 예시 화면 2: 자동리포트 — 탭 + 미니 차트 + 비교 ──────────────────
-function AutoReportMock() {
-  const bars = [42, 58, 48, 70, 64, 86, 78];
-  return (
-    <WindowFrame title="자동리포트 — 주간 성과">
-      <div className="space-y-3">
-        <div className="flex gap-1.5">
-          {["일간", "주간", "월간"].map((t) => (
-            <span
-              key={t}
-              className={
-                "rounded-md px-2.5 py-1 text-[11px] font-medium " +
-                (t === "주간"
-                  ? "bg-sky-400/25 text-sky-200"
-                  : "bg-white/5 text-white/50")
-              }
-            >
-              {t}
-            </span>
-          ))}
-          <span className="ml-auto rounded-md bg-white/5 px-2.5 py-1 text-[11px] text-white/50">
-            ⚙ 커스텀
-          </span>
-        </div>
-        <div className="rounded-lg bg-white/5 p-3">
-          <div className="flex h-24 items-end gap-1.5">
-            {bars.map((h, i) => (
-              <div
-                key={i}
-                className={
-                  "flex-1 rounded-t " + (i === 5 ? "bg-sky-400" : "bg-sky-400/40")
-                }
-                style={{ height: `${h}%` }}
-              />
-            ))}
-          </div>
-          <div className="mt-1 flex justify-between text-[9px] text-white/40">
-            <span>월</span><span>화</span><span>수</span><span>목</span>
-            <span>금</span><span>토</span><span>일</span>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-2 text-center">
-          {[
-            ["ROAS", "412%", "+18%p"],
-            ["전환수", "128건", "+22%"],
-            ["CPA", "8,120원", "−15%"],
-          ].map(([k, v, d]) => (
-            <div key={k} className="rounded-lg bg-white/5 p-2">
-              <p className="text-[10px] text-white/50">{k}</p>
-              <p className="text-sm font-extrabold text-white">{v}</p>
-              <p className="text-[10px] font-semibold text-emerald-300">
-                전주 대비 {d}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </WindowFrame>
-  );
-}
-
-// ── 예시 화면 3: 입찰조정 — 목표 + 차등 조절 + 원클릭 ────────────────
-function BidOptimizerMock() {
-  return (
-    <WindowFrame title="성과최적화 입찰조정 — 주간 제안">
-      <div className="space-y-3">
-        <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-[11px]">
-          <span className="text-white/60">이번 주 목표</span>
-          <span className="font-semibold text-white">
-            ROAS <span className="text-sky-300">400%</span> · 매출볼륨{" "}
-            <span className="text-sky-300">유지</span>
-          </span>
-        </div>
-        <div className="space-y-1.5">
-          {[
-            { name: "베스트 상품 A", tag: "매출주력", tagCls: "bg-sky-400/20 text-sky-300", from: "1,200", to: "1,450", up: true },
-            { name: "신제품 B", tag: "신제품", tagCls: "bg-violet-400/20 text-violet-300", from: "900", to: "1,150", up: true },
-            { name: "저효율 키워드 C", tag: "효율관리", tagCls: "bg-white/10 text-white/60", from: "1,100", to: "780", up: false },
-          ].map((r) => (
-            <div
-              key={r.name}
-              className="flex items-center justify-between gap-2 rounded-lg bg-white/5 px-3 py-2 text-[11px]"
-            >
-              <span className="min-w-0 truncate font-medium text-white/85">{r.name}</span>
-              <span
-                className={`hidden shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold sm:inline ${r.tagCls}`}
-              >
-                {r.tag}
-              </span>
-              <span className="shrink-0 font-mono text-white/50">
-                {r.from}원 →{" "}
-                <span className={r.up ? "font-bold text-emerald-300" : "font-bold text-red-300"}>
-                  {r.to}원 {r.up ? "▲" : "▼"}
-                </span>
-              </span>
-            </div>
-          ))}
-        </div>
-        <div className="rounded-lg bg-sky-500/90 py-2 text-center text-xs font-bold text-white">
-          ⚡ 원클릭 일괄 조정 (3건)
-        </div>
-      </div>
-    </WindowFrame>
-  );
-}
-
+// 솔루션별 유튜브 소개 영상 (팀퍼스트 채널 업로드분) — videoTitle은 유튜브 공식 영상 제목
 const SOLUTIONS = [
   {
     key: "log",
     no: "솔루션 1",
     name: "로그분석 프로그램",
+    brand: "CatchLog",
+    videoId: "GO2swOgoYZ8",
+    videoTitle: "AI 로그분석 솔루션 - Catch LOG",
     tagline: "광고비를 갉아먹는 악성 클릭은 막고, 고객의 발자취는 읽습니다.",
     features: [
       {
@@ -243,12 +71,14 @@ const SOLUTIONS = [
         body: "고객 로그 패턴을 퍼널로 시각화해 어디서 이탈하고 어디서 전환이 발생하는지 정확히 짚어줍니다.",
       },
     ],
-    mock: <LogAnalyticsMock />,
   },
   {
     key: "report",
     no: "솔루션 2",
     name: "자동리포트",
+    brand: "AUTO REPORT",
+    videoId: "xLSD-jPsczI",
+    videoTitle: "일/주/월 자동 커스텀 리포트 솔루션 - AUTO REPORT",
     tagline: "매번 엑셀 붙잡던 성과 정리, 이제 자동으로 도착합니다.",
     features: [
       {
@@ -262,12 +92,14 @@ const SOLUTIONS = [
         body: "전일·전주·전월 대비 변화를 한눈에 비교해, 좋아진 것과 나빠진 것을 바로 확인합니다.",
       },
     ],
-    mock: <AutoReportMock />,
   },
   {
     key: "bid",
     no: "솔루션 3",
     name: "성과최적화 입찰조정",
+    brand: "AUTO BID",
+    videoId: "RmjtpBuGC24",
+    videoTitle: "ROAS & 매출볼륨 최적화 솔루션 - AUTO BID",
     tagline: "목표만 정해두면, 입찰가 조정은 분석부터 실행까지 한 번에.",
     features: [
       {
@@ -286,7 +118,6 @@ const SOLUTIONS = [
         body: "설정한 기준에 따라 산출된 입찰가를 클릭 한 번으로 일괄 반영합니다.",
       },
     ],
-    mock: <BidOptimizerMock />,
   },
 ];
 
@@ -312,7 +143,16 @@ export function SolutionsShowcase() {
                 html={SOLUTION_DETAILS[s.key] ?? ""}
               />
             </div>
-            <div className={idx % 2 === 1 ? "md:order-1" : ""}>{s.mock}</div>
+            <div className={idx % 2 === 1 ? "md:order-1" : ""}>
+              <WindowFrame title={s.videoTitle}>
+                <YouTubeEmbed
+                  videoId={s.videoId}
+                  videoTitle={s.videoTitle}
+                  trackingKey={s.key}
+                  label={`${s.brand} 소개 영상 보기`}
+                />
+              </WindowFrame>
+            </div>
           </div>
         </Reveal>
       ))}

@@ -412,3 +412,10 @@
 - **배경**: 간편 신청 팝업(D-065)의 '추가 정보 입력하기' 링크와 솔루션 상세 팝업 내 CTA 3곳이 브랜드명·연락처 입력 없이 /apply로 직행 — 리드 캡처를 우회할 수 있었음.
 - **결정**: 약식 → 정식 전환은 **브랜드명·연락처를 채운 뒤에만** 가능. ① 팝업의 '추가 정보 입력하기'는 미입력 시 차단+안내 문구, 입력 시 **리드 저장 후** /apply 프리필 이동(저장 API 일시 실패 시에도 이동은 허용 — 정식 폼이 재수집) ② 솔루션 상세 iframe CTA는 /apply 직행 대신 postMessage(tf-open-apply) → 부모가 간편 신청 팝업 오픈(ApplyCtaLink id 앵커).
 - **범위 제외**: /apply 직접 유입(광고 랜딩·완료 화면·추가 정보 페이지)은 그대로 개방 — 광고 트래픽·기존 퍼널 훼손 방지.
+
+### D-071. 솔루션 소개 유튜브 영상 — 썸네일 파사드 + 인라인 재생 (2026-09-09)
+- **배경**: 솔루션 3종(CatchLog/AUTO REPORT/AUTO BID) 소개 영상을 유튜브에 업로드. 랜딩 솔루션 섹션에서 사이트 이동 없이 바로 재생되도록 요구.
+- **구현**: `YouTubeEmbed`(파사드) — 클릭 전엔 유튜브 CDN 썸네일(`maxresdefault` → 없으면 `hqdefault` 폴백, SSR 이미지가 하이드레이션 전에 로드/실패한 경우도 마운트 시 재검사) + 재생 버튼만 렌더링, 클릭 시 그 자리에서 `youtube-nocookie.com` 자동재생 iframe으로 교체. 플레이어 스크립트를 클릭 전 로드하지 않아 LCP 보호. 한 영상 재생 시 다른 영상은 썸네일로 복귀(`tf:video-play` 이벤트, 소리 겹침 방지).
+- **레이아웃**: 기존 CSS 목업(예시 화면) 3종을 영상으로 대체 — 시각 컬럼 1개 유지(목업+영상 병렬은 세로 과대). 브라우저 창 프레임(WindowFrame)은 유지해 이전 톤과 연속성 확보.
+- **트래킹**: `trackEvent` 헬퍼(GA4 이벤트 + Meta 커스텀 이벤트 + dataLayer, Ads 전환 미발화). 클릭은 `solution_video_click`, **실제 재생 시작**은 임베드 위젯 메시지(`listening` 구독 → `onStateChange`/`infoDelivery` playerState=1)로 감지해 `solution_video_play`를 1회 집계 — iOS Safari·인앱 브라우저(WebKit)는 클릭 후 생성된 교차 출처 iframe에 제스처를 넘기지 않아 자동재생이 안 되고 한 번 더 탭해야 하므로(파사드 패턴의 알려진 한계, 2탭 허용) 클릭≠재생. `content_name: solution_video_{log|report|bid}`. iframe `enablejsapi=1` 포함(GA4 향상된 측정 video_progress/complete 수집 가능).
+- **접근성(적대적 리뷰 반영)**: 재생 버튼이 `overflow-hidden` 박스와 정확히 겹쳐 전역 outline이 잘리므로 inset ring으로 포커스 표시, 버튼→iframe 교체 시 포커스를 플레이어로 이동(body로 유실 방지), 접근성 라벨에 가시 문구 포함(Label in Name). 플레이어가 그려질 때까지 캐시된 썸네일을 포스터로 유지.
