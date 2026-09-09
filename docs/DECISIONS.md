@@ -419,3 +419,9 @@
 - **레이아웃**: 기존 CSS 목업(예시 화면) 3종을 영상으로 대체 — 시각 컬럼 1개 유지(목업+영상 병렬은 세로 과대). 브라우저 창 프레임(WindowFrame)은 유지해 이전 톤과 연속성 확보.
 - **트래킹**: `trackEvent` 헬퍼(GA4 이벤트 + Meta 커스텀 이벤트 + dataLayer, Ads 전환 미발화). 클릭은 `solution_video_click`, **실제 재생 시작**은 임베드 위젯 메시지(`listening` 구독 → `onStateChange`/`infoDelivery` playerState=1)로 감지해 `solution_video_play`를 1회 집계 — iOS Safari·인앱 브라우저(WebKit)는 클릭 후 생성된 교차 출처 iframe에 제스처를 넘기지 않아 자동재생이 안 되고 한 번 더 탭해야 하므로(파사드 패턴의 알려진 한계, 2탭 허용) 클릭≠재생. `content_name: solution_video_{log|report|bid}`. iframe `enablejsapi=1` 포함(GA4 향상된 측정 video_progress/complete 수집 가능).
 - **접근성(적대적 리뷰 반영)**: 재생 버튼이 `overflow-hidden` 박스와 정확히 겹쳐 전역 outline이 잘리므로 inset ring으로 포커스 표시, 버튼→iframe 교체 시 포커스를 플레이어로 이동(body로 유실 방지), 접근성 라벨에 가시 문구 포함(Label in Name). 플레이어가 그려질 때까지 캐시된 썸네일을 포스터로 유지.
+
+### D-072. 링크 공유 미리보기(OG) — 페이백 서비스 기준으로 재구성 (2026-09-09)
+- **배경**: 메신저에 console.teamfirst.kr 공유 시 제목·설명이 구 매칭 플랫폼 문구("검증된 광고대행사 무료 매칭")였고, og:image가 없어 메신저가 페이지 첫 이미지(D-071로 추가된 CatchLog 유튜브 썸네일)를 대표 이미지로 잡음.
+- **결정**: 루트 메타데이터를 페이백 기준으로 교체 — 제목 "팀퍼스트 페이백 — 대행권만 지정하면 광고비 10~12% 페이백", 설명(운영 그대로·솔루션 무료·전문가 컨설팅), `metadataBase`(NEXT_PUBLIC_APP_URL, 기본 console.teamfirst.kr), openGraph(type/locale/siteName/url — title·description은 비워 페이지별 title이 og:title로 흐르게), twitter `summary_large_image`.
+- **OG 이미지**: `app/opengraph-image.png`(1200×630, 정적) 파일 규약 + `opengraph-image.alt.txt`. 원본 템플릿은 `docs/assets/og-image.html`(네이비 스포트라이트 배경, "대행권만 지정하면 / 광고비 10~12% 페이백", 칩 3종, URL). 동적 `ImageResponse`는 한글 폰트 번들/런타임 폰트 페치 의존이 커서 정적 PNG 채택 — 요율·문구 변경 시 템플릿을 1200×630으로 렌더해 교체.
+- **운영 메모**: 카카오톡·페이스북 등은 미리보기를 캐시하므로 배포 후 카카오 디벨로퍼스 "공유 디버거"(developers.kakao.com/tool/debugger/sharing)와 Facebook Sharing Debugger로 캐시 초기화 필요.
