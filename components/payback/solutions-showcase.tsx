@@ -49,7 +49,7 @@ function FeatureItem({
   );
 }
 
-// 솔루션별 유튜브 소개 영상 ID (팀퍼스트 채널 업로드분)
+// 솔루션별 유튜브 소개 영상 (팀퍼스트 채널 업로드분) — videoTitle은 유튜브 공식 영상 제목
 const SOLUTIONS = [
   {
     key: "log",
@@ -57,6 +57,7 @@ const SOLUTIONS = [
     name: "로그분석 프로그램",
     brand: "CatchLog",
     videoId: "GO2swOgoYZ8",
+    videoTitle: "AI 로그분석 솔루션 - Catch LOG",
     tagline: "광고비를 갉아먹는 악성 클릭은 막고, 고객의 발자취는 읽습니다.",
     features: [
       {
@@ -77,6 +78,7 @@ const SOLUTIONS = [
     name: "자동리포트",
     brand: "AUTO REPORT",
     videoId: "xLSD-jPsczI",
+    videoTitle: "일/주/월 자동 커스텀 리포트 솔루션 - AUTO REPORT",
     tagline: "매번 엑셀 붙잡던 성과 정리, 이제 자동으로 도착합니다.",
     features: [
       {
@@ -97,6 +99,7 @@ const SOLUTIONS = [
     name: "성과최적화 입찰조정",
     brand: "AUTO BID",
     videoId: "RmjtpBuGC24",
+    videoTitle: "ROAS & 매출볼륨 최적화 솔루션 - AUTO BID",
     tagline: "목표만 정해두면, 입찰가 조정은 분석부터 실행까지 한 번에.",
     features: [
       {
@@ -141,10 +144,10 @@ export function SolutionsShowcase() {
               />
             </div>
             <div className={idx % 2 === 1 ? "md:order-1" : ""}>
-              <WindowFrame title={`${s.brand} — ${s.name} 소개 영상`}>
+              <WindowFrame title={s.videoTitle}>
                 <YouTubeEmbed
                   videoId={s.videoId}
-                  title={s.name}
+                  videoTitle={s.videoTitle}
                   trackingKey={s.key}
                   label={`${s.brand} 소개 영상 보기`}
                 />

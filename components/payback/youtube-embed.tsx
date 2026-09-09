@@ -27,15 +27,15 @@ function thumbLooksBroken(img: HTMLImageElement): boolean {
 
 export function YouTubeEmbed({
   videoId,
-  title,
+  videoTitle,
   trackingKey,
   label = "소개 영상 보기",
   className,
 }: {
   videoId: string;
-  title: string; // 접근성 라벨·트래킹용 (예: "로그분석 프로그램")
+  videoTitle: string; // 유튜브 공식 영상 제목 — iframe title·접근성 라벨·트래킹에 사용
   trackingKey: string; // content_name 세그먼트 (예: "log")
-  label?: string;
+  label?: string; // 썸네일 좌하단 배지 문구
   className?: string;
 }) {
   const [playing, setPlaying] = useState(false);
@@ -75,7 +75,7 @@ export function YouTubeEmbed({
     }
     trackEvent("solution_video_play", {
       content_name: `solution_video_${trackingKey}`,
-      video_title: title,
+      video_title: videoTitle,
       video_id: videoId,
     });
   }
@@ -89,8 +89,9 @@ export function YouTubeEmbed({
       {playing ? (
         <iframe
           src={embedSrc}
-          title={`${title} 소개 영상`}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          title={videoTitle}
+          // 유튜브 공식 임베드 코드와 동일한 권한 목록
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen
           referrerPolicy="strict-origin-when-cross-origin"
           className="absolute inset-0 h-full w-full border-0"
@@ -99,7 +100,7 @@ export function YouTubeEmbed({
         <button
           type="button"
           onClick={play}
-          aria-label={`${title} 소개 영상 재생`}
+          aria-label={`${videoTitle} 재생`}
           className="group absolute inset-0 h-full w-full cursor-pointer text-left"
         >
           {thumbFailed ? null : (
