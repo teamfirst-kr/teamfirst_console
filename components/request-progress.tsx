@@ -7,7 +7,8 @@ import {
 // 완료=체크, 현재=강조, 예정=비활성.
 export function RequestProgress({ status }: { status: string }) {
   const current = stageIndexForStatus(status);
-  const cancelled = status === "cancelled";
+  // 취소·반려는 파이프라인이 중단된 상태 — 진행 표시를 비활성화한다.
+  const cancelled = status === "cancelled" || status === "rejected";
 
   return (
     <div className="overflow-x-auto">
@@ -58,7 +59,7 @@ export function RequestProgress({ status }: { status: string }) {
       </div>
       {cancelled ? (
         <p className="mt-3 text-xs font-medium text-destructive">
-          취소된 요청입니다.
+          {status === "rejected" ? "반려된 요청입니다." : "취소된 요청입니다."}
         </p>
       ) : null}
     </div>

@@ -43,6 +43,10 @@ export default async function AdminDashboardPage() {
     { count: activeReq },
     { count: meetingReq },
     { count: settlementPending },
+    { count: pbNewApps },
+    { count: pbOnboarding },
+    { count: pbActive },
+    { count: pbSettlementOpen },
     ...stageResults
   ] = await Promise.all([
     partnerCount("pending"),
@@ -55,6 +59,22 @@ export default async function AdminDashboardPage() {
       .from("settlements")
       .select("id", { count: "exact", head: true })
       .in("status", ["pending", "invoiced"]),
+    supabase
+      .from("pb_applications")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["received", "reviewing"]),
+    supabase
+      .from("pb_clients")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["agreement_sent", "agreement_signed", "transferring"]),
+    supabase
+      .from("pb_clients")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "active"),
+    supabase
+      .from("pb_monthly_settlements")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["draft", "confirmed"]),
     ...STAGES.map((s) => requestCount(s.statuses)),
   ]);
 
@@ -68,8 +88,40 @@ export default async function AdminDashboardPage() {
       <div>
         <h1 className="text-2xl font-bold text-secondary">운영자 대시보드</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          입점·매칭·미팅·계약을 한 화면에서 관리하세요.
+          페이백·입점·매칭·미팅·계약을 한 화면에서 관리하세요.
         </p>
+      </div>
+
+      <div>
+        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
+          페이백
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            label="신규 신청"
+            value={String(pbNewApps ?? 0)}
+            hint="검토·약정 발송 필요"
+            href="/admin/payback"
+          />
+          <StatCard
+            label="온보딩 진행"
+            value={String(pbOnboarding ?? 0)}
+            hint="약정·대행권 이관 중"
+            href="/admin/payback"
+          />
+          <StatCard
+            label="활성 고객사"
+            value={String(pbActive ?? 0)}
+            hint="페이백 산정 대상"
+            href="/admin/payback"
+          />
+          <StatCard
+            label="지급 전 정산"
+            value={String(pbSettlementOpen ?? 0)}
+            hint="확정·지급 대기"
+            href="/admin/payback/settlements"
+          />
+        </div>
       </div>
 
       <div>
@@ -172,17 +224,36 @@ export default async function AdminDashboardPage() {
             신청 대기 건이 있다면 우선 처리해주세요.
           </CardDescription>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          {pendingCount && pendingCount > 0 ? (
+        <CardContent className="space-y-1.5 text-sm text-muted-foreground">
+          {(pbNewApps ?? 0) > 0 ? (
+            <Link
+              href="/admin/payback"
+              className="block text-primary hover:underline"
+            >
+              페이백 신청 {pbNewApps}건 검토하기 →
+            </Link>
+          ) : null}
+          {(pendingCount ?? 0) > 0 ? (
             <Link
               href="/admin/partners?status=pending"
-              className="text-primary hover:underline"
+              className="block text-primary hover:underline"
             >
-              신청 대기 {pendingCount}건 처리하기 →
+              파트너 신청 대기 {pendingCount}건 처리하기 →
             </Link>
-          ) : (
-            "현재 처리 대기 중인 항목이 없습니다."
-          )}
+          ) : null}
+          {(submittedReq ?? 0) > 0 ? (
+            <Link
+              href="/admin/requests?status=submitted"
+              className="block text-primary hover:underline"
+            >
+              매칭 요청 검수 대기 {submittedReq}건 처리하기 →
+            </Link>
+          ) : null}
+          {(pbNewApps ?? 0) === 0 &&
+          (pendingCount ?? 0) === 0 &&
+          (submittedReq ?? 0) === 0
+            ? "현재 처리 대기 중인 항목이 없습니다."
+            : null}
         </CardContent>
       </Card>
     </div>

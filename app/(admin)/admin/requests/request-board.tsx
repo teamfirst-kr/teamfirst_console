@@ -29,7 +29,7 @@ const PIPELINE: { key: string; label: string; statuses: string[]; tint: string }
     { key: "rfp", label: "RFP · 수집", statuses: ["rfp_sent", "collecting"], tint: "bg-sky-50 border-sky-200" },
     { key: "curate", label: "후보 선정", statuses: ["curating", "candidates_sent"], tint: "bg-indigo-50 border-indigo-200" },
     { key: "meeting", label: "미팅", statuses: ["meeting_scheduled"], tint: "bg-emerald-50 border-emerald-200" },
-    { key: "closed", label: "종료", statuses: ["closed_won", "closed_lost", "cancelled"], tint: "bg-slate-100 border-slate-200" },
+    { key: "closed", label: "종료", statuses: ["closed_won", "closed_lost", "cancelled", "rejected"], tint: "bg-slate-100 border-slate-200" },
   ];
 
 export function RequestBoard({ requests }: { requests: BoardRequest[] }) {

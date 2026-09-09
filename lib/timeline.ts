@@ -18,7 +18,9 @@ export async function buildRequestTimeline(
 
   const { data: request } = await supabase
     .from("matching_requests")
-    .select("title, brief, submitted_at, rfp_sent_at, created_at, status")
+    .select(
+      "title, brief, submitted_at, rfp_sent_at, created_at, status, rejected_at, reject_reason",
+    )
     .eq("id", requestId)
     .single();
   if (!request) return [];
@@ -133,6 +135,16 @@ export async function buildRequestTimeline(
         detail: pName,
       });
     }
+  }
+
+  // 반려
+  if (request.status === "rejected" && request.rejected_at) {
+    events.push({
+      at: request.rejected_at,
+      icon: "decision",
+      title: "요청 반려",
+      detail: request.reject_reason ?? undefined,
+    });
   }
 
   events.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());

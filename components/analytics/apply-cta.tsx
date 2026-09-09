@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { readCalcState } from "@/lib/calc-state";
@@ -16,16 +17,19 @@ import { trackConversion } from "./track";
 
 // 페이백 신청 유도 CTA — 클릭 시 Meta AddToCart(장바구니) 전환 발화 후
 // 간편 신청 팝업(브랜드명+연락처 → 즉시 리드 저장) 오픈. DB 최대 확보용 2단계 캡처:
-// 1단계 미니폼 제출 or '추가 정보 입력하기'로 정식 신청(/apply, 프리필) 이동.
+// 정식 신청(/apply)으로는 약식(브랜드명+연락처)을 채워 리드가 저장된 뒤에만 이동 가능.
 export function ApplyCtaLink({
   location,
   className,
   children,
+  id,
 }: {
   location: string; // "hero" | "calculator" | "footer" | "solution_modal" 등
   className?: string;
   children: React.ReactNode;
+  id?: string; // 외부(iframe postMessage 등)에서 프로그래밍 방식으로 열기 위한 앵커
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [brand, setBrand] = useState("");
   const [phone, setPhone] = useState("");
@@ -75,8 +79,14 @@ export function ApplyCtaLink({
     fire(CTA_CLOSE_EVENT);
   }
 
-  async function submit() {
-    if (busy || !valid || sent) return;
+  // goApply=true: 약식 리드 저장 후 곧바로 정식 신청(/apply, 프리필)으로 이동.
+  // 저장 API가 일시 실패해도 약식은 이미 채워졌으므로 이동은 막지 않는다(정식 폼이 재수집).
+  async function submit(goApply = false) {
+    if (busy || !valid) return;
+    if (sent) {
+      if (goApply) router.push(applyHref());
+      return;
+    }
     setErrMsg(null);
     setBusy(true);
     try {
@@ -99,15 +109,18 @@ export function ApplyCtaLink({
           "purchase",
         );
         fire(CTA_CONVERTED_EVENT); // 전환 완료 — 설문은 띄우지 않는다
+        if (goApply) router.push(applyHref());
+      } else if (goApply) {
+        router.push(applyHref());
       } else {
-        setErrMsg(
-          "일시적 오류로 접수되지 않았습니다. 잠시 후 다시 시도하시거나 '추가 정보 입력하기'로 신청해주세요.",
-        );
+        setErrMsg("일시적 오류로 접수되지 않았습니다. 잠시 후 다시 시도해주세요.");
       }
     } catch {
-      setErrMsg(
-        "일시적 오류로 접수되지 않았습니다. 잠시 후 다시 시도하시거나 '추가 정보 입력하기'로 신청해주세요.",
-      );
+      if (goApply) {
+        router.push(applyHref());
+      } else {
+        setErrMsg("일시적 오류로 접수되지 않았습니다. 잠시 후 다시 시도해주세요.");
+      }
     } finally {
       setBusy(false);
     }
@@ -115,7 +128,7 @@ export function ApplyCtaLink({
 
   return (
     <>
-      <Button size="lg" className={className} onClick={openModal}>
+      <Button id={id} size="lg" className={className} onClick={openModal}>
         {children}
       </Button>
 
@@ -192,18 +205,36 @@ export function ApplyCtaLink({
                       <Button
                         className="w-full"
                         disabled={busy || !valid}
-                        onClick={submit}
+                        onClick={() => void submit()}
                       >
                         {busy ? "접수 중..." : "신청"}
                       </Button>
                     </div>
                     <div className="mt-3 border-t pt-3 text-center">
-                      <Link
-                        href={applyHref()}
-                        className="text-sm font-medium text-primary hover:underline"
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => {
+                          if (!valid) {
+                            setErrMsg(
+                              "정식 신청은 브랜드명과 연락처를 먼저 입력해야 진행할 수 있습니다.",
+                            );
+                            return;
+                          }
+                          void submit(true);
+                        }}
+                        className={
+                          "text-sm font-medium " +
+                          (valid
+                            ? "text-primary hover:underline"
+                            : "cursor-not-allowed text-muted-foreground")
+                        }
                       >
                         추가 정보 입력하기 → (정식 신청 페이지)
-                      </Link>
+                      </button>
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        브랜드명·연락처 입력 후 이동할 수 있어요
+                      </p>
                     </div>
                   </>
                 )}

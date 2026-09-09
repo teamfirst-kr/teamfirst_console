@@ -159,7 +159,7 @@ const CATCHLOG_HTML = `<!doctype html>
 
     <div class="clp-cta-wrap">
       <p>봇을 제외한 실방문 기준으로, 광고비가 새는 지점을 숫자로 짚어드립니다.</p>
-      <a class="clp-cta" href="/apply" target="_top">페이백 신청하고 무료로 이용하기</a>
+      <a class="clp-cta" href="#" onclick="event.preventDefault();parent.postMessage({type:'tf-open-apply'},'*')">페이백 신청하고 무료로 이용하기</a>
     </div>
 
   </div>
@@ -315,7 +315,7 @@ const AUTO_REPORT_HTML = `<!doctype html>
 
     <div class="arp-cta-wrap">
       <p>매번 엑셀과 씨름하던 리포트 업무, 이제 자동으로 도착합니다.</p>
-      <a class="arp-cta" href="/apply" target="_top">페이백 신청하고 무료로 이용하기</a>
+      <a class="arp-cta" href="#" onclick="event.preventDefault();parent.postMessage({type:'tf-open-apply'},'*')">페이백 신청하고 무료로 이용하기</a>
     </div>
 
   </div>
@@ -479,7 +479,7 @@ const AUTO_BID_HTML = `<!doctype html>
 
     <div class="abp-cta-wrap">
       <p>목표만 정해두세요. 분석부터 조정·기록까지, 입찰 관리가 한 번에 돌아갑니다.</p>
-      <a class="abp-cta" href="/apply" target="_top">페이백 신청하고 무료로 이용하기</a>
+      <a class="abp-cta" href="#" onclick="event.preventDefault();parent.postMessage({type:'tf-open-apply'},'*')">페이백 신청하고 무료로 이용하기</a>
     </div>
 
   </div>
