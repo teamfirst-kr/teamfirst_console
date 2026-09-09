@@ -278,8 +278,8 @@ export default async function PaybackLanding() {
             sub={
               <span className="text-white/70">
                 대행권을 지정한 광고주에게 무료로 제공되는 성과 도구입니다.
-                <br className="hidden sm:block" /> 썸네일을 누르면 각 솔루션의 소개
-                영상이 바로 재생됩니다.
+                <br className="hidden sm:block" /> 재생 버튼을 누르면 각 솔루션의 소개
+                영상을 페이지 이동 없이 확인할 수 있습니다.
               </span>
             }
           />
