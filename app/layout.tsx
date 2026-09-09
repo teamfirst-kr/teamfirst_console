@@ -5,9 +5,9 @@ import { Analytics, GtmNoScript } from "@/components/analytics";
 import "./globals.css";
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://console.teamfirst.kr";
-const SITE_TITLE = "팀퍼스트 페이백 — 대행권만 지정하면 광고비 10~12% 페이백";
+const SITE_TITLE = "팀퍼스트";
 const SITE_DESCRIPTION =
-  "네이버 광고 대행권을 팀퍼스트로 지정하면 광고비의 10~12%를 매월 현금으로 돌려드립니다. 운영 방식도 계정 소유권도 그대로, 자체 개발 솔루션 무료와 카테고리 전문 마케터 월간 컨설팅까지.";
+  "광고비 최대 12% 페이백 + 자동화 솔루션 3종 + 전문가 컨설팅. 대행권만 지정하면 운영은 그대로, 매월 현금으로 돌려드립니다.";
 
 // 사이트 기본 메타데이터 — 페이백 서비스 기준 (링크 공유 미리보기 = OG/트위터 카드).
 // OG 이미지는 app/opengraph-image.png 파일 규약으로 자동 연결(원본: docs/assets/og-image.html).
