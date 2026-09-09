@@ -4,10 +4,26 @@ import { Analytics, GtmNoScript } from "@/components/analytics";
 
 import "./globals.css";
 
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://console.teamfirst.kr";
+const SITE_TITLE = "팀퍼스트 페이백 — 대행권만 지정하면 광고비 10~12% 페이백";
+const SITE_DESCRIPTION =
+  "네이버 광고 대행권을 팀퍼스트로 지정하면 광고비의 10~12%를 매월 현금으로 돌려드립니다. 운영 방식도 계정 소유권도 그대로, 자체 개발 솔루션 무료와 카테고리 전문 마케터 월간 컨설팅까지.";
+
+// 사이트 기본 메타데이터 — 페이백 서비스 기준 (링크 공유 미리보기 = OG/트위터 카드).
+// OG 이미지는 app/opengraph-image.png 파일 규약으로 자동 연결(원본: docs/assets/og-image.html).
+// openGraph에 title/description을 두지 않아 각 페이지의 title/description이 그대로 og:title/og:description이 된다.
 export const metadata: Metadata = {
-  title: "팀퍼스트 TeamFirst — 검증된 광고대행사 무료 매칭",
-  description:
-    "RFP 작성부터 제안서 검토, 니즈에 맞는 대행사 검증까지. 브랜드사는 전액 무료로 최적의 광고대행사를 매칭받고 결정하세요.",
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    siteName: "팀퍼스트 TeamFirst",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({
