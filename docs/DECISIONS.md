@@ -422,6 +422,6 @@
 
 ### D-072. 링크 공유 미리보기(OG) — 페이백 서비스 기준으로 재구성 (2026-09-09)
 - **배경**: 메신저에 console.teamfirst.kr 공유 시 제목·설명이 구 매칭 플랫폼 문구("검증된 광고대행사 무료 매칭")였고, og:image가 없어 메신저가 페이지 첫 이미지(D-071로 추가된 CatchLog 유튜브 썸네일)를 대표 이미지로 잡음.
-- **결정**: 루트 메타데이터를 페이백 기준으로 교체 — 제목 "팀퍼스트 페이백 — 대행권만 지정하면 광고비 10~12% 페이백", 설명(운영 그대로·솔루션 무료·전문가 컨설팅), `metadataBase`(NEXT_PUBLIC_APP_URL, 기본 console.teamfirst.kr), openGraph(type/locale/siteName/url — title·description은 비워 페이지별 title이 og:title로 흐르게), twitter `summary_large_image`.
-- **OG 이미지**: `app/opengraph-image.png`(1200×630, 정적) 파일 규약 + `opengraph-image.alt.txt`. 원본 템플릿은 `docs/assets/og-image.html`(네이비 스포트라이트 배경, "대행권만 지정하면 / 광고비 10~12% 페이백", 칩 3종, URL). 동적 `ImageResponse`는 한글 폰트 번들/런타임 폰트 페치 의존이 커서 정적 PNG 채택 — 요율·문구 변경 시 템플릿을 1200×630으로 렌더해 교체.
+- **결정**: 루트 메타데이터를 페이백 기준으로 교체 — 제목 "팀퍼스트"(브랜드명만, 사용자 지시), 설명 "광고비 최대 12% 페이백 + 자동화 솔루션 3종 + 전문가 컨설팅. 대행권만 지정하면 운영은 그대로, 매월 현금으로 돌려드립니다.", `metadataBase`(NEXT_PUBLIC_APP_URL, 기본 console.teamfirst.kr), openGraph(type/locale/siteName/url — title·description은 비워 페이지별 title이 og:title로 흐르게), twitter `summary_large_image`.
+- **OG 이미지**: `app/opengraph-image.png`(1200×630, 정적) 파일 규약 + `opengraph-image.alt.txt`. 원본 템플릿은 `docs/assets/og-image.html`. 1차안(배지·칩 3종·URL·보조 문구)은 "광고 배너 같다"는 피드백으로 폐기 — 최종안은 네이비 배경에 브랜드(TF 배지+팀퍼스트), 헤드라인 "광고비 최대 12% 페이백", 보조 한 줄 "+ 자동화 솔루션 3종 + 전문가 컨설팅"만 둔 미니멀 구성. 동적 `ImageResponse`는 한글 폰트 번들/런타임 폰트 페치 의존이 커서 정적 PNG 채택 — 요율·문구 변경 시 템플릿을 1200×630으로 렌더해 교체.
 - **운영 메모**: 카카오톡·페이스북 등은 미리보기를 캐시하므로 배포 후 카카오 디벨로퍼스 "공유 디버거"(developers.kakao.com/tool/debugger/sharing)와 Facebook Sharing Debugger로 캐시 초기화 필요.
