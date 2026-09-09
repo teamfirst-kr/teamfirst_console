@@ -386,3 +386,9 @@
 - **프리필**: 계산기 입력(예산·옵션)을 sessionStorage(tf_calc)로 공유 — 간편 팝업 리드에 예산 포함, /apply 폼 마운트 시 예산·옵션 자동 입력.
 - **어드민**: 파이프라인 상단 '⚡ 간편 신청 리드' 섹션(tel: 링크, 예산, 유입 위치).
 - **팝업 vs 페이지 재론**: 정식 신청은 페이지 유지(파일 업로드·퍼널 측정·기존 체계) — 팝업은 리드 캡처 전용 미니폼으로 한정.
+
+### D-066. 솔루션 소개 유튜브 영상 — 썸네일 파사드 + 인라인 재생 (2026-09-09)
+- **배경**: 솔루션 3종(CatchLog/AUTO REPORT/AUTO BID) 소개 영상을 유튜브에 업로드. 랜딩 솔루션 섹션에서 사이트 이동 없이 바로 재생되도록 요구.
+- **구현**: `YouTubeEmbed`(파사드) — 클릭 전엔 유튜브 CDN 썸네일(`maxresdefault` → 없으면 `hqdefault` 폴백, SSR 이미지가 하이드레이션 전에 로드/실패한 경우도 마운트 시 재검사) + 재생 버튼만 렌더링, 클릭 시 그 자리에서 `youtube-nocookie.com` 자동재생 iframe으로 교체. 플레이어 스크립트를 클릭 전 로드하지 않아 LCP 보호. 한 영상 재생 시 다른 영상은 썸네일로 복귀(`tf:video-play` 이벤트, 소리 겹침 방지).
+- **레이아웃**: 기존 CSS 목업(예시 화면) 3종을 영상으로 대체 — 시각 컬럼 1개 유지(목업+영상 병렬은 세로 과대). 브라우저 창 프레임(WindowFrame)은 유지해 이전 톤과 연속성 확보.
+- **트래킹**: `trackEvent("solution_video_play", {content_name: solution_video_{log|report|bid}})` — GA4 이벤트 + Meta 커스텀 이벤트 + dataLayer. 전환(Ads) 미발화(비전환 인게이지먼트). iframe에 `enablejsapi=1` 포함해 GA4 향상된 측정(video_progress/complete)이 켜져 있으면 추가 수집 가능.

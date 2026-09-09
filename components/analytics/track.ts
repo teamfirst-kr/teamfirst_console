@@ -8,6 +8,20 @@ declare global {
 
 import { getStoredAttribution } from "./attribution";
 
+// 비전환 인게이지먼트 이벤트 (영상 재생 등) — GA4 + Meta 커스텀 이벤트 + dataLayer 동시 발화.
+// 전환(Ads send_to)은 발화하지 않는다 — 전환은 trackConversion 전용.
+export function trackEvent(name: string, params?: Record<string, unknown>): void {
+  try {
+    const attr = getStoredAttribution();
+    const shared = { ...(params ?? {}), ...attr };
+    window.gtag?.("event", name, shared);
+    window.fbq?.("trackCustom", name, shared);
+    window.dataLayer?.push({ event: `tf_${name}`, ...shared });
+  } catch {
+    // 트래킹 실패는 무시
+  }
+}
+
 // Google Ads 전환 라벨 (전환 액션별 send_to) — 이름 매칭과 무관하게 명시 전송
 const ADS_SEND_TO: Record<string, string> = {
   AddToCart: "AW-17029250004/4rp9CIiKheQcENT3lrg_",
