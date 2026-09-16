@@ -40,11 +40,11 @@ describe("번들 할인", () => {
     expect(q.discount).toBe(75_000);
     expect(q.total).toBe(112_500);
   });
-  it("연간: 리포트 700,000 + ROAS 1,000,000, 캐치로그는 월×12", () => {
+  it("연간: 리포트 700,000 + ROAS 1,000,000, 캐치로그는 월×10 (2개월 무료)", () => {
     const q = quote(["log", "report", "bid"], "yearly", 200_000);
-    expect(q.items.map((i) => i.price)).toEqual([288_000, 700_000, 1_000_000]);
+    expect(q.items.map((i) => i.price)).toEqual([240_000, 700_000, 1_000_000]);
     expect(q.discountRate).toBe(40);
-    expect(q.total).toBe(Math.floor(1_988_000 * 0.6));
+    expect(q.total).toBe(Math.floor(1_940_000 * 0.6));
   });
   it("중복 키는 1종으로 계산", () => {
     expect(quote(["bid", "bid"], "monthly", 0).discountRate).toBe(0);

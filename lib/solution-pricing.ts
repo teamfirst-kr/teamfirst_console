@@ -15,6 +15,7 @@ export const CATCHLOG_TIERS = [
 ] as const;
 export const CATCHLOG_EXTRA_PER_100K = 6_500; // 40만 PV 초과 시 10만 PV당 추가
 export const CATCHLOG_MAX_PV = 1_000_000; // 셀렉터 상한 (초과는 별도 문의)
+export const CATCHLOG_YEARLY_MONTHS = 10; // 연간 결제 = 월 요금 × 10 (2개월 무료)
 
 export const FIXED_PRICES: Record<Exclude<SolutionKey, "log">, { monthly: number; yearly: number }> = {
   report: { monthly: 70_000, yearly: 700_000 },
@@ -33,11 +34,11 @@ export function catchlogMonthly(pv: number): number {
   return top.monthly + extraBlocks * CATCHLOG_EXTRA_PER_100K;
 }
 
-// 선택 솔루션별 청구 금액 (billing 기준). 캐치로그는 연간 요금이 없어 연간 선택 시 월 요금 × 12.
+// 선택 솔루션별 청구 금액 (billing 기준). 캐치로그 연간은 월 요금 × 10 (2개월 무료, 다른 솔루션과 동일 정책).
 export function solutionPrice(key: SolutionKey, billing: Billing, pv: number): number {
   if (key === "log") {
     const m = catchlogMonthly(pv);
-    return billing === "yearly" ? m * 12 : m;
+    return billing === "yearly" ? m * CATCHLOG_YEARLY_MONTHS : m;
   }
   return FIXED_PRICES[key][billing];
 }

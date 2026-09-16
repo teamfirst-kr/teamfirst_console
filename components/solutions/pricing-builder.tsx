@@ -12,11 +12,13 @@ import {
   CATCHLOG_EXTRA_PER_100K,
   CATCHLOG_MAX_PV,
   CATCHLOG_TIERS,
+  CATCHLOG_YEARLY_MONTHS,
   FIXED_PRICES,
   SOLUTION_KEYS,
   catchlogMonthly,
   encodeSubscriptionSource,
   quote,
+  solutionPrice,
   type Billing,
   type SolutionKey,
 } from "@/lib/solution-pricing";
@@ -145,36 +147,27 @@ export function PricingBuilder() {
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 {SOLUTION_CATALOG.map((c) => (
-                  <button
-                    key={c.key}
-                    type="button"
-                    onClick={() => toggle(c.key)}
-                    aria-pressed={isOn(c.key)}
-                    className={
-                      "rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors " +
-                      (isOn(c.key) ? "border-secondary bg-secondary text-white" : "border-border bg-background text-muted-foreground hover:text-foreground")
-                    }
-                  >
-                    {isOn(c.key) ? "✓ " : "+ "}
-                    {c.brand}
-                  </button>
+                  <div key={c.key} className="contents">
+                    <button
+                      type="button"
+                      onClick={() => toggle(c.key)}
+                      aria-pressed={isOn(c.key)}
+                      className={
+                        "rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors " +
+                        (isOn(c.key) ? "border-secondary bg-secondary text-white" : "border-border bg-background text-muted-foreground hover:text-foreground")
+                      }
+                    >
+                      {isOn(c.key) ? "✓ " : "+ "}
+                      {c.brand}
+                    </button>
+                    {/* CatchLog 칩 바로 우측에 월 PV 드롭박스 */}
+                    {c.key === "log" && isOn("log") ? (
+                      <PvSelect pv={pv} onChange={setPv} className="rounded-full px-3 py-1.5" />
+                    ) : null}
+                  </div>
                 ))}
-                {isOn("log") ? (
-                  <select
-                    aria-label="CatchLog 월 페이지뷰"
-                    value={pv}
-                    onChange={(e) => setPv(Number(e.target.value))}
-                    className="rounded-full border bg-background px-3 py-1.5 text-sm"
-                  >
-                    {PV_OPTIONS.map((p) => (
-                      <option key={p} value={p}>
-                        CatchLog {manPv(p)}
-                      </option>
-                    ))}
-                  </select>
-                ) : null}
               </div>
 
               {q.items.length === 0 ? (
@@ -251,7 +244,7 @@ export function PricingBuilder() {
 
       {/* ── ③ 솔루션별 섹션 ── */}
       {SOLUTION_CATALOG.map((c, idx) => (
-        <SolutionSection key={c.key} info={c} billing={billing} pv={pv} on={isOn(c.key)} alt={idx % 2 === 1} />
+        <SolutionSection key={c.key} info={c} billing={billing} pv={pv} onPvChange={setPv} on={isOn(c.key)} alt={idx % 2 === 1} />
       ))}
       {/* 섹션 끝 센티널 — 여기를 지나면(크로스셀·푸터) 요약 바 숨김 */}
       <div ref={endRef} aria-hidden className="h-px" />
@@ -280,9 +273,43 @@ export function PricingBuilder() {
   );
 }
 
-function SolutionSection({ info: c, billing, pv, on, alt }: { info: SolutionInfo; billing: Billing; pv: number; on: boolean; alt: boolean }) {
+// 월 PV 드롭박스 (예상 구독료 박스와 CatchLog 요금제 카드가 같은 pv 상태를 공유)
+function PvSelect({ pv, onChange, className }: { pv: number; onChange: (pv: number) => void; className?: string }) {
+  return (
+    <select
+      aria-label="CatchLog 월 페이지뷰"
+      value={pv}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className={"border bg-background text-sm " + (className ?? "")}
+    >
+      {PV_OPTIONS.map((p) => (
+        <option key={p} value={p}>
+          {manPv(p)}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function SolutionSection({
+  info: c,
+  billing,
+  pv,
+  onPvChange,
+  on,
+  alt,
+}: {
+  info: SolutionInfo;
+  billing: Billing;
+  pv: number;
+  onPvChange: (pv: number) => void;
+  on: boolean;
+  alt: boolean;
+}) {
   const unit = billing === "yearly" ? "연" : "월";
-  const price = c.key === "log" ? catchlogMonthly(pv) * (billing === "yearly" ? 12 : 1) : FIXED_PRICES[c.key][billing];
+  const price = solutionPrice(c.key, billing, pv);
+  const monthly = c.key === "log" ? catchlogMonthly(pv) : FIXED_PRICES[c.key].monthly;
+  const yearly = c.key === "log" ? catchlogMonthly(pv) * CATCHLOG_YEARLY_MONTHS : FIXED_PRICES[c.key].yearly;
 
   return (
     <section id={c.key} className={"scroll-mt-16 border-t py-16 md:py-20 " + (alt ? "bg-muted/40" : "bg-background")}>
@@ -318,54 +345,38 @@ function SolutionSection({ info: c, billing, pv, on, alt }: { info: SolutionInfo
             </div>
 
             {c.key === "log" ? (
-              <>
-                <table className="mt-3 w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-left text-[11px] text-muted-foreground">
-                      <th className="py-1.5 font-medium">월 페이지뷰</th>
-                      <th className="py-1.5 text-right font-medium">월 요금</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {CATCHLOG_TIERS.map((t) => (
-                      <tr key={t.pv} className={"border-b " + (pv === t.pv ? "bg-sky-50/70" : "")}>
-                        <td className="py-2">{manPv(t.pv)}</td>
-                        <td className="py-2 text-right font-extrabold text-secondary">{won(t.monthly)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                  {manPv(CATCHLOG_TIERS[CATCHLOG_TIERS.length - 1].pv)} 초과 시 10만 PV당 {won(CATCHLOG_EXTRA_PER_100K)} 추가 · 연간 결제 시 월 요금 × 12
-                </p>
-              </>
-            ) : (
-              <>
-                <table className="mt-3 w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-left text-[11px] text-muted-foreground">
-                      <th className="py-1.5 font-medium">결제 주기</th>
-                      <th className="py-1.5 text-right font-medium">요금</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className={"border-b " + (billing === "monthly" ? "bg-sky-50/70" : "")}>
-                      <td className="py-2.5">월간</td>
-                      <td className="py-2.5 text-right font-extrabold text-secondary">{won(FIXED_PRICES[c.key].monthly)} / 월</td>
-                    </tr>
-                    <tr className={"border-b " + (billing === "yearly" ? "bg-sky-50/70" : "")}>
-                      <td className="py-2.5">
-                        연간 <span className="ml-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">2개월 무료</span>
-                      </td>
-                      <td className="py-2.5 text-right font-extrabold text-secondary">{won(FIXED_PRICES[c.key].yearly)} / 연</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                  연간 결제 시 월 요금 12개월분에서 2개월분이 할인됩니다. 다른 솔루션과 함께 구독하면 번들 할인이 추가 적용됩니다.
-                </p>
-              </>
-            )}
+              <label className="mt-3 flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2 text-sm">
+                <span className="font-semibold text-secondary">월 페이지뷰</span>
+                <PvSelect pv={pv} onChange={onPvChange} className="rounded-md px-2.5 py-1.5 font-semibold" />
+              </label>
+            ) : null}
+
+            <table className="mt-3 w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-[11px] text-muted-foreground">
+                  <th className="py-1.5 font-medium">결제 주기</th>
+                  <th className="py-1.5 text-right font-medium">요금{c.key === "log" ? ` (${manPv(pv)})` : ""}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className={"border-b " + (billing === "monthly" ? "bg-sky-50/70" : "")}>
+                  <td className="py-2.5">월간</td>
+                  <td className="py-2.5 text-right font-extrabold text-secondary">{won(monthly)} / 월</td>
+                </tr>
+                <tr className={"border-b " + (billing === "yearly" ? "bg-sky-50/70" : "")}>
+                  <td className="py-2.5">
+                    연간 <span className="ml-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">2개월 무료</span>
+                  </td>
+                  <td className="py-2.5 text-right font-extrabold text-secondary">{won(yearly)} / 연</td>
+                </tr>
+              </tbody>
+            </table>
+            <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+              {c.key === "log"
+                ? `${manPv(CATCHLOG_TIERS[CATCHLOG_TIERS.length - 1].pv)} 초과 시 10만 PV당 ${won(CATCHLOG_EXTRA_PER_100K)} 추가 · 연간 결제 시 월 요금 × ${CATCHLOG_YEARLY_MONTHS}. `
+                : "연간 결제 시 월 요금 12개월분에서 2개월분이 할인됩니다. "}
+              다른 솔루션과 함께 구독하면 번들 할인이 추가 적용됩니다.
+            </p>
 
             <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t pt-3">
               <p className="text-xs">
