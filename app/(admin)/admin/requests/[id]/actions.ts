@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentRole } from "@/lib/auth";
@@ -8,9 +9,12 @@ import { sendEmail } from "@/lib/email/resend";
 import { matchingRequestRejectedEmail, rfpArrivedEmail } from "@/lib/email/templates";
 import { notify, notifyMany } from "@/lib/notifications";
 import {
+  matchingRequestSchema,
+  normalizeBizRegNo,
   REQUEST_MEDIA,
   type MatchingBrief,
 } from "@/lib/schemas/matching-request";
+import type { Json } from "@/types/database";
 import type { RequestStatus } from "@/types/database";
 
 const MEDIA_LABEL = Object.fromEntries(
@@ -267,4 +271,129 @@ export async function rejectRequest(
   revalidatePath(`/admin/requests/${requestId}`);
   revalidatePath("/admin/requests");
   return { ok: true, message: "요청을 반려하고 광고주에게 통보했습니다.", count: 0 };
+}
+
+// ── 접수된 요청(RFP) 운영자 수정 ─────────────────────────────────────
+// 광고주가 수정 요청한 내용을 운영자가 대신 반영한다. 광고주 제출과 동일한
+// 스키마로 검증해 데이터 일관성 유지. 증빙 파일(ad_spend_proof)은 보존.
+export type EditRequestState =
+  | { error: string; fieldErrors?: Record<string, string[]> }
+  | null;
+
+function getAllStrings(formData: FormData, key: string): string[] {
+  return formData.getAll(key).map(String);
+}
+
+export async function updateRequestBrief(
+  _prev: EditRequestState,
+  formData: FormData,
+): Promise<EditRequestState> {
+  await assertAdmin();
+
+  const requestId = String(formData.get("request_id") || "").trim();
+  if (!requestId) return { error: "요청 ID가 없습니다." };
+
+  const raw = {
+    company_name: formData.get("company_name"),
+    biz_reg_no: formData.get("biz_reg_no"),
+    representative: formData.get("representative"),
+    brand_name: formData.get("brand_name"),
+    contact_name: formData.get("contact_name"),
+    contact_title: formData.get("contact_title"),
+    email: formData.get("email"),
+    phone: formData.get("phone"),
+    website: formData.get("website") || undefined,
+    category: formData.get("category"),
+    product_intro: formData.get("product_intro"),
+    reason: formData.get("reason"),
+    marketing_goals: getAllStrings(formData, "marketing_goals"),
+    channels: getAllStrings(formData, "channels"),
+    duration: formData.get("duration"),
+    kpis: getAllStrings(formData, "kpis"),
+    report_cycles: getAllStrings(formData, "report_cycles"),
+    meeting_cycles: getAllStrings(formData, "meeting_cycles"),
+    tools: getAllStrings(formData, "tools"),
+    preferred_agency: formData.get("preferred_agency"),
+    avoided_agency: formData.get("avoided_agency") || undefined,
+    payment_methods: getAllStrings(formData, "payment_methods"),
+    analysis_access_intent: formData.get("analysis_access_intent") === "on",
+  };
+
+  const parsed = matchingRequestSchema.safeParse(raw);
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string[]> = {};
+    for (const issue of parsed.error.issues) {
+      const key = issue.path.join(".") || "_form";
+      (fieldErrors[key] ||= []).push(issue.message);
+    }
+    return { error: "입력값을 다시 확인해주세요.", fieldErrors };
+  }
+
+  const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from("matching_requests")
+    .select("id, brief")
+    .eq("id", requestId)
+    .single<{ id: string; brief: MatchingBrief | null }>();
+  if (!existing) return { error: "요청을 찾을 수 없습니다." };
+
+  const data = parsed.data;
+
+  // 매체별 집행 예정 예산 (선택 매체만, planned_budget_<value>)
+  const plannedBudgets: Record<string, number> = {};
+  for (const ch of data.channels) {
+    const n = Number(
+      String(formData.get(`planned_budget_${ch}`) ?? "").replace(/[^\d]/g, ""),
+    );
+    if (n > 0) plannedBudgets[ch] = n;
+  }
+  const budgetTotal = Object.values(plannedBudgets).reduce((s, v) => s + v, 0);
+
+  const brief: MatchingBrief = {
+    company_name: data.company_name,
+    biz_reg_no: normalizeBizRegNo(data.biz_reg_no),
+    representative: data.representative,
+    brand_name: data.brand_name,
+    contact_name: data.contact_name,
+    contact_title: data.contact_title,
+    email: data.email,
+    phone: data.phone,
+    website: data.website || null,
+    category: data.category,
+    product_intro: data.product_intro,
+    reason: data.reason,
+    marketing_goals: data.marketing_goals,
+    channels: data.channels,
+    duration: data.duration,
+    kpis: data.kpis,
+    report_cycles: data.report_cycles,
+    meeting_cycles: data.meeting_cycles,
+    tools: data.tools,
+    preferred_agency: data.preferred_agency,
+    avoided_agency: data.avoided_agency ?? null,
+    payment_methods: data.payment_methods,
+    analysis_access_intent: data.analysis_access_intent ?? false,
+    planned_budgets: plannedBudgets,
+    // 증빙 파일은 광고주 제출본 유지 (운영자 수정에서 재업로드 없음)
+    ad_spend_proof: existing.brief?.ad_spend_proof ?? null,
+  };
+
+  const { error } = await supabase
+    .from("matching_requests")
+    .update({
+      title: data.brand_name,
+      brief: brief as unknown as Json,
+      budget_monthly: budgetTotal || null,
+    })
+    .eq("id", requestId);
+  if (error) return { error: error.message };
+
+  // 요청 내용을 보는 모든 화면 갱신 (어드민·광고주·파트너 RFP·PDF)
+  revalidatePath(`/admin/requests/${requestId}`);
+  revalidatePath("/admin/requests");
+  revalidatePath(`/client/request/${requestId}`);
+  revalidatePath(`/partner/rfp/${requestId}`);
+  revalidatePath(`/rfp/${requestId}/print`);
+
+  redirect(`/admin/requests/${requestId}`);
 }
