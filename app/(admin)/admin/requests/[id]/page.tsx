@@ -203,6 +203,12 @@ export default async function AdminRequestDetailPage({
           >
             RFP PDF 보기 →
           </Link>
+          <Link
+            href={`/admin/requests/${request.id}/edit`}
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            ✏️ 요청 수정
+          </Link>
         </div>
       </div>
 
