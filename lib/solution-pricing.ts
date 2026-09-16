@@ -4,6 +4,9 @@
 export type SolutionKey = "log" | "report" | "bid";
 export type Billing = "monthly" | "yearly";
 
+export const SOLUTION_KEYS: SolutionKey[] = ["log", "report", "bid"];
+export const SOLUTION_BRAND: Record<SolutionKey, string> = { log: "CatchLog", report: "AUTO REPORT", bid: "AUTO BID" };
+
 export const CATCHLOG_TIERS = [
   { pv: 100_000, monthly: 17_500 },
   { pv: 200_000, monthly: 24_000 },
@@ -58,4 +61,32 @@ export function quote(selected: SolutionKey[], billing: Billing, pv: number): Qu
   const total = subtotal - discount;
   const vat = Math.floor(total / 10);
   return { items, subtotal, discountRate, discount, total, vat, totalWithVat: total + vat };
+}
+
+// ── 구독 문의 리드 source 인코딩 ─────────────────────────────────────────
+// pb_leads.source(≤40자)에 "sub:log+report+bid/Y/pv10" 형식으로 선택 내역을 남긴다.
+// (관리자 화면·알림에서 "월/연 구독료"임을 구분해 표시하기 위함)
+export type SubscriptionSource = { keys: SolutionKey[]; billing: Billing; pv: number | null };
+
+export function encodeSubscriptionSource(selected: SolutionKey[], billing: Billing, pv: number): string {
+  const keys = SOLUTION_KEYS.filter((k) => selected.includes(k));
+  const pvPart = keys.includes("log") ? `/pv${Math.round(pv / 10_000)}` : "";
+  return `sub:${keys.join("+")}/${billing === "yearly" ? "Y" : "M"}${pvPart}`;
+}
+
+export function parseSubscriptionSource(source: string | null | undefined): SubscriptionSource | null {
+  const m = /^sub:([a-z+]+)\/(Y|M)(?:\/pv(\d+))?$/.exec(source ?? "");
+  if (!m) return null;
+  const keys = m[1].split("+").filter((k): k is SolutionKey => (SOLUTION_KEYS as string[]).includes(k));
+  if (keys.length === 0) return null;
+  return { keys, billing: m[2] === "Y" ? "yearly" : "monthly", pv: m[3] ? Number(m[3]) * 10_000 : null };
+}
+
+// 관리자 표시용: "구독 문의 · CatchLog+AUTO REPORT · 연간 · 10만 PV"
+export function describeSubscriptionSource(source: string | null | undefined): string | null {
+  const p = parseSubscriptionSource(source);
+  if (!p) return null;
+  const parts = ["구독 문의", p.keys.map((k) => SOLUTION_BRAND[k]).join("+"), p.billing === "yearly" ? "연간" : "월간"];
+  if (p.pv) parts.push(`${Math.round(p.pv / 10_000)}만 PV`);
+  return parts.join(" · ");
 }

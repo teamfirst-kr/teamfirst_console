@@ -27,19 +27,24 @@ export default function SolutionsPricingPage() {
         </div>
       </section>
 
-      <div className="bg-background pb-20">
+      <div className="bg-background">
         <PricingBuilder />
       </div>
 
-      <section className="border-t bg-muted/40 py-16">
+      <section className="border-t bg-secondary py-16 text-secondary-foreground md:py-20">
         <div className="mx-auto max-w-3xl px-6 text-center">
           <SectionHeader
+            tone="dark"
             eyebrow="FREE WITH PAYBACK"
             heading="대행권만 지정하면 3종 모두 무료"
-            sub="광고비 페이백 고객에게는 솔루션 3종이 무료로 제공되고, 광고비의 최대 12%까지 매월 현금으로 돌려드립니다."
+            sub={
+              <span className="text-white/70">
+                광고비 페이백 고객에게는 솔루션 3종이 무료로 제공되고, 광고비의 최대 12%까지 매월 현금으로 돌려드립니다.
+              </span>
+            }
           />
           <div className="mt-8">
-            <ApplyCtaLink id="solution-modal-apply-cta" location="solutions_pricing">💸 페이백 신청하고 무료로 이용하기</ApplyCtaLink>
+            <ApplyCtaLink location="solutions_pricing">💸 페이백 신청하고 무료로 이용하기</ApplyCtaLink>
           </div>
         </div>
       </section>
