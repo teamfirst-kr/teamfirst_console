@@ -8,28 +8,28 @@ import { BUNDLE_DISCOUNT } from "@/lib/solution-pricing";
 export const metadata: Metadata = {
   title: "솔루션 구독 — TeamFirst",
   description:
-    "캐치로그(로그분석)·자동리포트·자동 ROAS 최적화 솔루션 구독 요금. 2종 구독 시 20%, 3종 구독 시 40% 할인. 광고비 페이백 고객은 무료.",
+    "캐치로그(로그분석)·자동리포트·자동 ROAS 최적화 솔루션 상세 소개와 구독 요금. 2종 구독 시 20%, 3종 구독 시 40% 할인. 광고비 페이백 고객은 무료.",
 };
 
 export default function SolutionsPricingPage() {
   return (
     <div>
-      <section className="bg-secondary py-14 text-secondary-foreground md:py-20">
+      <section className="bg-secondary pb-20 pt-14 text-secondary-foreground md:pb-24 md:pt-20">
         <div className="mx-auto max-w-5xl px-6 text-center">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/70">SOLUTION SUBSCRIPTION</p>
-          <h1 className="mt-3 break-keep text-3xl font-extrabold md:text-4xl">
-            팀퍼스트 솔루션, 필요한 것만 구독하세요
-          </h1>
+          <h1 className="mt-3 break-keep text-3xl font-extrabold md:text-4xl">팀퍼스트 솔루션, 필요한 것만 구독하세요</h1>
           <p className="mx-auto mt-4 max-w-2xl break-keep text-white/75">
-            로그분석(CatchLog) · 자동리포트 · 자동 ROAS 최적화. 2종 구독 시 {BUNDLE_DISCOUNT[2]}%, 3종 구독 시{" "}
-            {BUNDLE_DISCOUNT[3]}% 할인됩니다. 모든 금액은 VAT 별도입니다.
+            로그분석(CatchLog) · 자동리포트 · 자동 ROAS 최적화
+            <br />
+            2종 구독 시 {BUNDLE_DISCOUNT[2]}%, 3종 구독 시 {BUNDLE_DISCOUNT[3]}% 할인됩니다.
           </p>
+          <p className="mt-5 text-xs text-white/50">모든 금액은 VAT 별도입니다.</p>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-14">
+      <div className="bg-muted/40 pb-14">
         <PricingBuilder />
-      </section>
+      </div>
 
       <section className="bg-muted/40 py-16">
         <div className="mx-auto max-w-3xl px-6 text-center">

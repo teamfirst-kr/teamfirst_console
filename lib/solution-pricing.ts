@@ -12,7 +12,6 @@ export const CATCHLOG_TIERS = [
 ] as const;
 export const CATCHLOG_EXTRA_PER_100K = 6_500; // 40만 PV 초과 시 10만 PV당 추가
 export const CATCHLOG_MAX_PV = 1_000_000; // 셀렉터 상한 (초과는 별도 문의)
-export const CATCHLOG_TRIAL_DAYS = 14;
 
 export const FIXED_PRICES: Record<Exclude<SolutionKey, "log">, { monthly: number; yearly: number }> = {
   report: { monthly: 70_000, yearly: 700_000 },

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { YouTubeEmbed } from "@/components/payback/youtube-embed";
 import { submitQuickLead } from "@/app/(public)/apply/lead-actions";
 import { trackConversion } from "@/components/analytics/track";
 import {
@@ -11,83 +12,27 @@ import {
   CATCHLOG_EXTRA_PER_100K,
   CATCHLOG_MAX_PV,
   CATCHLOG_TIERS,
-  CATCHLOG_TRIAL_DAYS,
   FIXED_PRICES,
   catchlogMonthly,
   quote,
   type Billing,
   type SolutionKey,
 } from "@/lib/solution-pricing";
+import { SOLUTION_CATALOG, type SolutionInfo } from "./solution-catalog";
 
-// 솔루션 구독 요금 빌더 — 3종 카드(선택) + 월간/연간 + 캐치로그 PV 구간 + 견적 요약 + 구독 문의(리드).
+// 솔루션 구독 페이지 본문 — 상단 예상 구독료 박스(결제 주기·선택·견적·문의) +
+// 솔루션별 상세 섹션(설명·영상·기능 6개) + 각 섹션 하단 가격표(구독 선택 체크).
 // 요금 계산은 lib/solution-pricing.ts 단일 모듈만 사용한다.
 
 const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
 const manPv = (pv: number) => `월 ${Math.round(pv / 10_000)}만 PV`;
-
-const PV_OPTIONS = Array.from(
-  { length: CATCHLOG_MAX_PV / 100_000 },
-  (_, i) => (i + 1) * 100_000,
-);
-
-const CATALOG: {
-  key: SolutionKey;
-  brand: string;
-  name: string;
-  tagline: string;
-  features: string[];
-}[] = [
-  {
-    key: "log",
-    brand: "CatchLog",
-    name: "로그분석 솔루션",
-    tagline: "부정클릭 차단 + 사이트·채널 분석 + AI 진단 + 상담 챗봇",
-    features: [
-      "부정클릭 IP 탐지 · 네이버 노출 제한 원클릭 차단 (모바일 기기·통신사 추적)",
-      "스마트스토어까지 추적용 URL로 광고 클릭·부정클릭 추적",
-      "실시간 방문·유입·행동 분석, 신규/재방문·리텐션, 14일 기간 비교",
-      "채널(직접·네이버·구글) · 요일·시간대별 유입 분석",
-      "AI 사이트 분석: 유입→탐색→전환 비율, 랜딩페이지별 매출",
-      "AI 성과 진단: ROAS 등락 원인, 브랜드/일반 키워드 분리, 누수 기회 진단",
-      "네이버 검색광고 연동 (캠페인·키워드·광고비) · 전환·매출 추적 (카페24 주문 연동)",
-      "히트맵 · 스크롤 분석 · 정기 리포트 메일 · 상담 챗봇",
-    ],
-  },
-  {
-    key: "report",
-    brand: "AUTO REPORT",
-    name: "자동리포트 솔루션",
-    tagline: "광고시스템 ID만 연결하면 일·주·월 리포트가 메일로 도착",
-    features: [
-      "구매전환·캠페인별 비용·매출 대시보드, 지표 선택 추이 그래프",
-      "캠페인 · 그룹 · 키워드 · PC/모바일 · 요일·시간대별 성과",
-      "일간 / 주간 / 월간 / 맞춤 기간 리포트 (엑셀 다운로드)",
-      "유형별(쇼핑·파워링크·브랜드검색·파워콘텐츠) · 쇼핑 검색어별 · 구매 시간대 표시",
-      "월간 전월 대비 비교 · 이메일 자동 발송 스케줄 (본문에 요약 포함)",
-      "커스텀 시트: 원하는 차원·지표 조합 추가",
-      "성과 개선 전략: 증액(ROAS 유지/볼륨 성장) · 감액 · 원클릭 계정 분석 제안",
-    ],
-  },
-  {
-    key: "bid",
-    brand: "AUTO BID",
-    name: "자동 ROAS 최적화 솔루션",
-    tagline: "목표 ROAS 기준 소재·키워드별 입찰가 자동 조정, 매출 볼륨은 보호",
-    features: [
-      "쇼핑검색(소재 ID별) · 파워링크(키워드별) 각각 최적화",
-      "목표 ROAS 초과/미달 시 증액·감액 비율 규칙 (예: ±10%)",
-      "볼륨 보호: 최근 4주 매출 대비 하락 시 감액 보류",
-      "조정 제외 조건: 노출순위 · 최소 소진액 · 최저 입찰가 가드",
-      "제품 분류별(일반·집중홍보) ROAS 계수·증감 비율 차등, 소재별 개별 목표",
-      "원클릭 일괄 반영 · 첫 달 전문가 세팅",
-    ],
-  },
-];
+const ALL_KEYS: SolutionKey[] = ["log", "report", "bid"];
+const PV_OPTIONS = Array.from({ length: CATCHLOG_MAX_PV / 100_000 }, (_, i) => (i + 1) * 100_000);
 
 export function PricingBuilder() {
   const [billing, setBilling] = useState<Billing>("monthly");
   const [pv, setPv] = useState<number>(CATCHLOG_TIERS[0].pv);
-  const [selected, setSelected] = useState<SolutionKey[]>(["log", "report", "bid"]);
+  const [selected, setSelected] = useState<SolutionKey[]>(ALL_KEYS);
   const [brand, setBrand] = useState("");
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
@@ -96,40 +41,26 @@ export function PricingBuilder() {
 
   const q = useMemo(() => quote(selected, billing, pv), [selected, billing, pv]);
   const unit = billing === "yearly" ? "연" : "월";
+  const isOn = (k: SolutionKey) => selected.includes(k);
+  const toggle = (k: SolutionKey) =>
+    setSelected((s) => (s.includes(k) ? s.filter((x) => x !== k) : ALL_KEYS.filter((x) => x === k || s.includes(x))));
 
-  function toggle(key: SolutionKey) {
-    setSelected((s) => (s.includes(key) ? s.filter((k) => k !== key) : [...s, key]));
-  }
-
-  const valid =
-    selected.length > 0 && brand.trim().length > 0 && phone.replace(/\D/g, "").length >= 9;
+  const valid = selected.length > 0 && brand.trim().length > 0 && phone.replace(/\D/g, "").length >= 9;
 
   async function submit() {
     if (busy || !valid || sent) return;
     setBusy(true);
     setErr(null);
     try {
-      const keys = (["log", "report", "bid"] as SolutionKey[]).filter((k) => selected.includes(k));
-      const source = `sub:${keys.join("+")}/${billing === "yearly" ? "Y" : "M"}${
-        keys.includes("log") ? `/pv${Math.round(pv / 10_000)}` : ""
-      }`;
-      const res = await submitQuickLead({
-        brand,
-        phone,
-        budget: q.total,
-        source,
-        label: "🧩 솔루션 구독 문의",
-      });
+      const keys = ALL_KEYS.filter(isOn);
+      const source = `sub:${keys.join("+")}/${billing === "yearly" ? "Y" : "M"}${keys.includes("log") ? `/pv${Math.round(pv / 10_000)}` : ""}`;
+      const res = await submitQuickLead({ brand, phone, budget: q.total, source, label: "🧩 솔루션 구독 문의" });
       if (!res.ok) {
         setErr("접수에 실패했습니다. 잠시 후 다시 시도해주세요.");
         return;
       }
       setSent(true);
-      trackConversion(
-        "Purchase",
-        { content_name: `solution_subscribe_${keys.join("_")}`, value: q.total, currency: "KRW" },
-        "purchase",
-      );
+      trackConversion("Purchase", { content_name: `solution_subscribe_${keys.join("_")}`, value: q.total, currency: "KRW" }, "purchase");
     } catch {
       setErr("접수에 실패했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
@@ -138,180 +69,282 @@ export function PricingBuilder() {
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
-      <div className="space-y-6">
-        {/* 결제 주기 */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">구독할 솔루션을 선택하세요. 2종 이상 선택 시 전체 금액이 할인됩니다.</p>
-          <div className="inline-flex rounded-lg border bg-card p-1 text-sm font-medium">
-            {(["monthly", "yearly"] as Billing[]).map((b) => (
-              <button
-                key={b}
-                type="button"
-                onClick={() => setBilling(b)}
-                aria-pressed={billing === b}
-                className={
-                  "rounded-md px-3.5 py-1.5 transition-colors " +
-                  (billing === b ? "bg-secondary text-white" : "text-muted-foreground hover:text-foreground")
-                }
-              >
-                {b === "monthly" ? "월간 결제" : "연간 결제"}
-              </button>
-            ))}
+    <>
+      {/* ── 예상 구독료 박스 ── */}
+      <section id="quote" className="mx-auto -mt-10 max-w-6xl scroll-mt-20 px-6">
+        <div className="rounded-2xl border bg-card p-5 shadow-lg md:p-7">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-lg font-extrabold text-secondary">예상 구독료</p>
+                <div className="inline-flex rounded-lg border bg-background p-1 text-sm font-medium">
+                  {(["monthly", "yearly"] as Billing[]).map((b) => (
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => setBilling(b)}
+                      aria-pressed={billing === b}
+                      className={"rounded-md px-3.5 py-1.5 transition-colors " + (billing === b ? "bg-secondary text-white" : "text-muted-foreground hover:text-foreground")}
+                    >
+                      {b === "monthly" ? "월간 결제" : "연간 결제"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 선택 칩 */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {SOLUTION_CATALOG.map((c) => (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => toggle(c.key)}
+                    aria-pressed={isOn(c.key)}
+                    className={
+                      "rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors " +
+                      (isOn(c.key) ? "border-secondary bg-secondary text-white" : "border-border bg-background text-muted-foreground hover:text-foreground")
+                    }
+                  >
+                    {isOn(c.key) ? "✓ " : "+ "}
+                    {c.brand}
+                  </button>
+                ))}
+                {isOn("log") ? (
+                  <select
+                    aria-label="CatchLog 월 페이지뷰"
+                    value={pv}
+                    onChange={(e) => setPv(Number(e.target.value))}
+                    className="rounded-full border bg-background px-3 py-1.5 text-sm"
+                  >
+                    {PV_OPTIONS.map((p) => (
+                      <option key={p} value={p}>
+                        CatchLog {manPv(p)}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+              </div>
+
+              {/* 라인 아이템 */}
+              {q.items.length === 0 ? (
+                <p className="mt-5 text-sm text-muted-foreground">솔루션을 1개 이상 선택하세요. 아래 각 솔루션 가격표에서도 선택할 수 있습니다.</p>
+              ) : (
+                <dl className="mt-5 space-y-1.5 text-sm">
+                  {q.items.map((i) => {
+                    const c = SOLUTION_CATALOG.find((x) => x.key === i.key)!;
+                    return (
+                      <div key={i.key} className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">
+                          {c.brand} <span className="text-xs">· {c.name}{i.key === "log" ? ` (${manPv(pv)})` : ""}</span>
+                        </dt>
+                        <dd className="font-medium">{won(i.price)}</dd>
+                      </div>
+                    );
+                  })}
+                  {q.discountRate > 0 ? (
+                    <div className="flex justify-between gap-3 text-emerald-700">
+                      <dt>번들 할인 {q.discountRate}% ({q.items.length}종 구독)</dt>
+                      <dd className="font-medium">−{won(q.discount)}</dd>
+                    </div>
+                  ) : null}
+                  <div className="flex items-baseline justify-between gap-3 border-t pt-2">
+                    <dt className="font-bold text-secondary">합계 / {unit} (VAT 별도)</dt>
+                    <dd className="text-2xl font-extrabold text-secondary">{won(q.total)}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3 text-xs text-muted-foreground">
+                    <dt>VAT 포함</dt>
+                    <dd>{won(q.totalWithVat)}</dd>
+                  </div>
+                </dl>
+              )}
+              <p className="mt-3 text-xs text-muted-foreground">
+                2종 구독 시 전체 금액 {BUNDLE_DISCOUNT[2]}% · 3종 구독 시 {BUNDLE_DISCOUNT[3]}% 할인. 광고비 페이백 고객에게는 3종 모두 <strong>무료</strong>입니다.
+              </p>
+            </div>
+
+            {/* 문의 */}
+            <div className="rounded-xl border bg-muted/30 p-4">
+              {sent ? (
+                <div className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">✅ 구독 문의가 접수되었습니다. 담당자가 곧 연락드립니다.</div>
+              ) : (
+                <>
+                  <p className="text-sm font-bold text-secondary">구독 문의</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">브랜드명과 연락처만 남겨주시면 세팅 안내를 드립니다.</p>
+                  <div className="mt-3 space-y-2">
+                    <Input placeholder="브랜드명 *" value={brand} onChange={(e) => setBrand(e.target.value)} maxLength={100} />
+                    <Input placeholder="연락처 * (010-0000-0000)" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" maxLength={20} />
+                  </div>
+                  {err ? <p className="mt-2 text-xs text-red-600">{err}</p> : null}
+                  <Button className="mt-3 w-full" disabled={!valid || busy} onClick={submit}>
+                    {busy ? "접수 중…" : "구독 문의하기"}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 솔루션별 상세 + 가격표 ── */}
+      {SOLUTION_CATALOG.map((c, idx) => (
+        <SolutionSection
+          key={c.key}
+          info={c}
+          flip={idx % 2 === 1}
+          billing={billing}
+          pv={pv}
+          on={isOn(c.key)}
+        />
+      ))}
+    </>
+  );
+}
+
+function SolutionSection({
+  info: c,
+  flip,
+  billing,
+  pv,
+  on,
+}: {
+  info: SolutionInfo;
+  flip: boolean;
+  billing: Billing;
+  pv: number;
+  on: boolean;
+}) {
+  const unit = billing === "yearly" ? "연" : "월";
+  const price = c.key === "log" ? catchlogMonthly(pv) * (billing === "yearly" ? 12 : 1) : FIXED_PRICES[c.key][billing];
+
+  return (
+    <section id={c.key} className="scroll-mt-16 border-t border-white/10 bg-secondary py-16 text-secondary-foreground md:py-20">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="grid items-start gap-8 md:grid-cols-2 md:gap-12">
+          <div className={flip ? "md:order-2" : ""}>
+            <span className="rounded-full bg-sky-400/20 px-2.5 py-0.5 text-xs font-bold text-sky-300">{c.no} · {c.brand}</span>
+            <h2 className="mt-3 text-2xl font-extrabold text-white md:text-3xl">{c.name}</h2>
+            <p className="mt-2 break-keep text-sm text-white/70">{c.tagline}</p>
+            <ul className="mt-6 space-y-4">
+              {c.features.map((f) => (
+                <li key={f.title} className="flex gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-lg">{f.icon}</span>
+                  <div>
+                    <p className="font-semibold text-white">{f.title}</p>
+                    <p className="mt-0.5 break-keep text-sm leading-relaxed text-white/65">{f.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-5 flex flex-wrap gap-1.5">
+              {c.highlights.map((h) => (
+                <span key={h} className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-white/75">
+                  {h}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className={(flip ? "md:order-1 " : "") + "md:sticky md:top-24"}>
+            <div className="overflow-hidden rounded-2xl border border-white/15 bg-[#0B1530] shadow-2xl shadow-black/30">
+              <div className="flex items-center gap-1.5 border-b border-white/10 bg-white/5 px-4 py-2.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
+                <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
+                <span className="ml-2 text-[11px] font-medium text-white/50">{c.videoTitle}</span>
+              </div>
+              <YouTubeEmbed videoId={c.videoId} videoTitle={c.videoTitle} trackingKey={`sub_${c.key}`} label={`${c.brand} 소개 영상 보기`} />
+            </div>
           </div>
         </div>
 
-        {/* 솔루션 카드 */}
-        <div className="grid gap-4 md:grid-cols-3">
-          {CATALOG.map((c) => {
-            const on = selected.includes(c.key);
-            const price =
-              c.key === "log"
-                ? catchlogMonthly(pv) * (billing === "yearly" ? 12 : 1)
-                : FIXED_PRICES[c.key][billing];
-            return (
-              <div
-                key={c.key}
-                className={
-                  "flex flex-col rounded-2xl border bg-card p-5 shadow-sm transition-colors " +
-                  (on ? "border-secondary ring-2 ring-secondary/20" : "border-border")
-                }
-              >
-                <label className="flex cursor-pointer items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={on}
-                    onChange={() => toggle(c.key)}
-                    className="mt-1 h-4 w-4 accent-[#111E38]"
-                    aria-label={`${c.name} 선택`}
-                  />
-                  <span>
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-primary">{c.brand}</span>
-                    <span className="block text-lg font-extrabold text-secondary">{c.name}</span>
-                    <span className="mt-0.5 block text-xs text-muted-foreground">{c.tagline}</span>
-                  </span>
-                </label>
+        {/* 가격표 */}
+        <div className="mt-10 rounded-2xl border border-white/10 bg-white p-6 text-foreground shadow-xl md:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-lg font-extrabold text-secondary">{c.brand} 요금제</p>
+              <p className="text-xs text-muted-foreground">
+                {c.key === "log" ? "사이트 1개 기준 · 전 기능 포함" : "계정 1개 기준 · 전 기능 포함"}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-semibold">
+              <span className="rounded-full bg-muted px-2.5 py-1 text-muted-foreground">VAT 별도</span>
+            </div>
+          </div>
 
-                <div className="mt-4 border-t pt-4">
-                  {c.key === "log" ? (
-                    <>
-                      <label className="block text-xs font-semibold text-muted-foreground" htmlFor="pv-select">
-                        월 페이지뷰 (사이트 1개 기준 · 전 기능 포함)
-                      </label>
-                      <select
-                        id="pv-select"
-                        value={pv}
-                        onChange={(e) => setPv(Number(e.target.value))}
-                        className="mt-1.5 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                      >
-                        {PV_OPTIONS.map((p) => (
-                          <option key={p} value={p}>
-                            {manPv(p)} — 월 {won(catchlogMonthly(p))}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                        {manPv(CATCHLOG_TIERS[CATCHLOG_TIERS.length - 1].pv)} 초과 시 10만 PV당{" "}
-                        {won(CATCHLOG_EXTRA_PER_100K)} 추가. 첫 {CATCHLOG_TRIAL_DAYS}일 무료체험, 체험 종료 후
-                        자동 결제 없음. {billing === "yearly" ? "연간 결제 시 월 요금 × 12로 계산됩니다." : ""}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      월 {won(FIXED_PRICES[c.key].monthly)} · 연 {won(FIXED_PRICES[c.key].yearly)}
-                      <span className="ml-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
-                        연간 2개월 무료
-                      </span>
-                    </p>
-                  )}
-                  <p className="mt-3 text-2xl font-extrabold text-secondary">
-                    {won(price)}
-                    <span className="ml-1 text-sm font-medium text-muted-foreground">/ {unit} · VAT 별도</span>
-                  </p>
-                </div>
-
-                <ul className="mt-4 space-y-1.5 text-sm">
-                  {c.features.map((f) => (
-                    <li key={f} className="flex gap-2 text-foreground/85">
-                      <span className="text-emerald-600">✓</span>
-                      <span className="break-keep">{f}</span>
-                    </li>
+          {c.key === "log" ? (
+            <>
+              <table className="mt-5 w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-xs text-muted-foreground">
+                    <th className="py-2 font-medium">월 페이지뷰</th>
+                    <th className="py-2 text-right font-medium">월 요금</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {CATCHLOG_TIERS.map((t) => (
+                    <tr key={t.pv} className={"border-b " + (pv === t.pv ? "bg-sky-50/60" : "")}>
+                      <td className="py-3">{manPv(t.pv)}</td>
+                      <td className="py-3 text-right text-base font-extrabold text-secondary">{won(t.monthly)}</td>
+                    </tr>
                   ))}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
+                </tbody>
+              </table>
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                {manPv(CATCHLOG_TIERS[CATCHLOG_TIERS.length - 1].pv)} 초과 시 10만 PV당 {won(CATCHLOG_EXTRA_PER_100K)} 추가. 연간 결제 선택 시 월 요금 × 12로
+                계산됩니다.
+              </p>
+            </>
+          ) : (
+            <table className="mt-5 w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs text-muted-foreground">
+                  <th className="py-2 font-medium">결제 주기</th>
+                  <th className="py-2 text-right font-medium">요금</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className={"border-b " + (billing === "monthly" ? "bg-sky-50/60" : "")}>
+                  <td className="py-3">월간</td>
+                  <td className="py-3 text-right text-base font-extrabold text-secondary">{won(FIXED_PRICES[c.key].monthly)} / 월</td>
+                </tr>
+                <tr className={"border-b " + (billing === "yearly" ? "bg-sky-50/60" : "")}>
+                  <td className="py-3">
+                    연간 <span className="ml-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">2개월 무료</span>
+                  </td>
+                  <td className="py-3 text-right text-base font-extrabold text-secondary">{won(FIXED_PRICES[c.key].yearly)} / 연</td>
+                </tr>
+              </tbody>
+            </table>
+          )}
 
-        <div className="rounded-xl border border-dashed bg-card/60 p-4 text-sm text-muted-foreground">
-          <p className="font-semibold text-foreground">번들 할인</p>
-          <p className="mt-1">
-            2종 구독 시 전체 금액 <strong className="text-secondary">{BUNDLE_DISCOUNT[2]}% 할인</strong> · 3종 구독 시 전체
-            금액 <strong className="text-secondary">{BUNDLE_DISCOUNT[3]}% 할인</strong>. 모든 금액은 VAT 별도입니다.
-          </p>
+          <div className="mt-5">
+            <p className="text-sm font-bold text-secondary">포함 기능</p>
+            <ul className="mt-2 grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
+              {c.included.map((f) => (
+                <li key={f} className="flex gap-2 text-foreground/85">
+                  <span className="text-emerald-600">✓</span>
+                  <span className="break-keep">{f}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t pt-5">
+            <p className="text-sm text-muted-foreground">
+              {on ? (
+                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">✓ 예상 구독료에 포함됨</span>
+              ) : (
+                <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">예상 구독료에 미포함</span>
+              )}
+              <a href="#quote" className="ml-3 text-xs font-semibold text-primary underline-offset-2 hover:underline">
+                상단 예상 구독료 박스에서 선택 ↑
+              </a>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              현재 선택 기준 <strong className="text-lg font-extrabold text-secondary">{won(price)}</strong> / {unit} · VAT 별도
+            </p>
+          </div>
         </div>
       </div>
-
-      {/* 견적 요약 + 문의 */}
-      <aside className="rounded-2xl border bg-card p-5 shadow-sm lg:sticky lg:top-6">
-        <p className="text-sm font-bold text-secondary">예상 구독료 ({billing === "yearly" ? "연간" : "월간"})</p>
-        {q.items.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">솔루션을 1개 이상 선택하세요.</p>
-        ) : (
-          <dl className="mt-3 space-y-1.5 text-sm">
-            {q.items.map((i) => {
-              const c = CATALOG.find((x) => x.key === i.key)!;
-              return (
-                <div key={i.key} className="flex justify-between gap-3">
-                  <dt className="text-muted-foreground">
-                    {c.brand}
-                    {i.key === "log" ? <span className="ml-1 text-xs">({manPv(pv)})</span> : null}
-                  </dt>
-                  <dd className="font-medium">{won(i.price)}</dd>
-                </div>
-              );
-            })}
-            {q.discountRate > 0 ? (
-              <div className="flex justify-between gap-3 text-emerald-700">
-                <dt>번들 할인 {q.discountRate}% ({q.items.length}종)</dt>
-                <dd className="font-medium">−{won(q.discount)}</dd>
-              </div>
-            ) : null}
-            <div className="flex justify-between gap-3 border-t pt-2 text-base">
-              <dt className="font-bold text-secondary">합계 (VAT 별도)</dt>
-              <dd className="text-xl font-extrabold text-secondary">{won(q.total)}</dd>
-            </div>
-            <div className="flex justify-between gap-3 text-xs text-muted-foreground">
-              <dt>VAT 포함</dt>
-              <dd>{won(q.totalWithVat)}</dd>
-            </div>
-          </dl>
-        )}
-
-        <div className="mt-5 border-t pt-4">
-          {sent ? (
-            <div className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">
-              ✅ 구독 문의가 접수되었습니다. 담당자가 곧 연락드립니다.
-            </div>
-          ) : (
-            <>
-              <p className="text-sm font-semibold text-secondary">구독 문의</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">브랜드명과 연락처만 남겨주시면 세팅 안내를 드립니다.</p>
-              <div className="mt-3 space-y-2">
-                <Input placeholder="브랜드명 *" value={brand} onChange={(e) => setBrand(e.target.value)} maxLength={100} />
-                <Input placeholder="연락처 * (010-0000-0000)" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" maxLength={20} />
-              </div>
-              {err ? <p className="mt-2 text-xs text-red-600">{err}</p> : null}
-              <Button className="mt-3 w-full" disabled={!valid || busy} onClick={submit}>
-                {busy ? "접수 중…" : "구독 문의하기"}
-              </Button>
-            </>
-          )}
-          <p className="mt-3 break-keep text-[11px] leading-relaxed text-muted-foreground">
-            💡 광고비 페이백 고객에게는 솔루션 3종이 <strong>무료</strong>로 제공됩니다.
-          </p>
-        </div>
-      </aside>
-    </div>
+    </section>
   );
 }
