@@ -29,6 +29,9 @@ export default async function PublicLayout({
             <Link href="/" className="hover:text-white">
               광고비 페이백
             </Link>
+            <Link href="/solutions" className="hover:text-white">
+              솔루션 구독
+            </Link>
             <Link href="/matching" className="hover:text-white">
               대행사 매칭
             </Link>
@@ -99,6 +102,9 @@ export default async function PublicLayout({
                 <p className="font-semibold text-white/80">서비스</p>
                 <Link href="/" className="block hover:text-white">
                   광고비 페이백
+                </Link>
+                <Link href="/solutions" className="block hover:text-white">
+                  솔루션 구독
                 </Link>
                 <Link href="/matching" className="block hover:text-white">
                   대행사 매칭

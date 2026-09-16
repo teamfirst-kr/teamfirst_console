@@ -22,6 +22,7 @@ export async function submitQuickLead(input: {
   phone: string;
   budget?: number | null;
   source?: string;
+  label?: string; // 운영자 알림 제목 (기본: 페이백 간편 신청 리드)
 }): Promise<{ ok: boolean }> {
   const brand = String(input.brand ?? "").trim().slice(0, 100);
   const phone = String(input.phone ?? "").replace(/[^\d+-]/g, "").slice(0, 20);
@@ -54,11 +55,11 @@ export async function submitQuickLead(input: {
   // 핫리드 — 즉시 운영자 알림 (메일 + 인앱)
   await notifyAdmins({
     type: "pb_lead",
-    title: "⚡ 페이백 간편 신청 리드",
+    title: String(input.label ?? "").slice(0, 60) || "⚡ 페이백 간편 신청 리드",
     rows: [
       ["브랜드", brand],
       ["연락처", phone],
-      ["월 예상 광고비", budget ? `${budget.toLocaleString()}원` : "미입력"],
+      [input.label ? "예상 구독료(VAT 별도)" : "월 예상 광고비", budget ? `${budget.toLocaleString()}원` : "미입력"],
       ["유입 위치", source ?? "-"],
     ],
     link: "/admin/payback",
