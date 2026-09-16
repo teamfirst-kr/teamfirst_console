@@ -5,6 +5,7 @@ import { DateText } from "@/components/date-text";
 import { createClient } from "@/lib/supabase/server";
 import { calcPayback, rateTableFromRow } from "@/lib/payback";
 import { SURVEY_REASONS } from "@/lib/apply-survey";
+import { describeSubscriptionSource, parseSubscriptionSource } from "@/lib/solution-pricing";
 
 import { ApplicationActions, ClientActions } from "./board-cards";
 
@@ -390,7 +391,7 @@ export default async function PaybackPipelinePage() {
                 <tr>
                   <th className="px-4 py-2.5 font-medium">브랜드</th>
                   <th className="px-4 py-2.5 font-medium">연락처</th>
-                  <th className="px-4 py-2.5 font-medium">월 예상 광고비</th>
+                  <th className="px-4 py-2.5 font-medium">월 예상 광고비 / 구독료</th>
                   <th className="px-4 py-2.5 font-medium">유입</th>
                   <th className="px-4 py-2.5 font-medium">접수 시각</th>
                 </tr>
@@ -413,9 +414,17 @@ export default async function PaybackPipelinePage() {
                       {l.expected_budget
                         ? `${Number(l.expected_budget).toLocaleString()}원`
                         : "—"}
+                      {(() => {
+                        const sub = parseSubscriptionSource(l.source);
+                        return sub ? (
+                          <span className="ml-1.5 rounded bg-sky-50 px-1.5 py-0.5 text-[11px] font-semibold text-sky-800">
+                            구독료 / {sub.billing === "yearly" ? "연" : "월"} · VAT 별도
+                          </span>
+                        ) : null;
+                      })()}
                     </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">
-                      {l.source ?? "-"}
+                      {describeSubscriptionSource(l.source) ?? l.source ?? "-"}
                     </td>
                     <td className="px-4 py-2.5 text-muted-foreground">
                       <DateText value={l.created_at} />

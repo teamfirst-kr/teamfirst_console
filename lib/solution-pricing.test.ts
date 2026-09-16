@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { catchlogMonthly, quote } from "./solution-pricing";
+import { catchlogMonthly, describeSubscriptionSource, encodeSubscriptionSource, parseSubscriptionSource, quote } from "./solution-pricing";
 
 describe("캐치로그 PV 구간 요금", () => {
   it.each([
@@ -48,5 +48,20 @@ describe("번들 할인", () => {
   });
   it("중복 키는 1종으로 계산", () => {
     expect(quote(["bid", "bid"], "monthly", 0).discountRate).toBe(0);
+  });
+});
+
+describe("구독 문의 source 인코딩", () => {
+  it("선택 순서와 무관하게 log→report→bid 순, PV는 CatchLog 포함 시에만", () => {
+    expect(encodeSubscriptionSource(["bid", "log"], "yearly", 200_000)).toBe("sub:log+bid/Y/pv20");
+    expect(encodeSubscriptionSource(["report", "bid"], "monthly", 200_000)).toBe("sub:report+bid/M");
+    expect(encodeSubscriptionSource(["log", "report", "bid"], "monthly", 1_000_000).length).toBeLessThanOrEqual(40);
+  });
+  it("파싱 왕복 + 관리자 설명 문자열", () => {
+    expect(parseSubscriptionSource("sub:log+report+bid/Y/pv10")).toEqual({ keys: ["log", "report", "bid"], billing: "yearly", pv: 100_000 });
+    expect(parseSubscriptionSource("sub:report/M")).toEqual({ keys: ["report"], billing: "monthly", pv: null });
+    expect(parseSubscriptionSource("calc:hero")).toBeNull();
+    expect(parseSubscriptionSource(null)).toBeNull();
+    expect(describeSubscriptionSource("sub:log+report/Y/pv30")).toBe("구독 문의 · CatchLog+AUTO REPORT · 연간 · 30만 PV");
   });
 });

@@ -1,4 +1,4 @@
-import type { SolutionKey } from "@/lib/solution-pricing";
+import { SOLUTION_BRAND, type SolutionKey } from "@/lib/solution-pricing";
 
 // 솔루션 구독 페이지 상세 카탈로그.
 // 상세 내용(headline/intro/chips/features/steps/stats)은 구 "자세히 알아보기" 팝업 문서
@@ -7,7 +7,7 @@ import type { SolutionKey } from "@/lib/solution-pricing";
 
 export type SolutionFeature = { icon: string; title: string; body: string };
 export type SolutionStep = { title: string; body: string };
-export type SolutionStat = { value: string; label: string; sub: string };
+export type SolutionStat = { value: string; label: string; sub?: string }; // sub: 원문에 있을 때만
 export type SolutionInfo = {
   key: SolutionKey;
   no: string;
@@ -29,7 +29,7 @@ export const SOLUTION_CATALOG: SolutionInfo[] = [
   {
     key: "log",
     no: "솔루션 1",
-    brand: "CatchLog",
+    brand: SOLUTION_BRAND.log,
     name: "로그분석 솔루션",
     videoId: "GO2swOgoYZ8",
     videoTitle: "AI 로그분석 솔루션 - Catch LOG",
@@ -55,14 +55,14 @@ export const SOLUTION_CATALOG: SolutionInfo[] = [
     stats: [
       { value: "월 200만+", label: "분석하는 페이지뷰", sub: "최근 30일 실측 기준" },
       { value: "80만+", label: "검증한 광고 클릭", sub: "누적 데이터" },
-      { value: "14만+", label: "탐지한 무효·의심 클릭", sub: "누적 데이터" },
+      { value: "14만+", label: "탐지한 무효·의심 클릭" },
     ],
     closing: "봇을 제외한 실방문 기준으로, 광고비가 새는 지점을 숫자로 짚어드립니다.",
   },
   {
     key: "report",
     no: "솔루션 2",
-    brand: "AUTO REPORT",
+    brand: SOLUTION_BRAND.report,
     name: "자동리포트 솔루션",
     videoId: "xLSD-jPsczI",
     videoTitle: "일/주/월 자동 커스텀 리포트 솔루션 - AUTO REPORT",
@@ -95,7 +95,7 @@ export const SOLUTION_CATALOG: SolutionInfo[] = [
   {
     key: "bid",
     no: "솔루션 3",
-    brand: "AUTO BID",
+    brand: SOLUTION_BRAND.bid,
     name: "자동 ROAS 최적화 솔루션",
     videoId: "RmjtpBuGC24",
     videoTitle: "ROAS & 매출볼륨 최적화 솔루션 - AUTO BID",

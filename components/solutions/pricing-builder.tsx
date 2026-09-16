@@ -13,7 +13,9 @@ import {
   CATCHLOG_MAX_PV,
   CATCHLOG_TIERS,
   FIXED_PRICES,
+  SOLUTION_KEYS,
   catchlogMonthly,
+  encodeSubscriptionSource,
   quote,
   type Billing,
   type SolutionKey,
@@ -24,22 +26,22 @@ import { SOLUTION_CATALOG, type SolutionInfo } from "./solution-catalog";
 //  ① 예상 구독료 박스 — 결제 주기(월간/연간)·솔루션 선택 칩·CatchLog PV·견적·구독 문의 (선택은 여기서만)
 //  ② 섹션 점프 내비 (CatchLog / AUTO REPORT / AUTO BID)
 //  ③ 솔루션별 섹션 — 제목(중앙) → 소개 영상(상단 고정) + 요금제(영상 높이에 맞춤) → 상세 소개(네이티브, 라이트)
-//  ④ 박스가 화면 밖으로 나가면 하단 고정 요약 바(합계 + 구독 문의로 이동)
+//  ④ 박스가 화면 밖으로 나가면 하단 고정 요약 바(합계 + 구독 문의로 이동) — 페이지 끝(크로스셀·푸터)에서는 숨김
 // 요금 계산은 lib/solution-pricing.ts 단일 모듈만 사용한다.
 
 const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
 const manPv = (pv: number) => `월 ${Math.round(pv / 10_000)}만 PV`;
-const ALL_KEYS: SolutionKey[] = ["log", "report", "bid"];
+const ALL_KEYS = SOLUTION_KEYS;
 const PV_OPTIONS = Array.from({ length: CATCHLOG_MAX_PV / 100_000 }, (_, i) => (i + 1) * 100_000);
 
-// **강조** 마크업 렌더러
-function Rich({ text }: { text: string }) {
+// **강조** 마크업 렌더러 — 본문(muted)에서는 진한 세미볼드, 헤드라인(이미 extrabold navy)에서는 브랜드 블루로 구분
+function Rich({ text, strongClass = "font-semibold text-secondary" }: { text: string; strongClass?: string }) {
   const parts = text.split("**");
   return (
     <>
       {parts.map((p, i) =>
         i % 2 === 1 ? (
-          <strong key={i} className="font-semibold text-secondary">
+          <strong key={i} className={strongClass}>
             {p}
           </strong>
         ) : (
@@ -60,15 +62,24 @@ export function PricingBuilder() {
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [quoteVisible, setQuoteVisible] = useState(true);
+  const [pastEnd, setPastEnd] = useState(false);
   const quoteRef = useRef<HTMLElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
 
-  // 예상 구독료 박스가 화면 밖으로 나가면 하단 요약 바 노출
+  // 예상 구독료 박스가 화면 밖으로 나가면 하단 요약 바 노출.
+  // 단, 솔루션 섹션 끝(하단 크로스셀·푸터 영역)에 도달하면 숨겨 푸터 마지막 줄을 가리지 않는다.
   useEffect(() => {
-    const el = quoteRef.current;
-    if (!el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(([e]) => setQuoteVisible(e.isIntersecting), { threshold: 0 });
-    io.observe(el);
-    return () => io.disconnect();
+    const q = quoteRef.current;
+    const end = endRef.current;
+    if (!q || !end || typeof IntersectionObserver === "undefined") return;
+    const qo = new IntersectionObserver(([e]) => setQuoteVisible(e.isIntersecting), { threshold: 0 });
+    const eo = new IntersectionObserver(([e]) => setPastEnd(e.isIntersecting || e.boundingClientRect.top < 0), { threshold: 0 });
+    qo.observe(q);
+    eo.observe(end);
+    return () => {
+      qo.disconnect();
+      eo.disconnect();
+    };
   }, []);
 
   const q = useMemo(() => quote(selected, billing, pv), [selected, billing, pv]);
@@ -85,8 +96,15 @@ export function PricingBuilder() {
     setErr(null);
     try {
       const keys = ALL_KEYS.filter(isOn);
-      const source = `sub:${keys.join("+")}/${billing === "yearly" ? "Y" : "M"}${keys.includes("log") ? `/pv${Math.round(pv / 10_000)}` : ""}`;
-      const res = await submitQuickLead({ brand, phone, budget: q.total, source, label: "🧩 솔루션 구독 문의" });
+      const source = encodeSubscriptionSource(keys, billing, pv);
+      const res = await submitQuickLead({
+        brand,
+        phone,
+        budget: q.total,
+        source,
+        label: "🧩 솔루션 구독 문의",
+        budgetLabel: `예상 구독료 / ${unit} (VAT 별도)`,
+      });
       if (!res.ok) {
         setErr("접수에 실패했습니다. 잠시 후 다시 시도해주세요.");
         return;
@@ -103,7 +121,7 @@ export function PricingBuilder() {
   return (
     <>
       {/* ── ① 예상 구독료 박스 ── */}
-      <section id="quote" ref={quoteRef} className="mx-auto max-w-6xl scroll-mt-20 px-6 pt-12">
+      <section id="quote" ref={quoteRef} className="mx-auto max-w-6xl scroll-mt-20 px-6 pb-10 pt-12 md:pb-12">
         <div className="rounded-2xl border bg-card p-5 shadow-sm md:p-7">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div>
@@ -235,17 +253,22 @@ export function PricingBuilder() {
       {SOLUTION_CATALOG.map((c, idx) => (
         <SolutionSection key={c.key} info={c} billing={billing} pv={pv} on={isOn(c.key)} alt={idx % 2 === 1} />
       ))}
+      {/* 섹션 끝 센티널 — 여기를 지나면(크로스셀·푸터) 요약 바 숨김 */}
+      <div ref={endRef} aria-hidden className="h-px" />
 
       {/* ── ④ 하단 고정 요약 바 ── */}
-      {!quoteVisible && q.items.length > 0 ? (
+      {!quoteVisible && !pastEnd && q.items.length > 0 ? (
         <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-card/95 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
-            <p className="min-w-0 truncate text-sm">
+            <p className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-sm leading-tight">
               <span className="font-semibold text-secondary">{q.items.length}종 선택</span>
-              <span className="text-muted-foreground"> · {billing === "yearly" ? "연간" : "월간"} </span>
+              <span className="text-muted-foreground">· {billing === "yearly" ? "연간" : "월간"}</span>
               <strong className="text-base font-extrabold text-secondary">{won(q.total)}</strong>
-              <span className="text-xs text-muted-foreground"> / {unit} · VAT 별도</span>
-              {q.discountRate > 0 ? <span className="ml-2 rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-bold text-emerald-700">{q.discountRate}% 할인</span> : null}
+              <span className="text-xs text-muted-foreground">
+                / {unit}
+                <span className="hidden sm:inline"> · VAT 별도</span>
+              </span>
+              {q.discountRate > 0 ? <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-bold text-emerald-700">{q.discountRate}% 할인</span> : null}
             </p>
             <Button asChild size="sm" className="shrink-0">
               <a href="#quote">구독 문의 ↑</a>
@@ -368,7 +391,7 @@ function SolutionSection({ info: c, billing, pv, on, alt }: { info: SolutionInfo
             <h3 className="break-keep text-2xl font-extrabold leading-snug text-secondary md:text-[28px]">
               {c.headline[0]}
               <br />
-              <Rich text={c.headline[1]} />
+              <Rich text={c.headline[1]} strongClass="font-extrabold text-[#004AAD]" />
             </h3>
             <p className="mt-4 break-keep leading-relaxed text-muted-foreground">{c.intro}</p>
             <div className="mt-4 flex flex-wrap gap-1.5">
@@ -416,7 +439,7 @@ function SolutionSection({ info: c, billing, pv, on, alt }: { info: SolutionInfo
               <div key={s.label} className="rounded-2xl border border-primary/15 bg-primary/[0.04] p-5 text-center">
                 <p className="text-2xl font-extrabold text-primary md:text-[28px]">{s.value}</p>
                 <p className="mt-1.5 break-keep text-sm font-semibold text-secondary">{s.label}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{s.sub}</p>
+                {s.sub ? <p className="mt-0.5 text-xs text-muted-foreground">{s.sub}</p> : null}
               </div>
             ))}
           </div>
