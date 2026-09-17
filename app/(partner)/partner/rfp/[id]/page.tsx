@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentPartnerId } from "@/lib/auth";
 import {
   REQUEST_MEDIA,
+  isRfpVoidStatus,
   type MatchingBrief,
 } from "@/lib/schemas/matching-request";
 
@@ -57,7 +58,8 @@ export default async function PartnerRfpDetailPage({
     .eq("id", id)
     .single();
 
-  if (!request) notFound();
+  // 반려·취소된 요청의 RFP는 파트너에게 무효
+  if (!request || isRfpVoidStatus(request.status)) notFound();
 
   const { data: myApp } = await supabase
     .from("applications")
