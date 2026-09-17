@@ -479,3 +479,13 @@
 - **배경(사용자 리포트)**: 운영자가 반려한 테스트 요청이 파트너 "도착한 RFP" 목록에 계속 노출됨. 파트너 화면이 `rfp_notifications` 존재 여부만 보고 요청의 현재 상태를 확인하지 않았기 때문 (지원 제출 액션만 ACCEPTING 상태 가드가 있었음).
 - **결정**: `isRfpVoidStatus(status)` 헬퍼 추가 — `rejected`·`cancelled`를 "파트너에게 무효인 RFP"로 정의. 파트너 대시보드 목록·요약 카운트에서 제외하고, RFP 상세·지원 페이지·RFP PDF(파트너 역할)는 notFound 처리. 운영자·광고주는 반려 건을 계속 열람 가능.
 - **비고**: `rfp_notifications` 행은 삭제하지 않음(발송 이력 보존) — 노출만 앱 레이어에서 차단. `closed_won/closed_lost`는 정상 종결 상태라 이력 노출 유지. DB 변경 없음.
+
+### D-083. 솔루션 구독 요금의 운영자 관리 전환 (2026-09-17)
+- **사용자 요청**: "솔루션 가격도 admin에서 관리할 수 있는 페이지 생성해줘".
+- **결정**: 하드코딩이던 요금을 `pb_app_settings.solution_pricing`(JSONB) 단일 키로 이동하고 `/admin/solutions/pricing`(사이드바 "요금 설정")에서 수정. `lib/solution-pricing.ts`에 `SolutionPricingConfig` 타입·`DEFAULT_PRICING`·`parseSolutionPricingConfig`(필드 단위 검증·기본값 병합)를 추가하고 `catchlogMonthly/solutionPrice/quote`에 옵션 cfg 파라미터를 더해 기존 호출부·테스트와 호환 유지. 공개 요금 페이지(/solutions)와 어드민 구독 폼은 서버에서 `getSolutionPricing()`으로 읽어 props로 전달. 키가 없거나 손상 시 코드 기본값 사용 — 마이그레이션 전에도 안전.
+- **연간 배지 동적화**: "2개월 무료" 하드코딩을 실제 비율(12 − 연간/월간 반올림)로 계산해 설정 변경 시 거짓 표기가 되지 않게 함.
+- **DB**: `030_solution_pricing_public.sql` — anon이 solution_pricing 키만 SELECT 가능(027 promo와 동일 패턴). 쓰기는 운영자 확인 후 service_role 경유. 기등록 구독의 amount는 불변(협의가).
+
+### D-084. 어드민 신규 대행사 직접 등록 (2026-09-17)
+- **배경**: 신규 대행사 등록 경로가 공개 등록신청서(/partner/apply)뿐이라 기존/오프라인 협의 대행사를 운영자가 시스템에 올릴 방법이 없었음.
+- **결정**: `/admin/partners/new` — 핵심 필드(대행사명·사업자번호·담당자·연락처·매체 등)만 입력하는 직접 등록 폼. RLS `partners_admin_all`로 운영자 세션 insert(마이그레이션 불필요). 초기 상태는 라디오로 명시 선택(기본 '계약 완료' — RFP 발송 대상 포함을 라벨에 표기, pending/reviewing 선택 가능). `application` JSONB는 공개 신청서와 같은 구조의 빈 값으로 채워 상세 화면 호환, fee_agreement=true(오프라인 합의 전제). reviewed_at/contracted_at은 상태에 맞춰 세팅. 계정 발급은 기존 상세 화면 버튼 재사용. 진입점은 파트너 목록 우측 상단 "+ 신규 대행사 직접 등록".

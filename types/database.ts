@@ -178,6 +178,8 @@ type PartnerInsert = {
   contact_phone?: string | null;
   address?: string | null;
   status?: PartnerStatus;
+  reviewed_at?: string | null;
+  contracted_at?: string | null;
   intro?: string | null;
   specialty?: string | null;
   portfolio?: Json | null;

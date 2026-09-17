@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { catchlogMonthly, describeSubscriptionSource, encodeSubscriptionSource, parseSubscriptionSource, quote } from "./solution-pricing";
+import {
+  DEFAULT_PRICING,
+  catchlogMonthly,
+  describeSubscriptionSource,
+  encodeSubscriptionSource,
+  parseSolutionPricingConfig,
+  parseSubscriptionSource,
+  quote,
+} from "./solution-pricing";
 
 describe("캐치로그 PV 구간 요금", () => {
   it.each([
@@ -48,6 +56,42 @@ describe("번들 할인", () => {
   });
   it("중복 키는 1종으로 계산", () => {
     expect(quote(["bid", "bid"], "monthly", 0).discountRate).toBe(0);
+  });
+});
+
+describe("요금 설정 (DB 오버라이드)", () => {
+  it("설정값이 계산에 반영된다", () => {
+    const cfg = parseSolutionPricingConfig({
+      catchlogTiers: [{ pv: 100_000, monthly: 20_000 }],
+      catchlogExtraPer100k: 5_000,
+      catchlogYearlyMonths: 11,
+      fixed: { report: { monthly: 80_000, yearly: 800_000 }, bid: { monthly: 120_000, yearly: 1_200_000 } },
+      bundleDiscount: { 2: 10, 3: 30 },
+    });
+    expect(catchlogMonthly(100_000, cfg)).toBe(20_000);
+    expect(catchlogMonthly(200_000, cfg)).toBe(25_000); // 최고 구간 초과 +5,000
+    const q = quote(["log", "report"], "monthly", 100_000, cfg);
+    expect(q.subtotal).toBe(100_000);
+    expect(q.discountRate).toBe(10);
+    const y = quote(["log"], "yearly", 100_000, cfg);
+    expect(y.items[0].price).toBe(220_000); // 20,000 × 11
+  });
+  it("손상되거나 빈 설정은 필드 단위로 기본값 병합", () => {
+    expect(parseSolutionPricingConfig(null)).toEqual(DEFAULT_PRICING);
+    expect(parseSolutionPricingConfig("oops")).toEqual(DEFAULT_PRICING);
+    const cfg = parseSolutionPricingConfig({ catchlogTiers: [], fixed: { report: { monthly: -5 } } });
+    expect(cfg.catchlogTiers).toEqual(DEFAULT_PRICING.catchlogTiers);
+    expect(cfg.fixed.report.monthly).toBe(DEFAULT_PRICING.fixed.report.monthly);
+  });
+  it("구간은 PV 오름차순으로 정렬된다", () => {
+    const cfg = parseSolutionPricingConfig({
+      catchlogTiers: [
+        { pv: 300_000, monthly: 30_000 },
+        { pv: 100_000, monthly: 10_000 },
+      ],
+    });
+    expect(cfg.catchlogTiers.map((t) => t.pv)).toEqual([100_000, 300_000]);
+    expect(catchlogMonthly(50_000, cfg)).toBe(10_000);
   });
 });
 
