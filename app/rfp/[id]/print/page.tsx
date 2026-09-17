@@ -43,8 +43,6 @@ export default async function RfpPrintPage({
 
   if (!request || !request.brief) notFound();
 
-  const masked = role === "partner";
-
   return (
     <div className="min-h-screen bg-muted/30">
       <style>{`
@@ -81,7 +79,6 @@ export default async function RfpPrintPage({
           title={request.title}
           budgetMonthly={request.budget_monthly}
           issuedAt={request.submitted_at ?? request.created_at}
-          masked={masked}
         />
       </div>
     </div>
