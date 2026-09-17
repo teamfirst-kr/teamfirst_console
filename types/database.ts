@@ -32,6 +32,30 @@ export type PbApplicationStatus =
   | "rejected";
 
 export type PbSettlementStatus = "draft" | "confirmed" | "paid" | "canceled";
+// 029: 간편 신청·구독 문의 리드 처리 상태
+export type LeadStatus = "new" | "contacted" | "converted" | "closed";
+// 029: 유료 솔루션 구독
+export type SolutionSubscriptionStatus = "pending" | "active" | "paused" | "ended";
+export type SolutionSubscriptionRow = {
+  id: string;
+  brand_name: string;
+  contact_name: string | null;
+  phone: string;
+  email: string | null;
+  solutions: string[]; // SolutionKey[]
+  billing: "monthly" | "yearly";
+  pv: number | null;
+  amount: number; // 결제 주기당 청구액 (VAT 별도)
+  status: SolutionSubscriptionStatus;
+  starts_at: string | null;
+  next_billing_at: string | null;
+  ends_at: string | null;
+  solution_login_id: string | null;
+  memo: string | null;
+  lead_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
 export type PbInvoiceStatus = "not_required" | "pending" | "issued" | "overdue";
 export type PbTransferStatus =
   | "pending"
@@ -366,8 +390,12 @@ export type Database = {
         phone: string;
         expected_budget: number | null;
         source: string | null;
+        status: LeadStatus; // 029
+        memo: string | null; // 029
+        handled_at: string | null; // 029
         created_at: string;
       }>;
+      solution_subscriptions: PbTable<SolutionSubscriptionRow>; // 029
       pb_apply_surveys: PbTable<{
         id: string;
         reason: string;

@@ -1,12 +1,10 @@
 import Link from "next/link";
 
 import { logoutAction } from "@/app/(auth)/actions";
-import { AppNav } from "@/components/app-nav";
+import { AppNav, type AppNavGroup, type AppNavItem } from "@/components/app-nav";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notification-bell";
 import { getMyNotifications } from "@/components/notification-actions";
-
-type NavItem = { href: string; label: string };
 
 export async function AppShell({
   title,
@@ -15,7 +13,7 @@ export async function AppShell({
   children,
 }: {
   title: string;
-  nav: NavItem[];
+  nav: AppNavItem[] | AppNavGroup[]; // 평면 목록 또는 서비스별 그룹
   email: string | undefined;
   children: React.ReactNode;
 }) {
@@ -38,7 +36,7 @@ export async function AppShell({
             TeamFirst
           </Link>
         </div>
-        <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-white/40">
+        <div className="px-3 pb-3 pt-2 text-[11px] uppercase tracking-wider text-white/40">
           {title}
         </div>
         <AppNav items={nav} />
