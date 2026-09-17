@@ -38,6 +38,7 @@ async function audit(action: string, entity: string, entityId: string, diff: Rec
 
 function revalidate() {
   revalidatePath("/admin/solutions");
+  revalidatePath("/admin/payback"); // 페이백 리드도 같은 상태 편집기 사용
   revalidatePath("/admin/dashboard");
 }
 

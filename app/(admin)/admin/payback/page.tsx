@@ -7,6 +7,8 @@ import { calcPayback, rateTableFromRow } from "@/lib/payback";
 import { SURVEY_REASONS } from "@/lib/apply-survey";
 
 import { ApplicationActions, ClientActions } from "./board-cards";
+import { LEAD_STATUS_LABEL } from "../solutions/labels";
+import { LeadStatusEditor } from "../solutions/lead-row";
 
 export const dynamic = "force-dynamic";
 
@@ -92,8 +94,8 @@ export default async function PaybackPipelinePage() {
         .limit(30),
       supabase
         .from("pb_leads")
-        .select("id, brand_name, phone, expected_budget, source, created_at")
-        .not("source", "like", "sub:%") // 솔루션 구독 문의는 /admin/solutions 에서 처리
+        .select("id, brand_name, phone, expected_budget, source, status, memo, created_at")
+        .or("source.is.null,source.not.like.sub:%") // 솔루션 구독 문의는 /admin/solutions 에서 처리 (NULL source는 페이백 리드)
         .order("created_at", { ascending: false })
         .limit(30),
   ]);
@@ -393,14 +395,18 @@ export default async function PaybackPipelinePage() {
                   <th className="px-4 py-2.5 font-medium">연락처</th>
                   <th className="px-4 py-2.5 font-medium">월 예상 광고비</th>
                   <th className="px-4 py-2.5 font-medium">유입</th>
+                  <th className="px-4 py-2.5 font-medium">처리</th>
                   <th className="px-4 py-2.5 font-medium">접수 시각</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {(leadRows ?? []).map((l) => (
-                  <tr key={l.id} className="bg-amber-50/40">
+                  <tr key={l.id} className={l.status === "new" ? "bg-amber-50/40" : undefined}>
                     <td className="px-4 py-2.5 font-semibold text-foreground">
                       {l.brand_name}
+                      <Badge variant={(LEAD_STATUS_LABEL[l.status] ?? LEAD_STATUS_LABEL.new).variant} className="ml-1.5">
+                        {(LEAD_STATUS_LABEL[l.status] ?? LEAD_STATUS_LABEL.new).label}
+                      </Badge>
                     </td>
                     <td className="px-4 py-2.5">
                       <a
@@ -417,6 +423,9 @@ export default async function PaybackPipelinePage() {
                     </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">
                       {l.source ?? "-"}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <LeadStatusEditor leadId={l.id} status={l.status} memo={l.memo} />
                     </td>
                     <td className="px-4 py-2.5 text-muted-foreground">
                       <DateText value={l.created_at} />

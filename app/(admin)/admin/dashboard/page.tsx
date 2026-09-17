@@ -62,7 +62,7 @@ export default async function AdminDashboardPage() {
     count("pb_clients", "status", ["agreement_sent", "agreement_signed", "transferring"]),
     count("pb_clients", "status", ["active"]),
     count("pb_monthly_settlements", "status", ["draft", "confirmed"]),
-    supabase.from("pb_leads").select("id", { count: "exact", head: true }).eq("status", "new").not("source", "like", "sub:%"),
+    supabase.from("pb_leads").select("id", { count: "exact", head: true }).eq("status", "new").or("source.is.null,source.not.like.sub:%"),
     count("marketer_requests", "status", ["submitted"]),
     count("marketer_requests", "status", ["reviewing", "matched", "interview"]),
     count("marketer_requests", "status", ["confirmed"]),
