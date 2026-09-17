@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import type { SolutionKey } from "@/lib/solution-pricing";
+import { getSolutionPricing } from "@/lib/solution-pricing-server";
 import type { SolutionSubscriptionRow } from "@/types/database";
 
 import { SubscriptionForm, defaultSubscriptionValues } from "../subscription-form";
@@ -15,6 +16,7 @@ export default async function EditSubscriptionPage({ params }: { params: Promise
   const { data } = await supabase.from("solution_subscriptions").select("*").eq("id", id).maybeSingle();
   if (!data) notFound();
   const s = data as SolutionSubscriptionRow;
+  const pricing = await getSolutionPricing();
 
   const initial = defaultSubscriptionValues({
     brand_name: s.brand_name,
@@ -43,7 +45,7 @@ export default async function EditSubscriptionPage({ params }: { params: Promise
         <h1 className="mt-2 text-2xl font-bold text-secondary">{s.brand_name} 구독 수정</h1>
         <p className="mt-1 text-sm text-muted-foreground">등록 {s.created_at.slice(0, 10)} · 최근 수정 {s.updated_at.slice(0, 10)}</p>
       </div>
-      <SubscriptionForm id={s.id} initial={initial} />
+      <SubscriptionForm id={s.id} initial={initial} pricing={pricing} />
     </div>
   );
 }

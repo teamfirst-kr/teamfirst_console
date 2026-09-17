@@ -8,12 +8,6 @@ import { YouTubeEmbed } from "@/components/payback/youtube-embed";
 import { submitQuickLead } from "@/app/(public)/apply/lead-actions";
 import { trackConversion } from "@/components/analytics/track";
 import {
-  BUNDLE_DISCOUNT,
-  CATCHLOG_EXTRA_PER_100K,
-  CATCHLOG_MAX_PV,
-  CATCHLOG_TIERS,
-  CATCHLOG_YEARLY_MONTHS,
-  FIXED_PRICES,
   SOLUTION_KEYS,
   catchlogMonthly,
   encodeSubscriptionSource,
@@ -21,6 +15,7 @@ import {
   solutionPrice,
   type Billing,
   type SolutionKey,
+  type SolutionPricingConfig,
 } from "@/lib/solution-pricing";
 import { SOLUTION_CATALOG, type SolutionInfo } from "./solution-catalog";
 
@@ -34,7 +29,8 @@ import { SOLUTION_CATALOG, type SolutionInfo } from "./solution-catalog";
 const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
 const manPv = (pv: number) => `월 ${Math.round(pv / 10_000)}만 PV`;
 const ALL_KEYS = SOLUTION_KEYS;
-const PV_OPTIONS = Array.from({ length: CATCHLOG_MAX_PV / 100_000 }, (_, i) => (i + 1) * 100_000);
+const pvOptionsOf = (maxPv: number) =>
+  Array.from({ length: Math.max(1, Math.floor(maxPv / 100_000)) }, (_, i) => (i + 1) * 100_000);
 
 // **강조** 마크업 렌더러 — 본문(muted)에서는 진한 세미볼드, 헤드라인(이미 extrabold navy)에서는 브랜드 블루로 구분
 function Rich({ text, strongClass = "font-semibold text-secondary" }: { text: string; strongClass?: string }) {
@@ -54,9 +50,9 @@ function Rich({ text, strongClass = "font-semibold text-secondary" }: { text: st
   );
 }
 
-export function PricingBuilder() {
+export function PricingBuilder({ pricing }: { pricing: SolutionPricingConfig }) {
   const [billing, setBilling] = useState<Billing>("monthly");
-  const [pv, setPv] = useState<number>(CATCHLOG_TIERS[0].pv);
+  const [pv, setPv] = useState<number>(pricing.catchlogTiers[0].pv);
   const [selected, setSelected] = useState<SolutionKey[]>(ALL_KEYS);
   const [brand, setBrand] = useState("");
   const [phone, setPhone] = useState("");
@@ -84,7 +80,8 @@ export function PricingBuilder() {
     };
   }, []);
 
-  const q = useMemo(() => quote(selected, billing, pv), [selected, billing, pv]);
+  const pvOptions = useMemo(() => pvOptionsOf(pricing.catchlogMaxPv), [pricing.catchlogMaxPv]);
+  const q = useMemo(() => quote(selected, billing, pv, pricing), [selected, billing, pv, pricing]);
   const unit = billing === "yearly" ? "연" : "월";
   const isOn = (k: SolutionKey) => selected.includes(k);
   const toggle = (k: SolutionKey) =>
@@ -164,7 +161,7 @@ export function PricingBuilder() {
                     </button>
                     {/* CatchLog 칩 바로 우측에 월 PV 드롭박스 */}
                     {c.key === "log" && isOn("log") ? (
-                      <PvSelect pv={pv} onChange={setPv} className="rounded-full px-3 py-1.5" />
+                      <PvSelect pv={pv} onChange={setPv} options={pvOptions} className="rounded-full px-3 py-1.5" />
                     ) : null}
                   </div>
                 ))}
@@ -202,7 +199,7 @@ export function PricingBuilder() {
                 </dl>
               )}
               <p className="mt-3 text-xs text-muted-foreground">
-                2종 구독 시 전체 금액 {BUNDLE_DISCOUNT[2]}% · 3종 구독 시 {BUNDLE_DISCOUNT[3]}% 할인. 광고비 페이백 고객에게는 3종 모두 <strong>무료</strong>입니다.
+                2종 구독 시 전체 금액 {pricing.bundleDiscount[2]}% · 3종 구독 시 {pricing.bundleDiscount[3]}% 할인. 광고비 페이백 고객에게는 3종 모두 <strong>무료</strong>입니다.
               </p>
             </div>
 
@@ -244,7 +241,7 @@ export function PricingBuilder() {
 
       {/* ── ③ 솔루션별 섹션 ── */}
       {SOLUTION_CATALOG.map((c, idx) => (
-        <SolutionSection key={c.key} info={c} billing={billing} pv={pv} onPvChange={setPv} on={isOn(c.key)} alt={idx % 2 === 1} />
+        <SolutionSection key={c.key} info={c} pricing={pricing} pvOptions={pvOptions} billing={billing} pv={pv} onPvChange={setPv} on={isOn(c.key)} alt={idx % 2 === 1} />
       ))}
       {/* 섹션 끝 센티널 — 여기를 지나면(크로스셀·푸터) 요약 바 숨김 */}
       <div ref={endRef} aria-hidden className="h-px" />
@@ -274,7 +271,7 @@ export function PricingBuilder() {
 }
 
 // 월 PV 드롭박스 (예상 구독료 박스와 CatchLog 요금제 카드가 같은 pv 상태를 공유)
-function PvSelect({ pv, onChange, className }: { pv: number; onChange: (pv: number) => void; className?: string }) {
+function PvSelect({ pv, onChange, options, className }: { pv: number; onChange: (pv: number) => void; options: number[]; className?: string }) {
   return (
     <select
       aria-label="CatchLog 월 페이지뷰"
@@ -282,7 +279,7 @@ function PvSelect({ pv, onChange, className }: { pv: number; onChange: (pv: numb
       onChange={(e) => onChange(Number(e.target.value))}
       className={"border bg-background text-sm " + (className ?? "")}
     >
-      {PV_OPTIONS.map((p) => (
+      {options.map((p) => (
         <option key={p} value={p}>
           {manPv(p)}
         </option>
@@ -293,6 +290,8 @@ function PvSelect({ pv, onChange, className }: { pv: number; onChange: (pv: numb
 
 function SolutionSection({
   info: c,
+  pricing,
+  pvOptions,
   billing,
   pv,
   onPvChange,
@@ -300,6 +299,8 @@ function SolutionSection({
   alt,
 }: {
   info: SolutionInfo;
+  pricing: SolutionPricingConfig;
+  pvOptions: number[];
   billing: Billing;
   pv: number;
   onPvChange: (pv: number) => void;
@@ -307,9 +308,11 @@ function SolutionSection({
   alt: boolean;
 }) {
   const unit = billing === "yearly" ? "연" : "월";
-  const price = solutionPrice(c.key, billing, pv);
-  const monthly = c.key === "log" ? catchlogMonthly(pv) : FIXED_PRICES[c.key].monthly;
-  const yearly = c.key === "log" ? catchlogMonthly(pv) * CATCHLOG_YEARLY_MONTHS : FIXED_PRICES[c.key].yearly;
+  const price = solutionPrice(c.key, billing, pv, pricing);
+  const monthly = c.key === "log" ? catchlogMonthly(pv, pricing) : pricing.fixed[c.key].monthly;
+  const yearly = c.key === "log" ? catchlogMonthly(pv, pricing) * pricing.catchlogYearlyMonths : pricing.fixed[c.key].yearly;
+  // 연간 결제 시 무료로 제공되는 개월 수 (월 요금 12개월분 대비) — 설정에 따라 계산
+  const freeMonths = monthly > 0 ? Math.max(0, 12 - Math.round(yearly / monthly)) : 0;
 
   return (
     <section id={c.key} className={"scroll-mt-16 border-t py-16 md:py-20 " + (alt ? "bg-muted/40" : "bg-background")}>
@@ -347,7 +350,7 @@ function SolutionSection({
             {c.key === "log" ? (
               <label className="mt-3 flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2 text-sm">
                 <span className="font-semibold text-secondary">월 페이지뷰</span>
-                <PvSelect pv={pv} onChange={onPvChange} className="rounded-md px-2.5 py-1.5 font-semibold" />
+                <PvSelect pv={pv} onChange={onPvChange} options={pvOptions} className="rounded-md px-2.5 py-1.5 font-semibold" />
               </label>
             ) : null}
 
@@ -365,7 +368,10 @@ function SolutionSection({
                 </tr>
                 <tr className={"border-b " + (billing === "yearly" ? "bg-sky-50/70" : "")}>
                   <td className="py-2.5">
-                    연간 <span className="ml-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">2개월 무료</span>
+                    연간{" "}
+                    {freeMonths > 0 ? (
+                      <span className="ml-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">{freeMonths}개월 무료</span>
+                    ) : null}
                   </td>
                   <td className="py-2.5 text-right font-extrabold text-secondary">{won(yearly)} / 연</td>
                 </tr>
@@ -373,8 +379,10 @@ function SolutionSection({
             </table>
             <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
               {c.key === "log"
-                ? `${manPv(CATCHLOG_TIERS[CATCHLOG_TIERS.length - 1].pv)} 초과 시 10만 PV당 ${won(CATCHLOG_EXTRA_PER_100K)} 추가 · 연간 결제 시 월 요금 × ${CATCHLOG_YEARLY_MONTHS}. `
-                : "연간 결제 시 월 요금 12개월분에서 2개월분이 할인됩니다. "}
+                ? `${manPv(pricing.catchlogTiers[pricing.catchlogTiers.length - 1].pv)} 초과 시 10만 PV당 ${won(pricing.catchlogExtraPer100k)} 추가 · 연간 결제 시 월 요금 × ${pricing.catchlogYearlyMonths}. `
+                : freeMonths > 0
+                  ? `연간 결제 시 월 요금 12개월분에서 ${freeMonths}개월분이 할인됩니다. `
+                  : ""}
               다른 솔루션과 함께 구독하면 번들 할인이 추가 적용됩니다.
             </p>
 

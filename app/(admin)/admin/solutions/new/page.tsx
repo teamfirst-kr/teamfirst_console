@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
 import { parseSubscriptionSource } from "@/lib/solution-pricing";
+import { getSolutionPricing } from "@/lib/solution-pricing-server";
 
 import { SubscriptionForm, defaultSubscriptionValues } from "../subscription-form";
 
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 // 구독 등록 — ?lead=<pb_leads.id> 로 진입하면 문의 내용(브랜드·연락처·선택 솔루션·주기·PV·견적)을 미리 채움
 export default async function NewSubscriptionPage({ searchParams }: { searchParams: Promise<{ lead?: string }> }) {
   const { lead } = await searchParams;
+  const pricing = await getSolutionPricing();
   let initial = defaultSubscriptionValues();
 
   if (lead) {
@@ -39,7 +41,7 @@ export default async function NewSubscriptionPage({ searchParams }: { searchPara
           {initial.lead_id ? "문의 내용을 불러왔습니다. 협의 결과에 맞게 수정 후 등록하세요." : "협의가 끝난 구독 고객을 등록합니다."}
         </p>
       </div>
-      <SubscriptionForm initial={initial} />
+      <SubscriptionForm initial={initial} pricing={pricing} />
     </div>
   );
 }

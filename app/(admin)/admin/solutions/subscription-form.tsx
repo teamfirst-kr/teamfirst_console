@@ -8,13 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  CATCHLOG_MAX_PV,
-  CATCHLOG_TIERS,
+  DEFAULT_PRICING,
   SOLUTION_BRAND,
   SOLUTION_KEYS,
   quote,
   type Billing,
   type SolutionKey,
+  type SolutionPricingConfig,
 } from "@/lib/solution-pricing";
 import type { SolutionSubscriptionStatus } from "@/types/database";
 
@@ -22,7 +22,6 @@ import { createSubscription, updateSubscription } from "./actions";
 import { SUB_STATUS_LABEL } from "./labels";
 import type { SubscriptionInput } from "./schema";
 
-const PV_OPTIONS = Array.from({ length: CATCHLOG_MAX_PV / 100_000 }, (_, i) => (i + 1) * 100_000);
 const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
 
 export type SubscriptionFormValues = {
@@ -51,7 +50,7 @@ export function defaultSubscriptionValues(partial: Partial<SubscriptionFormValue
     email: "",
     solutions: [...SOLUTION_KEYS],
     billing: "monthly",
-    pv: CATCHLOG_TIERS[0].pv,
+    pv: DEFAULT_PRICING.catchlogTiers[0].pv,
     amount: 0,
     status: "pending",
     starts_at: "",
@@ -65,14 +64,26 @@ export function defaultSubscriptionValues(partial: Partial<SubscriptionFormValue
 }
 
 // 구독 등록/수정 폼. 금액은 요금 모듈(quote)로 자동 계산하되 협의가로 직접 수정 가능.
-export function SubscriptionForm({ id, initial }: { id?: string; initial: SubscriptionFormValues }) {
+export function SubscriptionForm({
+  id,
+  initial,
+  pricing = DEFAULT_PRICING,
+}: {
+  id?: string;
+  initial: SubscriptionFormValues;
+  pricing?: SolutionPricingConfig;
+}) {
   const router = useRouter();
   const [v, setV] = useState<SubscriptionFormValues>(initial);
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string | null>(null);
   const set = <K extends keyof SubscriptionFormValues>(k: K, val: SubscriptionFormValues[K]) => setV((s) => ({ ...s, [k]: val }));
 
-  const q = useMemo(() => quote(v.solutions, v.billing, v.pv), [v.solutions, v.billing, v.pv]);
+  const PV_OPTIONS = useMemo(
+    () => Array.from({ length: Math.max(1, Math.floor(pricing.catchlogMaxPv / 100_000)) }, (_, i) => (i + 1) * 100_000),
+    [pricing.catchlogMaxPv],
+  );
+  const q = useMemo(() => quote(v.solutions, v.billing, v.pv, pricing), [v.solutions, v.billing, v.pv, pricing]);
   const hasLog = v.solutions.includes("log");
   const unit = v.billing === "yearly" ? "연" : "월";
 

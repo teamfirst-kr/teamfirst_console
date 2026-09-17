@@ -100,11 +100,19 @@ export default async function AdminPartnersPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-secondary">파트너 신청</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          입점 신청 → 검토 → 계약 → 입점 완료의 흐름을 관리하세요.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-secondary">파트너 신청</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            입점 신청 → 검토 → 계약 → 입점 완료의 흐름을 관리하세요.
+          </p>
+        </div>
+        <Link
+          href="/admin/partners/new"
+          className="rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          + 신규 대행사 직접 등록
+        </Link>
       </div>
 
       <BulkAccountPanel
