@@ -10,19 +10,18 @@ const MEDIA_LABEL = Object.fromEntries(
 );
 
 // 매칭 요청 brief를 RFP 문서로 렌더링 (인쇄·PDF·화면 공용).
-// masked=true → 광고주 PII(상호/대표/연락처 등)를 숨긴다(파트너 노출용).
+// 대행사에 전달되는 문서이므로 광고주 정보는 업체명·사이트 주소까지만 담는다.
+// (사업자등록번호·대표자·담당자·연락처·이메일은 어떤 뷰어에게도 렌더링 금지)
 export function RfpDocument({
   brief,
   title,
   budgetMonthly,
   issuedAt,
-  masked = false,
 }: {
   brief: MatchingBrief;
   title: string;
   budgetMonthly?: number | null;
   issuedAt?: string | null;
-  masked?: boolean;
 }) {
   const plannedBudgets = brief.planned_budgets ?? {};
   const hasPlanned = Object.keys(plannedBudgets).length > 0;
@@ -49,30 +48,14 @@ export function RfpDocument({
         </div>
       </header>
 
-      {/* 광고주 정보 (full 모드에서만) */}
-      {!masked ? (
-        <Section title="광고주 정보">
-          <Grid>
-            <Field label="상호(사업자명)" value={brief.company_name} />
-            <Field label="사업자등록번호" value={brief.biz_reg_no} />
-            <Field label="대표자명" value={brief.representative} />
-            <Field
-              label="담당자"
-              value={[brief.contact_name, brief.contact_title]
-                .filter(Boolean)
-                .join(" / ")}
-            />
-            <Field label="연락처" value={brief.phone} />
-            <Field label="이메일" value={brief.email} />
-          </Grid>
-        </Section>
-      ) : null}
-
-      {/* 브랜드 및 서비스 소개 */}
+      {/* 브랜드 및 서비스 소개 — 광고주 정보는 업체명·Website까지만 공개 */}
       <Section title="브랜드 및 서비스 소개">
-        <Field label="브랜드" value={brief.brand_name} />
-        <Field label="카테고리" value={brief.category} />
-        <Field label="Website" value={brief.website || "-"} />
+        <Grid>
+          <Field label="브랜드" value={brief.brand_name} />
+          <Field label="상호(사업자명)" value={brief.company_name} />
+          <Field label="카테고리" value={brief.category} />
+          <Field label="Website" value={brief.website || "-"} />
+        </Grid>
         <Block label="브랜드 소개" value={brief.product_intro} />
       </Section>
 
