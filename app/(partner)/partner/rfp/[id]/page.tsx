@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentPartnerId } from "@/lib/auth";
+import { formatDeadline, isRfpClosed, rfpDday } from "@/lib/rfp";
 import {
   REQUEST_MEDIA,
   type MatchingBrief,
@@ -53,11 +54,12 @@ export default async function PartnerRfpDetailPage({
 
   const { data: request } = await supabase
     .from("matching_requests")
-    .select("id, title, brief, budget_monthly, status, submitted_at, created_at")
+    .select("id, title, brief, budget_monthly, status, submitted_at, created_at, rfp_sent_at, rfp_deadline")
     .eq("id", id)
     .single();
 
   if (!request) notFound();
+  const closed = isRfpClosed(request.rfp_deadline);
 
   const { data: myApp } = await supabase
     .from("applications")
@@ -127,10 +129,15 @@ export default async function PartnerRfpDetailPage({
           <span className="text-xs text-white/70">
             발행일자{" "}
             {format(
-              new Date(request.submitted_at ?? request.created_at ?? Date.now()),
+              new Date(request.rfp_sent_at ?? request.submitted_at ?? request.created_at ?? Date.now()),
               "yyyy.MM.dd",
             )}
           </span>
+          {request.rfp_deadline ? (
+            <span className={"rounded-full px-3 py-1 text-xs font-semibold " + (closed ? "bg-white/10 text-white/60" : "bg-red-500/90 text-white")}>
+              지원 마감 {formatDeadline(request.rfp_deadline)} 23:59 · {rfpDday(request.rfp_deadline)}
+            </span>
+          ) : null}
         </div>
       </div>
 
@@ -245,6 +252,14 @@ export default async function PartnerRfpDetailPage({
             <Badge variant="success" className="mt-3">
               제출됨
             </Badge>
+          </>
+        ) : closed ? (
+          <>
+            <p className="text-lg font-bold text-secondary">지원이 마감되었습니다</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              지원 기한({formatDeadline(request.rfp_deadline!)} 23:59)이 지났습니다. 다음 RFP에서 다시 만나요.
+            </p>
+            <Badge variant="muted" className="mt-3">마감</Badge>
           </>
         ) : (
           <>

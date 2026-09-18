@@ -8,6 +8,7 @@ import { getCurrentRole } from "@/lib/auth";
 import { sendEmail } from "@/lib/email/resend";
 import { matchingRequestRejectedEmail, rfpArrivedEmail } from "@/lib/email/templates";
 import { notify, notifyMany } from "@/lib/notifications";
+import { formatDeadline, rfpDeadlineFrom, todayKst } from "@/lib/rfp";
 import {
   matchingRequestSchema,
   normalizeBizRegNo,
@@ -48,7 +49,7 @@ export async function sendRfp(
 
   const { data: request, error: reqError } = await supabase
     .from("matching_requests")
-    .select("id, title, brief, budget_monthly, status")
+    .select("id, title, brief, budget_monthly, status, rfp_deadline")
     .eq("id", requestId)
     .single();
 
@@ -93,12 +94,14 @@ export async function sendRfp(
     return { ok: false, error: insertError.message };
   }
 
-  // 상태 전환: submitted/draft → rfp_sent
+  // 상태 전환: submitted/draft → rfp_sent. 지원 기한은 최초 발행일(KST) + 5영업일 (추가 발송 시 유지)
+  const deadline = request.rfp_deadline ?? rfpDeadlineFrom(todayKst());
   await supabase
     .from("matching_requests")
     .update({
       status: "rfp_sent" satisfies RequestStatus,
       rfp_sent_at: new Date().toISOString(),
+      rfp_deadline: deadline,
     })
     .eq("id", requestId);
 
@@ -121,6 +124,7 @@ export async function sendRfp(
       marketingGoals: brief.marketing_goals,
       kpis: brief.kpis,
       preferredAgency: brief.preferred_agency,
+      deadline,
       rfpUrl,
     });
     const r = await sendEmail({ to: p.contact_email, ...mail });
@@ -143,7 +147,7 @@ export async function sendRfp(
     {
       type: "rfp",
       title: "새 RFP가 도착했습니다",
-      body: `${brief.brand_name ?? request.title} · ${brief.category ?? ""}`,
+      body: `${brief.brand_name ?? request.title} · ${brief.category ?? ""} · 지원 마감 ${formatDeadline(deadline)}`,
       link: `/partner/rfp/${requestId}`,
     },
   );

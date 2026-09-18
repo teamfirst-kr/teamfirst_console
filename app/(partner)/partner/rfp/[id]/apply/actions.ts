@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentPartnerId } from "@/lib/auth";
+import { formatDeadline, isRfpClosed } from "@/lib/rfp";
 import {
   rfpApplicationSchema,
   type ProposalAttachment,
@@ -64,12 +65,15 @@ export async function submitRfpApplication(
   // 모집 상태 가드: 후보 전달·마감된 요청에는 지원 불가.
   const { data: request } = await supabase
     .from("matching_requests")
-    .select("status")
+    .select("status, rfp_deadline")
     .eq("id", requestId)
     .maybeSingle();
   const ACCEPTING = new Set(["rfp_sent", "collecting", "curating"]);
   if (!request || !ACCEPTING.has(request.status)) {
     return { error: "이미 모집이 마감된 RFP입니다. 다음 기회에 지원해주세요." };
+  }
+  if (isRfpClosed(request.rfp_deadline)) {
+    return { error: `지원 기한(${formatDeadline(request.rfp_deadline!)} 23:59)이 지나 지원서를 제출할 수 없습니다.` };
   }
 
   // 중복 지원 선확인 (첨부 업로드 전에 걸러 고아 파일 방지)

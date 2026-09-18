@@ -474,3 +474,7 @@
 - **솔루션 구독 관리(`/admin/solutions`)**: 마이그레이션 029 — `pb_leads.status/memo/handled_at`(리드 처리 상태, 페이백 리드와 공용) + `solution_subscriptions`(유료 구독: 브랜드·연락처·솔루션 배열·결제 주기·PV·청구액·상태 pending/active/paused/ended·시작/다음 결제/종료일·솔루션 계정 ID·메모·lead_id, RLS admin). 페이지는 요약(신규 문의·구독 중·월 환산 매출·누적) → 구독 문의 리드(`source like 'sub:%'`, 상태·메모 편집, "이 문의로 구독 등록" 프리필) → 구독 고객(상태 전환·수정). 청구액은 `quote()` 정가를 기본으로 협의가 수정 가능. 페이백 파이프라인의 리드 표에서는 구독 문의를 제외. 페이백 고객의 무료 이용은 기존 `pb_entitlements`가 담당(분리 유지).
 - **대시보드**: "오늘의 할 일"을 상단으로 올리고 서비스별 섹션(광고비 페이백 / 솔루션 구독 / 대행사 매칭+파이프라인 / 마케터 매칭 / 콘텐츠)으로 재구성. 각 섹션 헤더에 해당 관리 화면 바로가기.
 
+### D-082. RFP 지원 기한 = 발행일 + 5영업일 / 파트너 본인 대행사 정보 조회·수정 (2026-09-18)
+- **RFP 지원 기한**: 마이그레이션 030 `matching_requests.rfp_deadline DATE`. RFP 최초 발송 시 `rfpDeadlineFrom(todayKst())`(`lib/rfp.ts`, 주말·공휴일 제외 5영업일, `lib/payback-domain.ts`의 `addBusinessDays` 재사용)로 저장하고 추가 발송 시에는 유지. 마감일 당일 23:59(KST)까지 지원 가능. 표시: 파트너 RFP 목록(마감일·D-day·"마감" 배지), RFP 상세 표지·RFP 문서(PDF)·도착 메일·인앱 알림, 운영자 요청 상세. 가드: 지원 페이지 진입·제출 서버 액션 모두 마감 시 차단.
+- **파트너 대행사 정보(`/partner/profile`)**: 입점 완료(contracted) 파트너가 본인 `partners` 행(대행사명·대표자·설립연도·직원수·웹사이트·주소·담당자 연락처·전문 분야·소개·강점·주요 클라이언트)과 `partner_categories`(광고대행 가능 매체)를 직접 수정. 기존 RLS `partners_update_self`를 그대로 사용하고, 카테고리는 030에서 `partner_cats_self_manage` 정책 추가. 사업자등록번호·입점 상태·운영자 메모는 운영자만 변경. 사이드바 "내 대행사 정보" + RFP 목록 상단 바로가기.
+

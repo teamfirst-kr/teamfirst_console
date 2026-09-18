@@ -17,11 +17,13 @@ export function RfpDocument({
   title,
   budgetMonthly,
   issuedAt,
+  deadline,
 }: {
   brief: MatchingBrief;
   title: string;
   budgetMonthly?: number | null;
   issuedAt?: string | null;
+  deadline?: string | null; // 지원 마감일 YYYY-MM-DD
 }) {
   const plannedBudgets = brief.planned_budgets ?? {};
   const hasPlanned = Object.keys(plannedBudgets).length > 0;
@@ -45,6 +47,11 @@ export function RfpDocument({
             발행일자{" "}
             {format(new Date(issuedAt ?? Date.now()), "yyyy.MM.dd")}
           </span>
+          {deadline ? (
+            <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white">
+              지원 마감 {deadline.replace(/-/g, ".")} 23:59
+            </span>
+          ) : null}
         </div>
       </header>
 

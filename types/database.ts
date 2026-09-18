@@ -459,6 +459,7 @@ export type Database = {
             applied_at: string;
             reviewed_at: string | null;
             contracted_at: string | null;
+            updated_at: string;
           }
         >;
         Relationships: [];
@@ -560,6 +561,7 @@ export type Database = {
           status: RequestStatus;
           submitted_at: string | null;
           rfp_sent_at: string | null;
+          rfp_deadline: string | null; // 030: 지원 마감일 (KST, 발행일 + 5영업일)
           closed_at: string | null;
           rejected_at: string | null;
           reject_reason: string | null;
@@ -578,6 +580,7 @@ export type Database = {
           status?: RequestStatus;
           submitted_at?: string | null;
           rfp_sent_at?: string | null;
+          rfp_deadline?: string | null;
           closed_at?: string | null;
           rejected_at?: string | null;
           reject_reason?: string | null;
@@ -592,6 +595,7 @@ export type Database = {
           status: RequestStatus;
           submitted_at: string | null;
           rfp_sent_at: string | null;
+          rfp_deadline: string | null;
           closed_at: string | null;
           rejected_at: string | null;
           reject_reason: string | null;

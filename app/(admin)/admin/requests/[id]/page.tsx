@@ -19,6 +19,7 @@ import {
   type MatchingBrief,
 } from "@/lib/schemas/matching-request";
 import type { RequestStatus } from "@/types/database";
+import { formatDeadline, rfpDday } from "@/lib/rfp";
 
 import { RfpPanel } from "./rfp-panel";
 import { RejectPanel } from "./reject-panel";
@@ -40,7 +41,7 @@ export default async function AdminRequestDetailPage({
   const { data: request } = await supabase
     .from("matching_requests")
     .select(
-      "id, title, brief, budget_monthly, status, submitted_at, created_at, admin_memo, reject_reason, rejected_at",
+      "id, title, brief, budget_monthly, status, submitted_at, created_at, admin_memo, reject_reason, rejected_at, rfp_deadline",
     )
     .eq("id", id)
     .single();
@@ -229,6 +230,11 @@ export default async function AdminRequestDetailPage({
       {sentCount > 0 ? (
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-primary">
           이 요청에 대해 RFP {sentCount}건이 발송되었습니다.
+          {request.rfp_deadline ? (
+            <span className="ml-2 font-semibold">
+              · 지원 마감 {formatDeadline(request.rfp_deadline)} ({rfpDday(request.rfp_deadline)})
+            </span>
+          ) : null}
         </div>
       ) : null}
 
