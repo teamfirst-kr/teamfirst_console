@@ -33,7 +33,7 @@ export default async function RfpPrintPage({
   // RLS가 권한을 보장: client는 본인 건, admin은 전체, partner는 RFP 발송된 건만 조회됨.
   const { data: request } = await supabase
     .from("matching_requests")
-    .select("id, title, brief, budget_monthly, status, submitted_at, created_at")
+    .select("id, title, brief, budget_monthly, status, submitted_at, created_at, rfp_sent_at, rfp_deadline")
     .eq("id", id)
     .maybeSingle<{
       id: string;
@@ -43,6 +43,8 @@ export default async function RfpPrintPage({
       status: string;
       submitted_at: string | null;
       created_at: string | null;
+      rfp_sent_at: string | null;
+      rfp_deadline: string | null;
     }>();
 
   if (!request || !request.brief) notFound();
@@ -84,7 +86,8 @@ export default async function RfpPrintPage({
           brief={request.brief}
           title={request.title}
           budgetMonthly={request.budget_monthly}
-          issuedAt={request.submitted_at ?? request.created_at}
+          issuedAt={request.rfp_sent_at ?? request.submitted_at ?? request.created_at}
+          deadline={request.rfp_deadline}
         />
       </div>
     </div>

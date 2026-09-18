@@ -522,6 +522,7 @@ export function rfpArrivedEmail(params: {
   marketingGoals?: string[];
   kpis?: string[];
   preferredAgency?: string | null;
+  deadline?: string | null; // YYYY-MM-DD (KST)
   rfpUrl: string;
 }): { subject: string; html: string } {
   const row = (label: string, value: string) =>
@@ -564,6 +565,7 @@ export function rfpArrivedEmail(params: {
            ${params.website ? row("Website", `<a href="${params.website}" style="color:${BRAND_BLUE};text-decoration:none;word-break:break-all;">${params.website}</a>`) : ""}
            ${row("월 예산", budgetText)}
            ${params.duration ? row("계약 기간", params.duration) : ""}
+           ${params.deadline ? row("지원 마감", `<span style="color:#b91c1c;">${params.deadline.replace(/-/g, ".")} (당일 23:59까지)</span>`) : ""}
          </table>
          ${tagBlock("요청 매체", params.channels)}
          ${tagBlock("마케팅 목표", params.marketingGoals)}
@@ -572,6 +574,7 @@ export function rfpArrivedEmail(params: {
          ${briefBlock("모집 배경", params.reason)}
          ${briefBlock("매칭 희망 파트너 / 선정 기준", params.preferredAgency)}
        </div>
+       ${params.deadline ? `<p style="font-size:13px;color:#4b5563;">지원 기한은 발행일로부터 <strong>5영업일</strong>(${params.deadline.replace(/-/g, ".")} 23:59)입니다. 기한이 지나면 지원서를 제출할 수 없습니다.</p>` : ""}
        <p style="text-align:center;">${button(params.rfpUrl, "RFP 확인하고 지원하기")}</p>
        <p style="font-size:12px;color:#9ca3af;text-align:center;">버튼을 누르면 팀퍼스트 콘솔에서 전체 RFP(브리프·예산 분배·필수 운영 툴 등)를 확인할 수 있습니다.</p>`,
     ),

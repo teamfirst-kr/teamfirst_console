@@ -16,6 +16,7 @@ export default async function PartnerLayout({
         { href: "/partner/dashboard", label: "RFP 목록" },
         { href: "/partner/matchings", label: "내 매칭 이력" },
         { href: "/partner/settlements", label: "정산 / 계산서" },
+        { href: "/partner/profile", label: "내 대행사 정보" },
       ]}
     >
       {children}

@@ -6,6 +6,7 @@ import { DateText } from "@/components/date-text";
 import { EmptyState } from "@/components/ui/empty-state";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentPartnerId } from "@/lib/auth";
+import { formatDeadline, isRfpClosed, rfpDday } from "@/lib/rfp";
 import {
   REQUEST_MEDIA,
   isRfpVoidStatus,
@@ -33,7 +34,7 @@ export default async function PartnerDashboardPage() {
   const { data: requests } = requestIds.length
     ? await supabase
         .from("matching_requests")
-        .select("id, title, brief, budget_monthly, status")
+        .select("id, title, brief, budget_monthly, status, rfp_deadline")
         .in("id", requestIds)
     : { data: [] };
   const requestMap = new Map((requests ?? []).map((r) => [r.id, r]));
@@ -70,11 +71,19 @@ export default async function PartnerDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-secondary">도착한 RFP</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          광고주 매칭 요청을 확인하고 지원하세요.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-secondary">도착한 RFP</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            광고주 매칭 요청을 확인하고 지원하세요. 지원 기한은 발행일로부터 5영업일입니다.
+          </p>
+        </div>
+        <Link
+          href="/partner/profile"
+          className="rounded-lg border bg-card px-3 py-2 text-sm font-medium text-primary shadow-sm hover:bg-muted/40"
+        >
+          🏢 내 대행사 정보 확인·수정 →
+        </Link>
       </div>
 
       {list.length > 0 ? (
@@ -101,6 +110,7 @@ export default async function PartnerDashboardPage() {
                 <th className="px-4 py-3 font-medium">요청 매체</th>
                 <th className="px-4 py-3 font-medium">월 예산</th>
                 <th className="px-4 py-3 font-medium">도착</th>
+                <th className="px-4 py-3 font-medium">지원 마감</th>
                 <th className="px-4 py-3 font-medium">상태</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -112,6 +122,7 @@ export default async function PartnerDashboardPage() {
                 const brief = (r.brief ?? {}) as MatchingBrief;
                 const channels = (brief.channels ?? []).slice(0, 3);
                 const applied = appliedSet.has(n.request_id);
+                const closed = isRfpClosed(r.rfp_deadline);
                 return (
                   <tr key={n.id} className="hover:bg-muted/30">
                     <td className="px-4 py-3">
@@ -146,9 +157,23 @@ export default async function PartnerDashboardPage() {
                     <td className="px-4 py-3 text-muted-foreground">
                       <DateText value={n.sent_at} />
                     </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      {r.rfp_deadline ? (
+                        <>
+                          {formatDeadline(r.rfp_deadline)}
+                          <span className={"ml-1 font-semibold " + (closed ? "text-muted-foreground" : "text-red-600")}>
+                            {rfpDday(r.rfp_deadline)}
+                          </span>
+                        </>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       {applied ? (
                         <Badge variant="success">지원 완료</Badge>
+                      ) : closed ? (
+                        <Badge variant="muted">마감</Badge>
                       ) : (
                         <Badge variant="warning">미지원</Badge>
                       )}
