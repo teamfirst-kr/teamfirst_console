@@ -24,7 +24,10 @@ export default async function AdminLayout({
         },
         {
           label: "솔루션 구독",
-          items: [{ href: "/admin/solutions", label: "구독 문의·고객" }],
+          items: [
+            { href: "/admin/solutions", label: "구독 문의·고객" },
+            { href: "/admin/solutions/pricing", label: "요금 설정" },
+          ],
         },
         {
           label: "대행사 매칭",

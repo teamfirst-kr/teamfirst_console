@@ -15,6 +15,7 @@ import { getCurrentPartnerId } from "@/lib/auth";
 import { formatDeadline, formatKstDate, isRfpClosed, rfpDday } from "@/lib/rfp";
 import {
   REQUEST_MEDIA,
+  isRfpVoidStatus,
   type MatchingBrief,
 } from "@/lib/schemas/matching-request";
 
@@ -58,7 +59,8 @@ export default async function PartnerRfpDetailPage({
     .eq("id", id)
     .single();
 
-  if (!request) notFound();
+  // 반려·취소된 요청의 RFP는 파트너에게 무효
+  if (!request || isRfpVoidStatus(request.status)) notFound();
   const closed = isRfpClosed(request.rfp_deadline);
 
   const { data: myApp } = await supabase

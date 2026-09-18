@@ -9,6 +9,7 @@ import { getCurrentPartnerId } from "@/lib/auth";
 import { formatDeadline, isRfpClosed, rfpDday } from "@/lib/rfp";
 import {
   REQUEST_MEDIA,
+  isRfpVoidStatus,
   requestDisplayTitle,
   type MatchingBrief,
 } from "@/lib/schemas/matching-request";
@@ -55,7 +56,11 @@ export default async function PartnerDashboardPage() {
         .eq("partner_id", partnerId)
     : { count: 0 };
 
-  const list = notifications ?? [];
+  // 반려·취소된 요청의 RFP는 무효 — 목록·집계에서 제외
+  const list = (notifications ?? []).filter((n) => {
+    const r = requestMap.get(n.request_id);
+    return r != null && !isRfpVoidStatus(r.status);
+  });
   const appliedInList = list.filter((n) => appliedSet.has(n.request_id)).length;
   const summary = {
     rfp: list.length,

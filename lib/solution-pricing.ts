@@ -24,23 +24,97 @@ export const FIXED_PRICES: Record<Exclude<SolutionKey, "log">, { monthly: number
 
 export const BUNDLE_DISCOUNT: Record<number, number> = { 2: 20, 3: 40 }; // 구독 종수 → 할인 %
 
-// 캐치로그 월 요금: 월 페이지뷰(PV) 기준 구간제, 40만 초과분은 10만 PV 단위 올림 가산
-export function catchlogMonthly(pv: number): number {
-  if (!Number.isFinite(pv) || pv <= 0) return CATCHLOG_TIERS[0].monthly;
-  const tier = CATCHLOG_TIERS.find((t) => pv <= t.pv);
-  if (tier) return tier.monthly;
-  const top = CATCHLOG_TIERS[CATCHLOG_TIERS.length - 1];
-  const extraBlocks = Math.ceil((pv - top.pv) / 100_000);
-  return top.monthly + extraBlocks * CATCHLOG_EXTRA_PER_100K;
+// ── 요금 설정 (운영자가 /admin/solutions/pricing 에서 수정, pb_app_settings.solution_pricing) ──
+// 위 상수들은 DB에 설정이 없거나 손상됐을 때의 기본값이다.
+export type SolutionPricingConfig = {
+  catchlogTiers: { pv: number; monthly: number }[];
+  catchlogExtraPer100k: number;
+  catchlogMaxPv: number;
+  catchlogYearlyMonths: number;
+  fixed: Record<Exclude<SolutionKey, "log">, { monthly: number; yearly: number }>;
+  bundleDiscount: Record<number, number>;
+};
+
+export const DEFAULT_PRICING: SolutionPricingConfig = {
+  catchlogTiers: CATCHLOG_TIERS.map((t) => ({ ...t })),
+  catchlogExtraPer100k: CATCHLOG_EXTRA_PER_100K,
+  catchlogMaxPv: CATCHLOG_MAX_PV,
+  catchlogYearlyMonths: CATCHLOG_YEARLY_MONTHS,
+  fixed: {
+    report: { ...FIXED_PRICES.report },
+    bid: { ...FIXED_PRICES.bid },
+  },
+  bundleDiscount: { ...BUNDLE_DISCOUNT },
+};
+
+const posInt = (v: unknown): number | null =>
+  typeof v === "number" && Number.isFinite(v) && v > 0 && Number.isInteger(v) ? v : null;
+const pct = (v: unknown): number | null =>
+  typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 90 ? Math.round(v) : null;
+
+// DB(JSONB)에 저장된 설정을 필드 단위로 검증해 기본값과 병합. 손상된 필드는 기본값으로 대체.
+export function parseSolutionPricingConfig(value: unknown): SolutionPricingConfig {
+  const d = DEFAULT_PRICING;
+  if (!value || typeof value !== "object") return d;
+  const v = value as Record<string, unknown>;
+
+  let tiers = d.catchlogTiers;
+  if (Array.isArray(v.catchlogTiers)) {
+    const parsed = v.catchlogTiers
+      .map((t) => {
+        const o = t as Record<string, unknown>;
+        const pv = posInt(o?.pv);
+        const monthly = posInt(o?.monthly);
+        return pv && monthly ? { pv, monthly } : null;
+      })
+      .filter((t): t is { pv: number; monthly: number } => t !== null)
+      .sort((a, b) => a.pv - b.pv);
+    if (parsed.length > 0) tiers = parsed;
+  }
+
+  const fixedIn = (v.fixed ?? {}) as Record<string, Record<string, unknown>>;
+  const fixedOf = (k: "report" | "bid") => ({
+    monthly: posInt(fixedIn?.[k]?.monthly) ?? d.fixed[k].monthly,
+    yearly: posInt(fixedIn?.[k]?.yearly) ?? d.fixed[k].yearly,
+  });
+
+  const discountIn = (v.bundleDiscount ?? {}) as Record<string, unknown>;
+
+  return {
+    catchlogTiers: tiers,
+    catchlogExtraPer100k: posInt(v.catchlogExtraPer100k) ?? d.catchlogExtraPer100k,
+    catchlogMaxPv: posInt(v.catchlogMaxPv) ?? d.catchlogMaxPv,
+    catchlogYearlyMonths: posInt(v.catchlogYearlyMonths) ?? d.catchlogYearlyMonths,
+    fixed: { report: fixedOf("report"), bid: fixedOf("bid") },
+    bundleDiscount: {
+      2: pct(discountIn?.["2"]) ?? d.bundleDiscount[2],
+      3: pct(discountIn?.["3"]) ?? d.bundleDiscount[3],
+    },
+  };
 }
 
-// 선택 솔루션별 청구 금액 (billing 기준). 캐치로그 연간은 월 요금 × 10 (2개월 무료, 다른 솔루션과 동일 정책).
-export function solutionPrice(key: SolutionKey, billing: Billing, pv: number): number {
+// 캐치로그 월 요금: 월 페이지뷰(PV) 기준 구간제, 최고 구간 초과분은 10만 PV 단위 올림 가산
+export function catchlogMonthly(pv: number, cfg: SolutionPricingConfig = DEFAULT_PRICING): number {
+  if (!Number.isFinite(pv) || pv <= 0) return cfg.catchlogTiers[0].monthly;
+  const tier = cfg.catchlogTiers.find((t) => pv <= t.pv);
+  if (tier) return tier.monthly;
+  const top = cfg.catchlogTiers[cfg.catchlogTiers.length - 1];
+  const extraBlocks = Math.ceil((pv - top.pv) / 100_000);
+  return top.monthly + extraBlocks * cfg.catchlogExtraPer100k;
+}
+
+// 선택 솔루션별 청구 금액 (billing 기준). 캐치로그 연간은 월 요금 × catchlogYearlyMonths.
+export function solutionPrice(
+  key: SolutionKey,
+  billing: Billing,
+  pv: number,
+  cfg: SolutionPricingConfig = DEFAULT_PRICING,
+): number {
   if (key === "log") {
-    const m = catchlogMonthly(pv);
-    return billing === "yearly" ? m * CATCHLOG_YEARLY_MONTHS : m;
+    const m = catchlogMonthly(pv, cfg);
+    return billing === "yearly" ? m * cfg.catchlogYearlyMonths : m;
   }
-  return FIXED_PRICES[key][billing];
+  return cfg.fixed[key][billing];
 }
 
 export type Quote = {
@@ -53,11 +127,16 @@ export type Quote = {
   totalWithVat: number;
 };
 
-export function quote(selected: SolutionKey[], billing: Billing, pv: number): Quote {
+export function quote(
+  selected: SolutionKey[],
+  billing: Billing,
+  pv: number,
+  cfg: SolutionPricingConfig = DEFAULT_PRICING,
+): Quote {
   const keys = Array.from(new Set(selected));
-  const items = keys.map((key) => ({ key, price: solutionPrice(key, billing, pv) }));
+  const items = keys.map((key) => ({ key, price: solutionPrice(key, billing, pv, cfg) }));
   const subtotal = items.reduce((s, i) => s + i.price, 0);
-  const discountRate = BUNDLE_DISCOUNT[keys.length] ?? 0;
+  const discountRate = cfg.bundleDiscount[keys.length] ?? 0;
   const discount = Math.floor((subtotal * discountRate) / 100);
   const total = subtotal - discount;
   const vat = Math.floor(total / 10);

@@ -5,7 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentPartnerId } from "@/lib/auth";
 import { isRfpClosed } from "@/lib/rfp";
-import type { MatchingBrief } from "@/lib/schemas/matching-request";
+import {
+  isRfpVoidStatus,
+  type MatchingBrief,
+} from "@/lib/schemas/matching-request";
 
 import { RfpApplyForm } from "./apply-form";
 
@@ -46,10 +49,11 @@ export default async function PartnerRfpApplyPage({
 
   const { data: request } = await supabase
     .from("matching_requests")
-    .select("title, brief, rfp_deadline")
+    .select("title, brief, status, rfp_deadline")
     .eq("id", id)
     .single();
-  if (!request) notFound();
+  // 반려·취소된 요청의 RFP는 파트너에게 무효
+  if (!request || isRfpVoidStatus(request.status)) notFound();
   // 지원 기한 경과 → 상세(마감 안내)로
   if (isRfpClosed(request.rfp_deadline)) redirect(`/partner/rfp/${id}`);
 

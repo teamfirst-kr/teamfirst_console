@@ -1,5 +1,5 @@
 -- ============================================================================
--- TeamFirst Migration 030 — RFP 지원 기한 + 파트너 본인 정보 수정
+-- TeamFirst Migration 031 — RFP 지원 기한 + 파트너 본인 정보 수정
 -- Date: 2026-09-18
 --
 -- 1) matching_requests.rfp_deadline: RFP 발행일 + 5영업일 (KST 날짜, 당일 23:59까지 지원 가능)

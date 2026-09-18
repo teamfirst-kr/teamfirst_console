@@ -178,6 +178,8 @@ type PartnerInsert = {
   contact_phone?: string | null;
   address?: string | null;
   status?: PartnerStatus;
+  reviewed_at?: string | null;
+  contracted_at?: string | null;
   intro?: string | null;
   specialty?: string | null;
   portfolio?: Json | null;
@@ -561,7 +563,7 @@ export type Database = {
           status: RequestStatus;
           submitted_at: string | null;
           rfp_sent_at: string | null;
-          rfp_deadline: string | null; // 030: 지원 마감일 (KST, 발행일 + 5영업일)
+          rfp_deadline: string | null; // 031: 지원 마감일 (KST, 발행일 + 5영업일)
           closed_at: string | null;
           rejected_at: string | null;
           reject_reason: string | null;

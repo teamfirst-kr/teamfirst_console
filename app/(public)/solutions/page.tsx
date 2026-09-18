@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { ApplyCtaLink } from "@/components/analytics/apply-cta";
 import { SectionHeader } from "@/components/section-header";
 import { PricingBuilder } from "@/components/solutions/pricing-builder";
-import { BUNDLE_DISCOUNT } from "@/lib/solution-pricing";
+import { getSolutionPricing } from "@/lib/solution-pricing-server";
 
 export const metadata: Metadata = {
   title: "솔루션 구독 — TeamFirst",
@@ -11,7 +11,10 @@ export const metadata: Metadata = {
     "캐치로그(로그분석)·자동리포트·자동 ROAS 최적화 솔루션 상세 소개와 구독 요금. 2종 구독 시 20%, 3종 구독 시 40% 할인. 광고비 페이백 고객은 무료.",
 };
 
-export default function SolutionsPricingPage() {
+export const dynamic = "force-dynamic";
+
+export default async function SolutionsPricingPage() {
+  const pricing = await getSolutionPricing();
   return (
     <div>
       <section className="bg-secondary pb-20 pt-14 text-secondary-foreground md:pb-24 md:pt-20">
@@ -21,14 +24,14 @@ export default function SolutionsPricingPage() {
           <p className="mx-auto mt-4 max-w-2xl break-keep text-white/75">
             로그분석(CatchLog) · 자동리포트 · 자동 ROAS 최적화
             <br />
-            2종 구독 시 {BUNDLE_DISCOUNT[2]}%, 3종 구독 시 {BUNDLE_DISCOUNT[3]}% 할인됩니다.
+            2종 구독 시 {pricing.bundleDiscount[2]}%, 3종 구독 시 {pricing.bundleDiscount[3]}% 할인됩니다.
           </p>
           <p className="mt-5 text-xs text-white/50">모든 금액은 VAT 별도입니다.</p>
         </div>
       </section>
 
       <div className="bg-background">
-        <PricingBuilder />
+        <PricingBuilder pricing={pricing} />
       </div>
 
       <section className="border-t bg-secondary py-16 text-secondary-foreground md:py-20">

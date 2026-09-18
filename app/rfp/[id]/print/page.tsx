@@ -5,7 +5,10 @@ import { RfpDocument } from "@/components/rfp/rfp-document";
 import { PrintButton } from "@/components/rfp/print-button";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentRole } from "@/lib/auth";
-import type { MatchingBrief } from "@/lib/schemas/matching-request";
+import {
+  isRfpVoidStatus,
+  type MatchingBrief,
+} from "@/lib/schemas/matching-request";
 
 export const dynamic = "force-dynamic";
 
@@ -30,13 +33,14 @@ export default async function RfpPrintPage({
   // RLS가 권한을 보장: client는 본인 건, admin은 전체, partner는 RFP 발송된 건만 조회됨.
   const { data: request } = await supabase
     .from("matching_requests")
-    .select("id, title, brief, budget_monthly, submitted_at, created_at, rfp_sent_at, rfp_deadline")
+    .select("id, title, brief, budget_monthly, status, submitted_at, created_at, rfp_sent_at, rfp_deadline")
     .eq("id", id)
     .maybeSingle<{
       id: string;
       title: string;
       brief: MatchingBrief | null;
       budget_monthly: number | null;
+      status: string;
       submitted_at: string | null;
       created_at: string | null;
       rfp_sent_at: string | null;
@@ -44,6 +48,8 @@ export default async function RfpPrintPage({
     }>();
 
   if (!request || !request.brief) notFound();
+  // 반려·취소된 요청의 RFP는 파트너에게 무효 (운영자·광고주는 열람 가능)
+  if (role === "partner" && isRfpVoidStatus(request.status)) notFound();
 
   return (
     <div className="min-h-screen bg-muted/30">

@@ -155,6 +155,12 @@ export const REQUEST_STATUS_LABEL: Record<
   rejected: { label: "반려", variant: "destructive" },
 };
 
+// 반려·취소된 요청은 파트너에게 무효인 RFP — 목록·상세·PDF에서 숨긴다.
+// (지원 제출 액션은 별도의 ACCEPTING 상태 가드로 이미 차단됨)
+export function isRfpVoidStatus(status: string | null | undefined): boolean {
+  return status === "rejected" || status === "cancelled";
+}
+
 // 광고주/운영자가 공통으로 보는 단일 파이프라인 단계 정의 (진행바·보드 기준).
 export const REQUEST_STAGES: { key: string; label: string; statuses: string[] }[] = [
   { key: "submitted", label: "매칭 요청 제출", statuses: ["draft", "submitted"] },

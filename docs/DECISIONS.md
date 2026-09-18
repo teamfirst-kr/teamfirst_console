@@ -474,8 +474,24 @@
 - **솔루션 구독 관리(`/admin/solutions`)**: 마이그레이션 029 — `pb_leads.status/memo/handled_at`(리드 처리 상태, 페이백 리드와 공용) + `solution_subscriptions`(유료 구독: 브랜드·연락처·솔루션 배열·결제 주기·PV·청구액·상태 pending/active/paused/ended·시작/다음 결제/종료일·솔루션 계정 ID·메모·lead_id, RLS admin). 페이지는 요약(신규 문의·구독 중·월 환산 매출·누적) → 구독 문의 리드(`source like 'sub:%'`, 상태·메모 편집, "이 문의로 구독 등록" 프리필) → 구독 고객(상태 전환·수정). 청구액은 `quote()` 정가를 기본으로 협의가 수정 가능. 페이백 파이프라인의 리드 표에서는 구독 문의를 제외. 페이백 고객의 무료 이용은 기존 `pb_entitlements`가 담당(분리 유지).
 - **대시보드**: "오늘의 할 일"을 상단으로 올리고 서비스별 섹션(광고비 페이백 / 솔루션 구독 / 대행사 매칭+파이프라인 / 마케터 매칭 / 콘텐츠)으로 재구성. 각 섹션 헤더에 해당 관리 화면 바로가기.
 
-### D-082. RFP 지원 기한 = 발행일 + 5영업일 / 파트너 본인 대행사 정보 조회·수정 (2026-09-18)
-- **RFP 지원 기한**: 마이그레이션 030 `matching_requests.rfp_deadline DATE`. RFP 최초 발송 시 `rfpDeadlineFrom(todayKst())`(`lib/rfp.ts`, 주말·공휴일 제외 5영업일, `lib/payback-domain.ts`의 `addBusinessDays` 재사용)로 저장하고 추가 발송 시에는 유지. 마감일 당일 23:59(KST)까지 지원 가능. 표시: 파트너 RFP 목록(마감일·D-day·"마감" 배지), RFP 상세 표지·RFP 문서(PDF)·도착 메일·인앱 알림, 운영자 요청 상세. 가드: 지원 페이지 진입·제출 서버 액션 모두 마감 시 차단.
-- **파트너 대행사 정보(`/partner/profile`)**: 입점 완료(contracted) 파트너가 본인 `partners` 행(대행사명·대표자·설립연도·직원수·웹사이트·주소·담당자 연락처·전문 분야·소개·강점·주요 클라이언트)과 `partner_categories`(광고대행 가능 매체)를 직접 수정. 기존 RLS `partners_update_self`를 그대로 사용하고, 카테고리는 030에서 `partner_cats_self_manage` 정책 추가. 사업자등록번호·입점 상태·운영자 메모는 운영자만 변경. 사이드바 "내 대행사 정보" + RFP 목록 상단 바로가기.
 
-- **리뷰 반영(D-082)**: 발행일자 표시를 KST(`formatKstDate`)로 통일(서버 UTC로 하루 어긋나던 문제). 발행일·기한은 최초 발송 시 1회 고정하고, 기한이 지난 뒤 추가 발송하면 재발행(발행일·기한 오늘 기준 재산정, 결과 메시지에 "연장" 표기). 공휴일 테이블 정정(2027-06-07 제거, 2027-12-27 추가) + 2028년 추가, 내년 테이블 존재 테스트. 파트너 정보 폼은 검증 오류 시 입력값 유지.
+### D-082. 반려·취소된 매칭 요청의 RFP를 파트너 화면에서 숨김 (2026-09-17)
+- **배경(사용자 리포트)**: 운영자가 반려한 테스트 요청이 파트너 "도착한 RFP" 목록에 계속 노출됨. 파트너 화면이 `rfp_notifications` 존재 여부만 보고 요청의 현재 상태를 확인하지 않았기 때문 (지원 제출 액션만 ACCEPTING 상태 가드가 있었음).
+- **결정**: `isRfpVoidStatus(status)` 헬퍼 추가 — `rejected`·`cancelled`를 "파트너에게 무효인 RFP"로 정의. 파트너 대시보드 목록·요약 카운트에서 제외하고, RFP 상세·지원 페이지·RFP PDF(파트너 역할)는 notFound 처리. 운영자·광고주는 반려 건을 계속 열람 가능.
+- **비고**: `rfp_notifications` 행은 삭제하지 않음(발송 이력 보존) — 노출만 앱 레이어에서 차단. `closed_won/closed_lost`는 정상 종결 상태라 이력 노출 유지. DB 변경 없음.
+
+### D-083. 솔루션 구독 요금의 운영자 관리 전환 (2026-09-17)
+- **사용자 요청**: "솔루션 가격도 admin에서 관리할 수 있는 페이지 생성해줘".
+- **결정**: 하드코딩이던 요금을 `pb_app_settings.solution_pricing`(JSONB) 단일 키로 이동하고 `/admin/solutions/pricing`(사이드바 "요금 설정")에서 수정. `lib/solution-pricing.ts`에 `SolutionPricingConfig` 타입·`DEFAULT_PRICING`·`parseSolutionPricingConfig`(필드 단위 검증·기본값 병합)를 추가하고 `catchlogMonthly/solutionPrice/quote`에 옵션 cfg 파라미터를 더해 기존 호출부·테스트와 호환 유지. 공개 요금 페이지(/solutions)와 어드민 구독 폼은 서버에서 `getSolutionPricing()`으로 읽어 props로 전달. 키가 없거나 손상 시 코드 기본값 사용 — 마이그레이션 전에도 안전.
+- **연간 배지 동적화**: "2개월 무료" 하드코딩을 실제 비율(12 − 연간/월간 반올림)로 계산해 설정 변경 시 거짓 표기가 되지 않게 함.
+- **DB**: `030_solution_pricing_public.sql` — anon이 solution_pricing 키만 SELECT 가능(027 promo와 동일 패턴). 쓰기는 운영자 확인 후 service_role 경유. 기등록 구독의 amount는 불변(협의가).
+
+### D-084. 어드민 신규 대행사 직접 등록 (2026-09-17)
+- **배경**: 신규 대행사 등록 경로가 공개 등록신청서(/partner/apply)뿐이라 기존/오프라인 협의 대행사를 운영자가 시스템에 올릴 방법이 없었음.
+- **결정**: `/admin/partners/new` — 핵심 필드(대행사명·사업자번호·담당자·연락처·매체 등)만 입력하는 직접 등록 폼. RLS `partners_admin_all`로 운영자 세션 insert(마이그레이션 불필요). 초기 상태는 라디오로 명시 선택(기본 '계약 완료' — RFP 발송 대상 포함을 라벨에 표기, pending/reviewing 선택 가능). `application` JSONB는 공개 신청서와 같은 구조의 빈 값으로 채워 상세 화면 호환, fee_agreement=true(오프라인 합의 전제). reviewed_at/contracted_at은 상태에 맞춰 세팅. 계정 발급은 기존 상세 화면 버튼 재사용. 진입점은 파트너 목록 우측 상단 "+ 신규 대행사 직접 등록".
+
+### D-085. RFP 지원 기한 = 발행일 + 5영업일 / 파트너 본인 대행사 정보 조회·수정 (2026-09-18)
+- **RFP 지원 기한**: 마이그레이션 031 `matching_requests.rfp_deadline DATE`. RFP 최초 발송 시 `rfpDeadlineFrom(todayKst())`(`lib/rfp.ts`, 주말·공휴일 제외 5영업일, `lib/payback-domain.ts`의 `addBusinessDays` 재사용)로 저장하고 추가 발송 시에는 유지. 마감일 당일 23:59(KST)까지 지원 가능. 표시: 파트너 RFP 목록(마감일·D-day·"마감" 배지), RFP 상세 표지·RFP 문서(PDF)·도착 메일·인앱 알림, 운영자 요청 상세. 가드: 지원 페이지 진입·제출 서버 액션 모두 마감 시 차단.
+- **파트너 대행사 정보(`/partner/profile`)**: 입점 완료(contracted) 파트너가 본인 `partners` 행(대행사명·대표자·설립연도·직원수·웹사이트·주소·담당자 연락처·전문 분야·소개·강점·주요 클라이언트)과 `partner_categories`(광고대행 가능 매체)를 직접 수정. 기존 RLS `partners_update_self`를 그대로 사용하고, 카테고리는 031에서 `partner_cats_self_manage` 정책 추가. 사업자등록번호·입점 상태·운영자 메모는 운영자만 변경. 사이드바 "내 대행사 정보" + RFP 목록 상단 바로가기.
+
+- **리뷰 반영(D-085)**: 발행일자 표시를 KST(`formatKstDate`)로 통일(서버 UTC로 하루 어긋나던 문제). 발행일·기한은 최초 발송 시 1회 고정하고, 기한이 지난 뒤 추가 발송하면 재발행(발행일·기한 오늘 기준 재산정, 결과 메시지에 "연장" 표기). 공휴일 테이블 정정(2027-06-07 제거, 2027-12-27 추가) + 2028년 추가, 내년 테이블 존재 테스트. 파트너 정보 폼은 검증 오류 시 입력값 유지.
