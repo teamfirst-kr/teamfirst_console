@@ -31,3 +31,8 @@ export function rfpDday(deadline: string | null | undefined, now: Date = new Dat
 export function formatDeadline(deadline: string): string {
   return deadline.replace(/-/g, ".");
 }
+
+// ISO 타임스탬프 → KST 날짜 "yyyy.MM.dd" (서버 TZ가 UTC여도 마감일과 같은 KST 기준으로 표시)
+export function formatKstDate(iso: string | number | Date): string {
+  return new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" }).replace(/-/g, ".");
+}

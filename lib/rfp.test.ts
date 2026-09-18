@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { isRfpClosed, rfpDday, rfpDeadlineFrom, todayKst } from "./rfp";
+import { KR_HOLIDAYS_LAST_YEAR } from "./payback-domain";
+import { formatKstDate, isRfpClosed, rfpDday, rfpDeadlineFrom, todayKst } from "./rfp";
 
 describe("RFP 지원 기한 (+5영업일)", () => {
   it("평일 발행 → 주말 건너뛰고 5영업일 뒤", () => {
@@ -21,5 +22,9 @@ describe("RFP 지원 기한 (+5영업일)", () => {
     expect(rfpDday("2026-09-18", now)).toBe("마감");
     expect(rfpDday(null, now)).toBeNull();
     expect(isRfpClosed(null)).toBe(false);
+    expect(formatKstDate("2026-09-18T22:00:00Z")).toBe("2026.09.19"); // 발행일자는 KST
+  });
+  it("공휴일 테이블은 내년까지 준비돼 있어야 한다 (연말 갱신 알림)", () => {
+    expect(KR_HOLIDAYS_LAST_YEAR).toBeGreaterThanOrEqual(new Date().getFullYear() + 1);
   });
 });

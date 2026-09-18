@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentPartnerId } from "@/lib/auth";
-import { formatDeadline, isRfpClosed, rfpDday } from "@/lib/rfp";
+import { formatDeadline, formatKstDate, isRfpClosed, rfpDday } from "@/lib/rfp";
 import {
   REQUEST_MEDIA,
   type MatchingBrief,
@@ -128,10 +128,7 @@ export default async function PartnerRfpDetailPage({
           <Badge variant="muted">{brief.category}</Badge>
           <span className="text-xs text-white/70">
             발행일자{" "}
-            {format(
-              new Date(request.rfp_sent_at ?? request.submitted_at ?? request.created_at ?? Date.now()),
-              "yyyy.MM.dd",
-            )}
+            {formatKstDate(request.rfp_sent_at ?? request.submitted_at ?? request.created_at ?? Date.now())}
           </span>
           {request.rfp_deadline ? (
             <span className={"rounded-full px-3 py-1 text-xs font-semibold " + (closed ? "bg-white/10 text-white/60" : "bg-red-500/90 text-white")}>

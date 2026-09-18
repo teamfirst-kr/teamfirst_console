@@ -8,7 +8,7 @@ import { getCurrentRole } from "@/lib/auth";
 import { sendEmail } from "@/lib/email/resend";
 import { matchingRequestRejectedEmail, rfpArrivedEmail } from "@/lib/email/templates";
 import { notify, notifyMany } from "@/lib/notifications";
-import { formatDeadline, rfpDeadlineFrom, todayKst } from "@/lib/rfp";
+import { formatDeadline, isRfpClosed, rfpDeadlineFrom, todayKst } from "@/lib/rfp";
 import {
   matchingRequestSchema,
   normalizeBizRegNo,
@@ -49,7 +49,7 @@ export async function sendRfp(
 
   const { data: request, error: reqError } = await supabase
     .from("matching_requests")
-    .select("id, title, brief, budget_monthly, status, rfp_deadline")
+    .select("id, title, brief, budget_monthly, status, rfp_sent_at, rfp_deadline")
     .eq("id", requestId)
     .single();
 
@@ -94,13 +94,17 @@ export async function sendRfp(
     return { ok: false, error: insertError.message };
   }
 
-  // 상태 전환: submitted/draft → rfp_sent. 지원 기한은 최초 발행일(KST) + 5영업일 (추가 발송 시 유지)
-  const deadline = request.rfp_deadline ?? rfpDeadlineFrom(todayKst());
+  // 상태 전환: submitted/draft → rfp_sent.
+  // 발행일·지원 기한(발행일 KST + 5영업일)은 최초 발송 시 1회 고정. 기한 내 추가 발송은 그대로 유지하고,
+  // 기한이 지난 뒤 추가 발송하면 재발행으로 간주해 발행일·기한을 오늘 기준으로 다시 잡는다(기한 연장).
+  const reissue = !request.rfp_sent_at || !request.rfp_deadline || isRfpClosed(request.rfp_deadline);
+  const deadline = reissue ? rfpDeadlineFrom(todayKst()) : request.rfp_deadline!;
+  const extended = reissue && !!request.rfp_deadline;
   await supabase
     .from("matching_requests")
     .update({
       status: "rfp_sent" satisfies RequestStatus,
-      rfp_sent_at: new Date().toISOString(),
+      rfp_sent_at: reissue ? new Date().toISOString() : request.rfp_sent_at,
       rfp_deadline: deadline,
     })
     .eq("id", requestId);
@@ -156,7 +160,7 @@ export async function sendRfp(
   revalidatePath("/admin/requests");
   return {
     ok: true,
-    message: `RFP를 ${partners.length}개 대행사에 발송했습니다. (메일 ${mailed}건)`,
+    message: `RFP를 ${partners.length}개 대행사에 발송했습니다. (메일 ${mailed}건) · 지원 마감 ${formatDeadline(deadline)}${extended ? " (기한이 지나 재발행·연장됨)" : ""}`,
     count: partners.length,
   };
 }

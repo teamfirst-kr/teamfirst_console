@@ -1,5 +1,4 @@
-import { format } from "date-fns";
-
+import { formatKstDate } from "@/lib/rfp";
 import {
   REQUEST_MEDIA,
   type MatchingBrief,
@@ -45,7 +44,7 @@ export function RfpDocument({
           </span>
           <span className="text-xs text-white/70">
             발행일자{" "}
-            {format(new Date(issuedAt ?? Date.now()), "yyyy.MM.dd")}
+            {formatKstDate(issuedAt ?? Date.now())}
           </span>
           {deadline ? (
             <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white">

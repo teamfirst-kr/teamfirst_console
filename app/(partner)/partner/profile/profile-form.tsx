@@ -8,28 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PARTNER_CATEGORIES, STAFF_SIZE_OPTIONS } from "@/lib/schemas/partner-application";
 
-import { updatePartnerProfile, type ProfileState } from "./actions";
+import { updatePartnerProfile, type ProfileFormValues, type ProfileState } from "./actions";
 
-export type ProfileFormValues = {
-  company_name: string;
-  representative: string;
-  established_year: string;
-  staff_size: string;
-  website: string;
-  contact_person: string;
-  contact_email: string;
-  contact_phone: string;
-  address: string;
-  specialty: string;
-  intro: string;
-  strengths: string;
-  notable_clients: string;
-  categories: string[];
-};
+export type { ProfileFormValues };
 
-export function PartnerProfileForm({ initial }: { initial: ProfileFormValues }) {
+export function PartnerProfileForm({ initial: saved }: { initial: ProfileFormValues }) {
   const [state, action, pending] = useActionState<ProfileState, FormData>(updatePartnerProfile, null);
   const err = (k: string) => (state && !state.ok ? state.fieldErrors?.[k]?.[0] : undefined);
+  // 검증 오류 시 React가 폼을 리셋하므로 제출했던 값을 defaultValue로 되돌려준다
+  const initial = state && !state.ok && state.values ? state.values : saved;
 
   return (
     <form action={action} className="space-y-8">
