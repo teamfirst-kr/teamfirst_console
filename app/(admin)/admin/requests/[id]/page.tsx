@@ -38,14 +38,34 @@ export default async function AdminRequestDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: request } = await supabase
+  const { data: request, error: requestError } = await supabase
     .from("matching_requests")
     .select(
       "id, title, brief, budget_monthly, status, submitted_at, created_at, admin_memo, reject_reason, rejected_at, rfp_deadline",
     )
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
+  // 조회 오류(예: 마이그레이션 미적용으로 컬럼 없음)는 404가 아니라 원인을 보여준다
+  if (requestError) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-3">
+        <Link href="/admin/requests" className="text-sm text-muted-foreground hover:underline">
+          ← 매칭 요청 목록
+        </Link>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <p className="font-semibold">매칭 요청을 불러오지 못했습니다.</p>
+          <p className="mt-1 font-mono text-xs">{requestError.message}</p>
+          {/column .* does not exist/i.test(requestError.message) ? (
+            <p className="mt-2">
+              DB 마이그레이션이 적용되지 않은 것으로 보입니다. <code>db/migrations</code>의 최신 SQL(예: 031
+              rfp_deadline)을 Supabase SQL Editor에서 실행한 뒤 새로고침하세요.
+            </p>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
   if (!request) notFound();
 
   const brief = (request.brief ?? {}) as MatchingBrief;
