@@ -230,6 +230,12 @@ export default async function AdminRequestDetailPage({
           >
             ✏️ 요청 수정
           </Link>
+          <Link
+            href={`/client/request/${request.id}`}
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            👁 광고주 화면 보기 →
+          </Link>
         </div>
       </div>
 
