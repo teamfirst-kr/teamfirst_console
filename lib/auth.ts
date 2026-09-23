@@ -30,7 +30,12 @@ export async function getCurrentRole(): Promise<Role | null> {
 }
 
 // 로그인 + 역할 일치 보장. 미일치 시 안전한 경로로 리다이렉트.
-export async function requireRole(role: Role) {
+// allowAdmin: 운영자가 해당 역할 화면을 검수 목적으로 그대로 열람하도록 허용
+// (메일에 삽입된 광고주 URL 검수용). 반환 role이 'admin'이면 검수 모드.
+export async function requireRole(
+  role: Role,
+  opts: { allowAdmin?: boolean } = {},
+) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -49,11 +54,11 @@ export async function requireRole(role: Role) {
     .single<{ role: Role }>();
 
   const current = data?.role ?? null;
-  if (current !== role) {
+  if (current !== role && !(opts.allowAdmin && current === "admin")) {
     redirect(roleHome(current));
   }
 
-  return { user, role: current };
+  return { user, role: current as Role };
 }
 
 export async function getCurrentPartnerId(): Promise<string | null> {
