@@ -49,7 +49,7 @@ export default async function MarketAppsPage() {
 
       {fallback ? (
         <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          앱 카탈로그 테이블이 아직 없습니다. Supabase에서 마이그레이션 <strong>032_solution_market.sql</strong>을 실행하면
+          앱 카탈로그 테이블이 아직 없습니다. Supabase에서 마이그레이션 <strong>033_solution_market.sql</strong>을 실행하면
           앱을 추가·수정할 수 있습니다. (지금은 기본 3종으로 표시 중)
         </p>
       ) : null}

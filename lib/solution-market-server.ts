@@ -8,7 +8,7 @@ import {
 } from "@/lib/solution-market";
 
 // 플랜 설정 (pb_app_settings.solution_market). 키가 없거나 조회에 실패하면 기본값 —
-// 마이그레이션 032 적용 전에도 공개 마켓 페이지가 깨지지 않게.
+// 마이그레이션 033 적용 전에도 공개 마켓 페이지가 깨지지 않게.
 export async function getMarketConfig(): Promise<MarketConfig> {
   try {
     const supabase = await createClient();
@@ -24,7 +24,7 @@ export async function getMarketConfig(): Promise<MarketConfig> {
 }
 
 // 앱 카탈로그 (sort 순). 공개 조회는 RLS가 숨김 앱을 빼고, 운영자 세션은 전체가 조회된다.
-// 테이블이 없으면(032 미적용) 기존 3종 기본값을 쓰고 fallback=true.
+// 테이블이 없으면(033 미적용) 기존 3종 기본값을 쓰고 fallback=true.
 export async function getMarketApps(): Promise<{ apps: MarketApp[]; fallback: boolean }> {
   try {
     const supabase = await createClient();

@@ -89,7 +89,7 @@ export default async function AdminSolutionsPage() {
 
       {fallback ? (
         <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-          솔루션 마켓 테이블이 아직 없습니다. Supabase에서 마이그레이션 <strong>032_solution_market.sql</strong>을 실행해야
+          솔루션 마켓 테이블이 아직 없습니다. Supabase에서 마이그레이션 <strong>033_solution_market.sql</strong>을 실행해야
           플랜 구독 등록·앱 카탈로그가 동작합니다.
         </p>
       ) : null}

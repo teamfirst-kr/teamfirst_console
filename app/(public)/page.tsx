@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Reveal } from "@/components/reveal";
 import { SectionHeader } from "@/components/section-header";
 import { ApplyCtaLink } from "@/components/analytics/apply-cta";
@@ -5,6 +7,7 @@ import { HeroCalculator } from "@/components/payback/hero-calculator";
 import { SolutionsShowcase } from "@/components/payback/solutions-showcase";
 import { MarketerSlider } from "@/components/payback/marketer-slider";
 import { ApplyExitSurvey } from "@/components/payback/exit-survey";
+import { NewsletterSubscribeForm } from "@/components/newsletter/subscribe-form";
 import { createClient } from "@/lib/supabase/server";
 import { manLabel, rateTableFromRow, tierLabelOf, type RateTable } from "@/lib/payback";
 
@@ -460,6 +463,45 @@ export default async function PaybackLanding() {
               </details>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* 8.5 뉴스레터 구독 — 정보 제공 + 브랜드사·대행사 DB 수집 */}
+      <section className="border-t bg-background py-16 md:py-24">
+        <div className="mx-auto grid max-w-5xl gap-10 px-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:items-start">
+          <Reveal>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Newsletter</p>
+            <h2 className="mt-4 break-keep text-[26px] font-extrabold leading-[1.25] tracking-[-0.02em] text-secondary md:text-[32px]">
+              광고 실무자를 위한
+              <br />
+              월간 브리핑
+            </h2>
+            <ol className="mt-6 divide-y border-y text-sm">
+              {[
+                "메타·구글·네이버 광고 기능 업데이트",
+                "마케팅 컨퍼런스 핵심 인사이트",
+                "브랜드 마케팅·콘텐츠 트렌드",
+                "AI로 업무 시간을 줄이는 마케터 노하우",
+              ].map((t, i) => (
+                <li key={t} className="grid grid-cols-[2.25rem_1fr] items-baseline py-2.5">
+                  <span className="text-xs font-semibold tabular-nums text-muted-foreground">0{i + 1}</span>
+                  <span className="text-secondary">{t}</span>
+                </li>
+              ))}
+            </ol>
+            <Link href="/newsletter" className="mt-5 inline-block text-sm font-semibold text-secondary underline underline-offset-4">
+              지난 호 보기
+            </Link>
+          </Reveal>
+          <Reveal>
+            <div className="border border-border bg-card p-6 md:p-8">
+              <p className="text-sm font-bold text-secondary">구독 신청</p>
+              <p className="mt-1 text-xs text-muted-foreground">월 1~2회 발송 · 사업자등록번호·브랜드명·이메일로 등록</p>
+              <div className="mt-5">
+                <NewsletterSubscribeForm source="landing" />
+              </div>
+            </div>
+          </Reveal>
         </div>
       </section>
 

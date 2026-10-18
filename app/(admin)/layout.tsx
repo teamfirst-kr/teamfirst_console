@@ -49,7 +49,10 @@ export default async function AdminLayout({
         },
         {
           label: "콘텐츠",
-          items: [{ href: "/admin/cases", label: "성공 사례" }],
+          items: [
+            { href: "/admin/newsletter", label: "뉴스레터" },
+            { href: "/admin/cases", label: "성공 사례" },
+          ],
         },
       ]}
     >

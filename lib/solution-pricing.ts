@@ -1,7 +1,7 @@
 import type { Billing } from "@/lib/solution-market";
 
 // 레거시 — 솔루션별 개별 요금제(D-083) 시절의 키·문의 source 해석만 남긴다.
-// 현재 요금 구조는 플랜 기반 솔루션 마켓(lib/solution-market.ts, D-088).
+// 현재 요금 구조는 플랜 기반 솔루션 마켓(lib/solution-market.ts, D-089).
 // 남은 용도: 기존 3종 앱의 상세 콘텐츠 키(solution-catalog.ts), 개편 전 접수된 구독 문의 리드 표시.
 
 export type SolutionKey = "log" | "report" | "bid";

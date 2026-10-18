@@ -178,7 +178,7 @@ export type MarketApp = Omit<SolutionAppRow, "created_at" | "updated_at">;
 
 export const appLabel = (a: Pick<MarketApp, "brand" | "name">): string => a.brand?.trim() || a.name;
 
-// 카탈로그 테이블이 없을 때(마이그레이션 032 미적용)의 기본값 — 032 시드와 동일
+// 카탈로그 테이블이 없을 때(마이그레이션 033 미적용)의 기본값 — 033 시드와 동일
 export const DEFAULT_APPS: MarketApp[] = [
   {
     key: "log",

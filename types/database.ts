@@ -34,6 +34,50 @@ export type PbApplicationStatus =
 export type PbSettlementStatus = "draft" | "confirmed" | "paid" | "canceled";
 // 029: 간편 신청·구독 문의 리드 처리 상태
 export type LeadStatus = "new" | "contacted" | "converted" | "closed";
+// 032: 뉴스레터
+export type NewsletterOrgType = "brand" | "agency" | "marketer" | "other";
+export type NewsletterCategory = "media_update" | "conference" | "brand_trend" | "content_trend" | "ai_workflow" | "general";
+export type NewsletterSubscriberRow = {
+  id: string;
+  email: string;
+  brand_name: string;
+  biz_reg_no: string; // 숫자 10자리
+  name: string | null;
+  org_type: NewsletterOrgType;
+  source: string | null;
+  status: "subscribed" | "unsubscribed";
+  token: string;
+  consented_at: string;
+  unsubscribed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+export type NewsletterIssueRow = {
+  id: string;
+  slug: string;
+  issue_no: number | null;
+  title: string;
+  summary: string | null;
+  category: NewsletterCategory;
+  cover_url: string | null;
+  body_md: string;
+  cta_title: string | null;
+  cta_body: string | null;
+  status: "draft" | "published";
+  published_at: string | null;
+  sent_at: string | null;
+  sent_count: number;
+  created_at: string;
+  updated_at: string;
+};
+export type NewsletterDeliveryRow = {
+  id: string;
+  issue_id: string;
+  subscriber_id: string;
+  status: "sent" | "failed";
+  error: string | null;
+  sent_at: string;
+};
 // 029: 유료 솔루션 구독
 export type SolutionSubscriptionStatus = "pending" | "active" | "paused" | "ended";
 export type SolutionSubscriptionRow = {
@@ -53,12 +97,12 @@ export type SolutionSubscriptionRow = {
   solution_login_id: string | null;
   memo: string | null;
   lead_id: string | null;
-  plan: "choice" | "plus" | "pro" | "max" | null; // 032 (NULL = 기존 개별 요금제 구독)
-  member_emails: string[]; // 032 초대 직원 계정
+  plan: "choice" | "plus" | "pro" | "max" | null; // 033 (NULL = 기존 개별 요금제 구독)
+  member_emails: string[]; // 033 초대 직원 계정
   created_at: string;
   updated_at: string;
 };
-// 032: 솔루션 마켓 앱 카탈로그
+// 033: 솔루션 마켓 앱 카탈로그
 export type SolutionAppStatus = "available" | "coming_soon" | "hidden";
 export type SolutionAppRow = {
   key: string;
@@ -416,7 +460,10 @@ export type Database = {
         created_at: string;
       }>;
       solution_subscriptions: PbTable<SolutionSubscriptionRow>; // 029
-      solution_apps: PbTable<SolutionAppRow>; // 032
+      solution_apps: PbTable<SolutionAppRow>; // 033
+      newsletter_subscribers: PbTable<NewsletterSubscriberRow>; // 032
+      newsletter_issues: PbTable<NewsletterIssueRow>; // 032
+      newsletter_deliveries: PbTable<NewsletterDeliveryRow>; // 032
       pb_apply_surveys: PbTable<{
         id: string;
         reason: string;
