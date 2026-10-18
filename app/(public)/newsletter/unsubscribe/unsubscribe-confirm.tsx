@@ -6,9 +6,9 @@ import { setSubscriptionByToken } from "../actions";
 
 const btn = "inline-flex h-11 items-center px-6 text-sm font-semibold transition-colors disabled:opacity-50";
 
-export function UnsubscribeConfirm({ token }: { token: string }) {
+export function UnsubscribeConfirm({ token, initialStatus = "subscribed" }: { token: string; initialStatus?: "subscribed" | "unsubscribed" }) {
   const [pending, start] = useTransition();
-  const [state, setState] = useState<"ask" | "done" | "resubscribed" | "error">("ask");
+  const [state, setState] = useState<"ask" | "already" | "done" | "resubscribed" | "error">(initialStatus === "unsubscribed" ? "already" : "ask");
   const [email, setEmail] = useState<string | undefined>();
 
   if (state === "error") {
@@ -24,6 +24,22 @@ export function UnsubscribeConfirm({ token }: { token: string }) {
       <>
         <h1 className="mt-3 text-2xl font-extrabold tracking-[-0.01em] text-secondary">다시 구독되었습니다</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">다음 호부터 다시 보내드립니다.</p>
+      </>
+    );
+  }
+  if (state === "already") {
+    return (
+      <>
+        <h1 className="mt-3 text-2xl font-extrabold tracking-[-0.01em] text-secondary">이미 수신거부된 주소입니다</h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">더 이상 뉴스레터를 보내지 않습니다. 다시 받아보시려면 아래 버튼을 눌러주세요.</p>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => start(async () => setState((await setSubscriptionByToken(token, "subscribed")).ok ? "resubscribed" : "error"))}
+          className={btn + " mt-6 bg-secondary text-white hover:bg-secondary/90"}
+        >
+          다시 구독하기
+        </button>
       </>
     );
   }

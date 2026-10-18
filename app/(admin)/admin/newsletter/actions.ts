@@ -27,7 +27,17 @@ async function assertApprover(): Promise<string | null> {
   const allowed = process.env.NEWSLETTER_APPROVER_EMAIL?.trim().toLowerCase();
   if (!allowed) return null;
   const user = await getCurrentUser();
-  if ((user?.email ?? "").toLowerCase() !== allowed) return "승인 권한이 있는 운영자 계정으로만 예약할 수 있습니다.";
+  if ((user?.email ?? "").toLowerCase() !== allowed) return "승인 권한이 있는 운영자 계정으로만 할 수 있습니다.";
+  return null;
+}
+export async function isApprover(): Promise<boolean> {
+  return (await assertApprover()) === null;
+}
+
+// 승인·예약된 호(발송 시작 전)는 내용 수정 금지 — 승인자가 본 내용과 다른 내용이 발송되는 것을 막는다
+async function assertNotLocked(id: string): Promise<string | null> {
+  const { data } = await createAdminClient().from("newsletter_issues").select("approved_at, send_started_at").eq("id", id).maybeSingle();
+  if (data?.approved_at && !data.send_started_at) return "승인·발송 예약된 호는 수정할 수 없습니다. 먼저 '예약 취소·시각 변경'으로 승인을 해제한 뒤 수정하고 다시 검수 요청하세요.";
   return null;
 }
 
@@ -81,7 +91,8 @@ export async function createIssue(_prev: IssueActionState, fd: FormData): Promis
   const f = readForm(fd);
   if (!f.title) return { error: "제목을 입력해주세요." };
   const supabase = await createClient();
-  const { publish, intent, ...fields } = f;
+  const { intent, publish: publishRequested, ...fields } = f;
+  const publish = publishRequested && (await isApprover()); // 즉시 공개는 승인 권한자만
   const { data, error } = await supabase
     .from("newsletter_issues")
     .insert({ ...fields, status: publish ? "published" : "draft", published_at: publish ? new Date().toISOString() : null })
@@ -104,7 +115,10 @@ export async function updateIssue(id: string, _prev: IssueActionState, fd: FormD
   const supabase = await createClient();
   const { data: cur } = await supabase.from("newsletter_issues").select("status, published_at, slug, sent_count").eq("id", id).maybeSingle();
   if (!cur) return { error: "호를 찾을 수 없습니다." };
-  const { publish, intent, ...fields } = f;
+  const locked = await assertNotLocked(id);
+  if (locked) return { error: locked };
+  const { intent, publish: publishRequested, ...fields } = f;
+  const publish = publishRequested ? (await isApprover()) || cur.status === "published" : false; // 즉시 공개는 승인 권한자만 (이미 공개된 호는 유지)
   if (fields.slug !== cur.slug && cur.sent_count > 0) return { error: "이미 발송된 호의 slug는 변경할 수 없습니다 (메일 링크 보호)." };
   const { error } = await supabase
     .from("newsletter_issues")
@@ -187,17 +201,17 @@ export async function requestReview(id: string): Promise<{ ok: boolean; error?: 
   const issue = await loadIssueAdmin(id);
   if (!issue) return { ok: false, error: "호를 찾을 수 없습니다." };
   const now = new Date().toISOString();
-  const admin = createAdminClient();
-  const { error } = await admin.from("newsletter_issues").update({ review_requested_at: now, updated_at: now }).eq("id", id);
-  if (error) return { ok: false, error: error.message };
   const to = reviewEmailAddress();
   const mail = buildSubscriberMail({ ...issue, review_requested_at: now }, { email: to, name: null, token: DUMMY_TOKEN }, "review", {
     note: issue.review_note,
     adminUrl: `${appUrl()}/admin/newsletter/${issue.id}`,
     requestedAt: `${formatKstDateTime(now)} KST`,
   });
+  // 메일을 먼저 보내고, 성공(또는 키 미설정으로 생략)했을 때만 검수 요청 시각을 기록한다
   const r = await sendEmail({ to, subject: mail.subject, html: mail.html });
   if (!r.ok && !r.skipped) return { ok: false, error: `검수 메일 발송 실패: ${r.error ?? "unknown"}` };
+  const { error } = await createAdminClient().from("newsletter_issues").update({ review_requested_at: now, updated_at: now }).eq("id", id);
+  if (error) return { ok: false, error: error.message };
   revalidatePath("/admin/newsletter");
   revalidatePath(`/admin/newsletter/${id}`);
   return { ok: true, to };
@@ -252,9 +266,11 @@ export async function sendTestIssue(id: string): Promise<{ ok: boolean; error?: 
   return { ok: true, to: user.email };
 }
 
-// 비상용 수동 발송 (어드민 버튼이 remaining=0 까지 반복 호출)
+// 비상용 수동 발송 (어드민 버튼이 remaining=0 까지 반복 호출) — 승인 권한자만
 export async function sendIssueBatch(id: string): Promise<SendBatchResult> {
   await assertAdmin();
+  const denied = await assertApprover();
+  if (denied) return { ok: false, error: denied };
   const r = await sendIssueBatchCore(id);
   revalidatePath("/admin/newsletter");
   revalidatePath(`/admin/newsletter/${id}`);

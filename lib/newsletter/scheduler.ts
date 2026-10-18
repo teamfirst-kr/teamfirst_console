@@ -45,9 +45,21 @@ export async function runNewsletterScheduledSends(opts: { now?: Date; budgetMs?:
       patch.published_at = issue.published_at ?? nowIso;
     }
     if (!issue.send_started_at) patch.send_started_at = nowIso;
-    const { error: pErr } = await admin.from("newsletter_issues").update(patch).eq("id", issue.id);
-    if (pErr) {
-      summary.processed.push({ id: issue.id, title: issue.title, sent: 0, failed: 0, remaining: -1, completed: false, error: pErr.message });
+    // 조건부 갱신: 그 사이 예약이 취소(approved_at NULL)되거나 완료됐으면 0행 → 건너뜀 (취소 경합 방지)
+    const { data: claimed, error: pErr } = await admin
+      .from("newsletter_issues")
+      .update(patch)
+      .eq("id", issue.id)
+      .not("approved_at", "is", null)
+      .is("send_completed_at", null)
+      .select("id");
+    if (pErr || !claimed || claimed.length === 0) {
+      const msg = pErr ? pErr.message : "예약이 취소되었거나 이미 완료되어 건너뜀";
+      summary.processed.push({ id: issue.id, title: issue.title, sent: 0, failed: 0, remaining: -1, completed: false, error: msg });
+      if (pErr) {
+        const mail = sendResultEmail({ kind: "aborted", title: issue.title, issueNo: issue.issue_no, sent: 0, failed: 0, total: null, publicUrl: `${appUrl()}/newsletter/${issue.slug}`, adminUrl: `${appUrl()}/admin/newsletter/${issue.id}`, errors: [msg] });
+        await sendEmail({ to: reviewEmailAddress(), subject: mail.subject, html: mail.html });
+      }
       continue;
     }
 
@@ -85,6 +97,7 @@ export async function runNewsletterScheduledSends(opts: { now?: Date; budgetMs?:
       ]);
       const base = appUrl();
       const mail = sendResultEmail({
+        kind: "completed",
         title: issue.title,
         issueNo: issue.issue_no,
         sent: sentTotal ?? sent,
@@ -95,18 +108,19 @@ export async function runNewsletterScheduledSends(opts: { now?: Date; budgetMs?:
       });
       await sendEmail({ to: reviewEmailAddress(), subject: mail.subject, html: mail.html });
     } else if (errorMsg) {
-      // 오류는 운영자에게 즉시 알림 (다음 실행에서 자동 재시도)
+      // 오류는 운영자에게 즉시 알림 (다음 실행에서 자동 재시도 — 선점 행이 있어 중복 발송은 없음)
       const mail = sendResultEmail({
+        kind: "aborted",
         title: issue.title,
         issueNo: issue.issue_no,
         sent,
         failed,
-        total: 0,
+        total: null,
         publicUrl: `${appUrl()}/newsletter/${issue.slug}`,
         adminUrl: `${appUrl()}/admin/newsletter/${issue.id}`,
         errors: [errorMsg],
       });
-      await sendEmail({ to: reviewEmailAddress(), subject: `[발송 중단] ${mail.subject}`, html: mail.html });
+      await sendEmail({ to: reviewEmailAddress(), subject: mail.subject, html: mail.html });
     }
     summary.processed.push({ id: issue.id, title: issue.title, sent, failed, remaining, completed, ...(errorMsg ? { error: errorMsg } : {}) });
     if (summary.budgetExhausted) break;

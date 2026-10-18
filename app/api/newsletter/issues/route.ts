@@ -126,8 +126,11 @@ export async function POST(request: Request) {
   };
 
   if (d.id) {
-    const { data: cur } = await admin.from("newsletter_issues").select("id, slug, status, published_at, sent_count").eq("id", d.id).maybeSingle();
+    const { data: cur } = await admin.from("newsletter_issues").select("id, slug, status, published_at, sent_count, approved_at, send_started_at").eq("id", d.id).maybeSingle();
     if (!cur) return NextResponse.json({ error: "해당 id의 호가 없습니다." }, { status: 404 });
+    if (cur.approved_at && !cur.send_started_at) {
+      return NextResponse.json({ error: "승인·발송 예약된 호는 수정할 수 없습니다. 운영자가 예약을 취소한 뒤 수정하세요." }, { status: 409 });
+    }
     // slug는 명시했을 때만 변경(제목만 고쳐도 URL이 바뀌지 않게), 발송된 호는 메일 링크 보호를 위해 변경 불가
     const nextSlug = d.slug ? slugify(d.slug) : cur.slug;
     if (nextSlug !== cur.slug && cur.sent_count > 0) {

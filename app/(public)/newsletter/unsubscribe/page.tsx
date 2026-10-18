@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { getNewsletterViewer } from "@/lib/newsletter/access";
+
 import { UnsubscribeConfirm } from "./unsubscribe-confirm";
 
 export const dynamic = "force-dynamic";
@@ -10,12 +12,14 @@ export const metadata = { title: "뉴스레터 수신거부 — TeamFirst", robo
 export default async function UnsubscribePage({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
   const { token } = await searchParams;
   const valid = !!token && /^[a-f0-9]{48}$/.test(token);
+  // 이미 수신거부된 구독자가 안내 메일의 링크로 오면 바로 '다시 구독' 화면을 보여준다
+  const viewer = valid ? await getNewsletterViewer(token) : null;
 
   return (
     <div className="mx-auto max-w-md px-6 py-24">
       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Newsletter</p>
       {valid ? (
-        <UnsubscribeConfirm token={token!} />
+        <UnsubscribeConfirm token={token!} initialStatus={viewer?.status ?? "subscribed"} />
       ) : (
         <>
           <h1 className="mt-3 text-2xl font-extrabold tracking-[-0.01em] text-secondary">링크가 올바르지 않습니다</h1>

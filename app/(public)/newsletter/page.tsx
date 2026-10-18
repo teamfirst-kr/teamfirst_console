@@ -45,7 +45,7 @@ export default async function NewsletterPage({ searchParams }: { searchParams: P
               주 3회 브리핑
             </h1>
             <p className="mt-6 max-w-lg break-keep text-[15px] leading-relaxed text-muted-foreground md:text-base">
-              매체 업데이트부터 컨퍼런스 인사이트, 브랜드·콘텐츠 트렌드, AI 업무 효율화까지. 광고주와 대행사 실무자가 매달 확인해야 할 변화만 골라 팀퍼스트가 직접 정리합니다.
+              매체 업데이트부터 컨퍼런스 인사이트, 브랜드·콘텐츠 트렌드, AI 업무 효율화까지. 광고주와 대행사 실무자가 매주 확인해야 할 변화만 골라 팀퍼스트가 직접 정리합니다.
             </p>
             <ol className="mt-10 divide-y border-y">
               {NEWSLETTER_CATEGORIES.filter((c) => c.value !== "general").map((c, i) => (

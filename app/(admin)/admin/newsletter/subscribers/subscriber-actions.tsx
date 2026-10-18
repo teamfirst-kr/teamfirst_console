@@ -9,6 +9,7 @@ import { deleteSubscriber, setSubscriberStatus } from "../actions";
 export function SubscriberActions({ id, status }: { id: string; status: "subscribed" | "unsubscribed" }) {
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string | null>(null);
+  const [armed, setArmed] = useState(false); // 삭제는 2단계 버튼 (브라우저 확인 창 미사용)
   return (
     <div className="flex items-center gap-1">
       <Button
@@ -25,11 +26,17 @@ export function SubscriberActions({ id, status }: { id: string; status: "subscri
         variant="ghost"
         className="h-7 text-xs text-destructive hover:bg-destructive/10"
         disabled={pending}
+        onBlur={() => setArmed(false)}
         onClick={() => {
-          if (window.confirm("구독자를 완전히 삭제할까요? (개인정보 삭제 요청 시)")) start(async () => setErr((await deleteSubscriber(id)).error ?? null));
+          if (!armed) {
+            setArmed(true);
+            return;
+          }
+          setArmed(false);
+          start(async () => setErr((await deleteSubscriber(id)).error ?? null));
         }}
       >
-        삭제
+        {armed ? "정말 삭제 (한 번 더 클릭)" : "삭제"}
       </Button>
       {err ? <span className="text-[11px] text-destructive">{err}</span> : null}
     </div>

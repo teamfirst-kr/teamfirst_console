@@ -1,7 +1,7 @@
 import "server-only";
 
-import { DEFAULT_BUTTON_LABEL, resolveHighlight, subjectFor } from "@/lib/newsletter/highlight";
-import { escapeHtml, renderInline } from "@/lib/newsletter/markdown";
+import { DEFAULT_BUTTON_LABEL, formatKstDateTime, resolveHighlight, subjectFor } from "@/lib/newsletter/highlight";
+import { escapeHtml, markdownToText, renderInline } from "@/lib/newsletter/markdown";
 import type { NewsletterIssueRow } from "@/types/database";
 
 const NAVY = "#111E38";
@@ -30,9 +30,9 @@ export function newsletterEmail(params: {
   const { issue } = params;
   const variant = params.variant ?? "subscriber";
   const h = resolveHighlight(issue);
-  const dateText = (issue.send_scheduled_at ?? issue.published_at ?? issue.created_at).slice(0, 10).replace(/-/g, ".");
+  const dateText = formatKstDateTime(issue.send_scheduled_at ?? issue.published_at ?? issue.created_at).slice(0, 10); // KST 날짜
   const consultUrl = `${params.webUrl}&to=consult`;
-  const preheader = escapeHtml(h.intro || h.headline);
+  const preheader = escapeHtml(markdownToText(h.intro || h.headline, 160)); // 받은편지함 미리보기에는 마크다운 기호 제거
   const volText = issue.issue_no ? `Vol.${issue.issue_no}` : "";
   const intro = renderInline(escapeHtml(h.intro), "email").replace(/\n/g, "<br/>");
 
@@ -93,8 +93,9 @@ export function newsletterEmail(params: {
         <td style="padding:22px 36px 28px;background:#f8fafc;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;line-height:1.8;">
           <p style="margin:0;">본 메일은 팀퍼스트 뉴스레터 및 광고성 정보 수신에 동의하신 분께 발송됩니다.
             <a href="${escapeHtml(params.webUrl)}" style="color:${NAVY};">웹에서 보기</a> ·
-            <a href="${escapeHtml(params.unsubscribeUrl)}" style="color:#6b7280;">수신거부</a></p>
-          <p style="margin:8px 0 0;color:#9ca3af;font-size:11px;">전송자: 팀퍼스트(TeamFirst) · 사업자등록번호 102-16-97516 · 20, Yonghae-ro, Seo-gu, Incheon · 문의 team1st2025@gmail.com</p>
+            <a href="${escapeHtml(params.unsubscribeUrl)}" style="color:#6b7280;">수신거부 Unsubscribe</a></p>
+          <p style="margin:6px 0 0;">수신을 원하지 않으시면 위 '수신거부'를 눌러주세요. If you no longer wish to receive this email, click 'Unsubscribe' above.</p>
+          <p style="margin:8px 0 0;color:#9ca3af;font-size:11px;">전송자: 팀퍼스트(TeamFirst) · 사업자등록번호 102-16-97516 · 20, Yonghae-ro, Seo-gu, Incheon · 전화 010-9543-2625 · 이메일 team1st2025@gmail.com</p>
         </td>
       </tr>
     </table>
