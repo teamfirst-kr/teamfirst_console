@@ -23,7 +23,12 @@ export default async function SubscribersPage({ searchParams }: { searchParams: 
     .order("created_at", { ascending: false })
     .limit(500);
   if (status === "subscribed" || status === "unsubscribed") query = query.eq("status", status);
-  if (q?.trim()) query = query.or(`email.ilike.%${q.trim()}%,brand_name.ilike.%${q.trim()}%,biz_reg_no.ilike.%${q.replace(/\D/g, "")}%`);
+  // 검색어는 PostgREST 필터 문법·LIKE 와일드카드를 제거한 안전 문자만 사용, 사업자번호 조건은 숫자가 있을 때만
+  const safe = (q ?? "").replace(/[^\p{L}\p{N}@.\- ]/gu, "").trim().slice(0, 60);
+  const digits = (q ?? "").replace(/\D/g, "").slice(0, 10);
+  const clauses = safe ? [`email.ilike."%${safe}%"`, `brand_name.ilike."%${safe}%"`] : [];
+  if (digits) clauses.push(`biz_reg_no.ilike."%${digits}%"`);
+  if (clauses.length > 0) query = query.or(clauses.join(","));
   const { data, error } = await query;
   const rows = (error ? [] : (data ?? [])) as Row[];
 

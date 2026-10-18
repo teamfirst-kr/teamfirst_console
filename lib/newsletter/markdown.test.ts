@@ -47,6 +47,15 @@ describe("뉴스레터 마크다운 렌더러", () => {
     expect(html).not.toContain("class=");
   });
 
+  it("문단 뒤 이미지 줄은 별도 블록, 문장 안 이미지는 <img>, 메일은 width 속성", () => {
+    const blocks = parseMarkdown("설명 문장\n![그림](https://x.y/a.png)");
+    expect(blocks.map((b) => b.type)).toEqual(["paragraph", "image"]);
+    const web = renderMarkdown("앞 ![아이콘](https://x.y/i.png) 뒤");
+    expect(web).toContain('<img src="https://x.y/i.png" alt="아이콘" class="nl-img"/>');
+    expect(web).not.toContain("!<a");
+    expect(renderMarkdown("![c](https://x.y/c.png)", "email")).toMatch(/<img src="https:\/\/x.y\/c.png" alt="c" width="568" style="/);
+  });
+
   it("평문 요약", () => {
     expect(markdownToText("## 제목\n**굵게** [링크](https://x.y) 본문", 50)).toBe("제목 굵게 링크 본문");
   });

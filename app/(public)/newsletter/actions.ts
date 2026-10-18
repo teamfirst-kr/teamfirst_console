@@ -20,9 +20,12 @@ function rateLimited(ip: string): boolean {
 }
 
 const ORG_TYPES: NewsletterOrgType[] = ["brand", "agency", "marketer", "other"];
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// 와일드카드(% * _ 는 LIKE 패턴)·공백·따옴표 등은 거부. 로컬파트는 영숫자와 . _ + - 만 허용
+const EMAIL_RE = /^[a-z0-9._+-]+@[a-z0-9-]+(\.[a-z0-9-]+)+$/;
 
-export type SubscribeResult = { ok: true; already?: boolean } | { ok: false; error: string };
+export type SubscribeResult =
+  | { ok: true; already?: boolean; mismatch?: boolean } // mismatch: 기존 등록 이메일이지만 사업자번호가 달라 열람 권한을 주지 않음
+  | { ok: false; error: string };
 
 async function setViewerCookie(token: string) {
   (await cookies()).set(NL_COOKIE, token, {
@@ -62,14 +65,22 @@ export async function subscribeNewsletter(input: {
 
   try {
     const admin = createAdminClient();
-    const { data: existing } = await admin.from("newsletter_subscribers").select("id, status, token").ilike("email", email).maybeSingle();
+    // 정확히 일치하는 이메일만 (ilike는 _ % 가 패턴으로 해석돼 타인 행에 매칭될 수 있음)
+    const { data: existing, error: lookupError } = await admin
+      .from("newsletter_subscribers")
+      .select("id, status, token, biz_reg_no")
+      .eq("email", email)
+      .maybeSingle();
+    if (lookupError) return { ok: false, error: "등록 처리에 실패했습니다. 잠시 후 다시 시도해주세요." };
     const now = new Date().toISOString();
     if (existing) {
+      // 기존 등록 이메일: 등록해 둔 사업자번호가 일치해야 본인으로 보고 열람 쿠키를 준다.
+      // (이메일만 알면 남의 정보를 덮어쓰거나 수신거부를 되돌리거나 토큰을 받는 것을 막는다)
+      if (existing.biz_reg_no !== bizRegNo) return { ok: true, mismatch: true };
       const { error } = await admin
         .from("newsletter_subscribers")
         .update({
           brand_name: brandName,
-          biz_reg_no: bizRegNo,
           ...(name ? { name } : {}),
           org_type: orgType,
           status: "subscribed",

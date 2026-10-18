@@ -36,7 +36,7 @@ const EMAIL_STYLE = {
   li: "margin:0 0 6px;font-size:15px;line-height:1.75;color:#1f2937;",
   quote: `margin:0 0 18px;padding:14px 18px;background:#f8fafc;border-left:3px solid ${NAVY};font-size:14px;line-height:1.75;color:#334155;`,
   hr: "border:0;border-top:1px solid #e5e7eb;margin:28px 0;",
-  img: "display:block;max-width:100%;height:auto;border-radius:4px;margin:0 0 18px;",
+  img: "display:block;width:100%;max-width:568px;height:auto;border-radius:4px;margin:0 0 18px;",
   table: "width:100%;border-collapse:collapse;margin:0 0 18px;font-size:13px;",
   th: `padding:9px 10px;background:#f1f5f9;color:${NAVY};text-align:left;font-weight:700;border-top:1px solid ${NAVY};border-bottom:1px solid #e5e7eb;`,
   td: "padding:9px 10px;border-bottom:1px solid #e5e7eb;color:#1f2937;line-height:1.6;vertical-align:top;",
@@ -50,8 +50,19 @@ function attr(mode: MarkdownMode, key: keyof typeof EMAIL_STYLE): string {
 }
 
 // 인라인: 이미 이스케이프된 텍스트에 링크·굵게·코드 적용
+function imgTag(src: string, alt: string, mode: MarkdownMode): string {
+  // 메일(Outlook)은 max-width를 무시하므로 width 속성을 함께 준다
+  const size = mode === "email" ? ` width="568"` : "";
+  return `<img src="${src}" alt="${alt}"${size}${attr(mode, "img")}/>`;
+}
+
 export function renderInline(escaped: string, mode: MarkdownMode): string {
   let out = escaped.replace(/`([^`]+)`/g, (_m, c: string) => `<code${attr(mode, "code")}>${c}</code>`);
+  // 문장 안의 이미지 ![alt](url) — 링크보다 먼저 처리
+  out = out.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_m, alt: string, url: string) => {
+    const u = safeUrl(url.replace(/&amp;/g, "&"));
+    return u ? imgTag(u, alt, mode) : "";
+  });
   out = out.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, text: string, url: string) => {
     // 이스케이프 전 URL의 &는 &amp; 로 들어오므로 복원 후 검사
     const u = safeUrl(url.replace(/&amp;/g, "&"));
@@ -136,7 +147,7 @@ export function parseMarkdown(md: string): Block[] {
     // 문단: 빈 줄 전까지 이어붙임 (줄바꿈은 <br>)
     const p: string[] = [line];
     i++;
-    while (i < lines.length && lines[i].trim() && !/^(#{1,3}\s|[-*]\s|\d+[.)]\s|>|\|)/.test(lines[i].trim()) && !/^(-{3,}|\*{3,})$/.test(lines[i].trim())) {
+    while (i < lines.length && lines[i].trim() && !/^(#{1,3}\s|[-*]\s|\d+[.)]\s|>|\||!\[)/.test(lines[i].trim()) && !/^(-{3,}|\*{3,})$/.test(lines[i].trim())) {
       p.push(lines[i].trim());
       i++;
     }
@@ -166,7 +177,7 @@ export function renderMarkdown(md: string, mode: MarkdownMode = "web"): string {
           return `<hr${attr(mode, "hr")}/>`;
         case "image": {
           const src = safeUrl(b.src);
-          return src ? `<img src="${src}" alt="${escapeHtml(b.alt)}"${attr(mode, "img")}/>` : "";
+          return src ? imgTag(src, escapeHtml(b.alt), mode) : "";
         }
         case "table":
           return `<table${attr(mode, "table")}><thead><tr>${b.header.map((h) => `<th${attr(mode, "th")}>${inline(h)}</th>`).join("")}</tr></thead><tbody>${b.rows

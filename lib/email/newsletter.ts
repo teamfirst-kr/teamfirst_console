@@ -18,7 +18,7 @@ export function newsletterEmail(params: {
   issue: NewsletterIssueRow;
   recipientName?: string | null;
   unsubscribeUrl: string;
-  webUrl: string; // 토큰 포함 (등록 없이 바로 열람)
+  webUrl: string; // /newsletter/open?t=…&slug=… (토큰을 쿠키로 바꾸고 깨끗한 URL로 이동)
 }): { subject: string; html: string } {
   const { issue } = params;
   const cat = CATEGORY_MAP[issue.category];
@@ -27,7 +27,7 @@ export function newsletterEmail(params: {
     title: issue.cta_title?.trim() || DEFAULT_CTA.title,
     body: issue.cta_body?.trim() || DEFAULT_CTA.body,
   };
-  const consultUrl = `${params.webUrl}#consult`; // 웹 상담 신청 양식 (브랜드명·월 마케팅 예산·연락처)
+  const consultUrl = `${params.webUrl}&to=consult`; // 웹 상담 신청 양식 (브랜드명·월 마케팅 예산·연락처)
   const preheader = escapeHtml(issue.summary ?? issue.title);
   const body = renderMarkdown(issue.body_md, "email");
   const volText = issue.issue_no ? `Vol.${issue.issue_no}` : "";
