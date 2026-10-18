@@ -53,27 +53,38 @@ export default async function NewsletterIssuePage({
 
   return (
     <article className="bg-background">
-      <div className="mx-auto max-w-3xl px-6 pt-10">
-        <Link href="/newsletter" className="text-sm text-muted-foreground hover:underline">
-          ← 뉴스레터 보관함
-        </Link>
-        {issue.status !== "published" ? (
-          <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">초안 미리보기 — 아직 공개되지 않았습니다 (운영자에게만 보임).</p>
-        ) : null}
-        <div className="mt-5 flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground">
-          <span className="rounded-full bg-secondary/10 px-2.5 py-1 text-secondary">
-            {cat.emoji} {cat.label}
-          </span>
-          {issue.issue_no ? <span>Vol.{issue.issue_no}</span> : null}
-          <span>{dateText}</span>
+      <header className="border-b">
+        <div className="mx-auto max-w-3xl px-6 pb-10 pt-10 md:pt-14">
+          <Link href="/newsletter" className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground hover:text-foreground">
+            ← Newsletter
+          </Link>
+          {issue.status !== "published" ? (
+            <p className="mt-4 border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">초안 미리보기 — 아직 공개되지 않았습니다 (운영자에게만 보임).</p>
+          ) : null}
+          <p className="mt-8 flex flex-wrap items-center gap-x-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            <span className="text-primary">{cat.code}</span>
+            <span aria-hidden>·</span>
+            <span>{cat.label}</span>
+            {issue.issue_no ? (
+              <>
+                <span aria-hidden>·</span>
+                <span>Vol.{issue.issue_no}</span>
+              </>
+            ) : null}
+            <span aria-hidden>·</span>
+            <span className="tracking-normal">{dateText}</span>
+          </p>
+          <h1 className="mt-4 break-keep text-[30px] font-extrabold leading-[1.25] tracking-[-0.02em] text-secondary md:text-[40px]">{issue.title}</h1>
+          {issue.summary ? <p className="mt-5 break-keep text-[17px] leading-relaxed text-muted-foreground">{issue.summary}</p> : null}
         </div>
-        <h1 className="mt-3 break-keep text-3xl font-extrabold leading-tight text-secondary md:text-4xl">{issue.title}</h1>
-        {issue.summary ? <p className="mt-4 break-keep text-lg leading-relaxed text-muted-foreground">{issue.summary}</p> : null}
-        {issue.cover_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={issue.cover_url} alt="" className="mt-8 w-full rounded-2xl border object-cover" />
-        ) : null}
-      </div>
+      </header>
+
+      {issue.cover_url ? (
+        <div className="mx-auto max-w-3xl px-6 pt-10">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={issue.cover_url} alt="" className="aspect-[16/9] w-full object-cover" />
+        </div>
+      ) : null}
 
       {unlocked ? (
         <>
@@ -82,35 +93,39 @@ export default async function NewsletterIssuePage({
           </div>
 
           {/* 주제와 이어지는 CTA + 상담 신청 양식 */}
-          <div id="consult" className="mx-auto max-w-3xl scroll-mt-20 px-6 pb-16">
-            <div className="rounded-2xl bg-secondary p-7 text-secondary-foreground">
-              <p className="text-xs font-bold tracking-[0.15em] text-sky-300">TEAMFIRST</p>
-              <p className="mt-2 break-keep text-xl font-extrabold">{cta.title}</p>
-              <p className="mt-2 break-keep text-sm leading-relaxed text-white/75">{cta.body}</p>
-              <div className="mt-5 rounded-xl bg-white p-4 text-foreground">
-                <p className="mb-3 text-sm font-bold text-secondary">💬 팀퍼스트에 상담 신청하기</p>
-                <NewsletterConsultForm slug={issue.slug} defaultBrand={viewer?.brand_name} />
+          <section id="consult" className="mx-auto max-w-3xl scroll-mt-20 px-6 pb-20">
+            <div className="border-t-2 border-secondary pt-8">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Consulting</p>
+              <h2 className="mt-3 break-keep text-2xl font-extrabold leading-snug tracking-[-0.01em] text-secondary">{cta.title}</h2>
+              <p className="mt-3 max-w-2xl break-keep text-[15px] leading-relaxed text-muted-foreground">{cta.body}</p>
+              <div className="mt-8 bg-muted/40 p-6 md:p-8">
+                <p className="text-sm font-bold text-secondary">팀퍼스트에 상담 신청하기</p>
+                <p className="mt-1 text-xs text-muted-foreground">브랜드명·월 마케팅 예산·연락처만 남기시면 담당자가 연락드립니다.</p>
+                <div className="mt-5">
+                  <NewsletterConsultForm slug={issue.slug} defaultBrand={viewer?.brand_name} />
+                </div>
               </div>
             </div>
             {viewer?.status === "unsubscribed" ? (
-              <div className="mt-6 rounded-2xl border bg-card p-5">
+              <div className="mt-10 border-t pt-6">
                 <p className="text-sm font-bold text-secondary">현재 수신거부 상태입니다</p>
-                <p className="mt-1 text-xs text-muted-foreground">다시 받아보시려면 아래에서 등록해주세요.</p>
-                <div className="mt-3">
+                <p className="mt-1 text-xs text-muted-foreground">다음 호를 다시 받아보시려면 아래에서 등록해주세요.</p>
+                <div className="mt-4">
                   <NewsletterSubscribeForm source={`issue:${issue.slug}`} submitLabel="다시 구독하기" refreshOnSuccess />
                 </div>
               </div>
             ) : null}
-          </div>
+          </section>
         </>
       ) : (
-        <div className="mx-auto max-w-3xl px-6 py-10">
-          <div className="relative overflow-hidden rounded-2xl border bg-card p-6 shadow-sm md:p-8">
-            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-secondary to-primary" />
-            <p className="text-xs font-bold tracking-[0.15em] text-primary">🔒 계속 읽으려면 등록이 필요합니다</p>
-            <h2 className="mt-2 break-keep text-xl font-extrabold text-secondary">사업자번호 · 브랜드명 · 이메일을 등록하면 전체 내용을 바로 볼 수 있습니다</h2>
-            <p className="mt-2 text-sm text-muted-foreground">등록 즉시 이 호의 전문이 열리고, 다음 호부터 메일로 받아보실 수 있습니다. 무료입니다.</p>
-            <div className="mt-5">
+        <div className="mx-auto max-w-3xl px-6 py-12">
+          <div className="border border-border bg-card p-7 md:p-9">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Subscribers only</p>
+            <h2 className="mt-3 break-keep text-xl font-extrabold tracking-[-0.01em] text-secondary md:text-2xl">등록 후 전문을 확인하실 수 있습니다</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              사업자등록번호·브랜드명·이메일을 등록하면 이 호의 전문이 바로 열리고, 다음 호부터 메일로 받아보실 수 있습니다. 무료이며 언제든 수신거부할 수 있습니다.
+            </p>
+            <div className="mt-7">
               <NewsletterSubscribeForm source={`issue:${issue.slug}`} submitLabel="등록하고 계속 읽기" refreshOnSuccess />
             </div>
           </div>

@@ -63,8 +63,8 @@ export default async function AdminNewsletterPage() {
 
       <div className={"rounded-lg border p-3 text-xs " + (apiEnabled ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800")}>
         {apiEnabled
-          ? "🤖 Cowork 자동화 API 활성 — Cowork가 작성한 호는 이 목록에 초안으로 들어옵니다. 내용 확인 후 공개·발송하세요. (프롬프트: docs/COWORK_NEWSLETTER_PROMPT.md)"
-          : "🤖 Cowork 자동화 API 비활성 — Vercel 환경변수 NEWSLETTER_API_KEY를 설정하면 Cowork가 호를 자동 작성해 초안으로 올릴 수 있습니다. (docs/COWORK_NEWSLETTER_PROMPT.md)"}
+          ? "Cowork 자동화 API 활성 — Cowork가 작성한 호는 이 목록에 초안으로 들어옵니다. 내용 확인 후 공개·발송하세요. (프롬프트: docs/COWORK_NEWSLETTER_PROMPT.md)"
+          : "Cowork 자동화 API 비활성 — Vercel 환경변수 NEWSLETTER_API_KEY를 설정하면 Cowork가 호를 자동 작성해 초안으로 올릴 수 있습니다. (docs/COWORK_NEWSLETTER_PROMPT.md)"}
       </div>
 
       <section>
@@ -97,7 +97,7 @@ export default async function AdminNewsletterPage() {
                         <p className="text-xs text-muted-foreground">/newsletter/{i.slug}</p>
                       </td>
                       <td className="px-4 py-2.5 text-xs">
-                        {cat.emoji} {cat.label}
+                        <span className="font-semibold text-primary">{cat.code}</span> · {cat.label}
                       </td>
                       <td className="px-4 py-2.5">
                         {i.status === "published" ? <Badge variant="success">공개 {(i.published_at ?? "").slice(0, 10)}</Badge> : <Badge variant="warning">초안</Badge>}

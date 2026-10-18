@@ -28,20 +28,20 @@ const NAVY = "#111E38";
 const BLUE = "#004AAD";
 
 const EMAIL_STYLE = {
-  h1: `margin:28px 0 12px;font-size:24px;line-height:1.35;font-weight:800;color:${NAVY};`,
-  h2: `margin:28px 0 10px;padding-left:10px;border-left:4px solid ${BLUE};font-size:19px;line-height:1.4;font-weight:800;color:${NAVY};`,
-  h3: `margin:20px 0 8px;font-size:16px;line-height:1.5;font-weight:700;color:${NAVY};`,
-  p: "margin:0 0 14px;font-size:15px;line-height:1.75;color:#1f2937;",
-  ul: "margin:0 0 16px;padding-left:22px;",
-  li: "margin:0 0 6px;font-size:15px;line-height:1.7;color:#1f2937;",
-  quote: `margin:0 0 18px;padding:14px 16px;background:#eef4ff;border-left:4px solid ${BLUE};border-radius:6px;font-size:14px;line-height:1.7;color:#1e3a8a;`,
-  hr: "border:0;border-top:1px solid #e5e7eb;margin:24px 0;",
-  img: "display:block;max-width:100%;height:auto;border-radius:8px;margin:0 0 16px;",
+  h1: `margin:28px 0 12px;font-size:24px;line-height:1.35;font-weight:800;letter-spacing:-0.01em;color:${NAVY};`,
+  h2: `margin:34px 0 12px;padding-top:14px;border-top:1px solid #e5e7eb;font-size:19px;line-height:1.4;font-weight:800;letter-spacing:-0.01em;color:${NAVY};`,
+  h3: `margin:22px 0 8px;font-size:16px;line-height:1.5;font-weight:700;color:${NAVY};`,
+  p: "margin:0 0 14px;font-size:15px;line-height:1.8;color:#1f2937;",
+  ul: "margin:0 0 16px;padding-left:20px;",
+  li: "margin:0 0 6px;font-size:15px;line-height:1.75;color:#1f2937;",
+  quote: `margin:0 0 18px;padding:14px 18px;background:#f8fafc;border-left:3px solid ${NAVY};font-size:14px;line-height:1.75;color:#334155;`,
+  hr: "border:0;border-top:1px solid #e5e7eb;margin:28px 0;",
+  img: "display:block;max-width:100%;height:auto;border-radius:4px;margin:0 0 18px;",
   table: "width:100%;border-collapse:collapse;margin:0 0 18px;font-size:13px;",
-  th: `padding:8px 10px;background:${NAVY};color:#ffffff;text-align:left;font-weight:700;border:1px solid #e5e7eb;`,
-  td: "padding:8px 10px;border:1px solid #e5e7eb;color:#1f2937;line-height:1.6;vertical-align:top;",
+  th: `padding:9px 10px;background:#f1f5f9;color:${NAVY};text-align:left;font-weight:700;border-top:1px solid ${NAVY};border-bottom:1px solid #e5e7eb;`,
+  td: "padding:9px 10px;border-bottom:1px solid #e5e7eb;color:#1f2937;line-height:1.6;vertical-align:top;",
   a: `color:${BLUE};text-decoration:underline;`,
-  code: "font-family:ui-monospace,Menlo,monospace;font-size:13px;background:#f1f5f9;padding:1px 5px;border-radius:4px;",
+  code: "font-family:ui-monospace,Menlo,monospace;font-size:13px;background:#f1f5f9;padding:1px 5px;border-radius:3px;",
   strong: `font-weight:700;color:${NAVY};`,
 };
 

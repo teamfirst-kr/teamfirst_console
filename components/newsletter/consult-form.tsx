@@ -4,8 +4,6 @@ import { useState, useTransition } from "react";
 
 import { submitQuickLead } from "@/app/(public)/apply/lead-actions";
 import { trackConversion } from "@/components/analytics/track";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { BUDGET_OPTIONS } from "@/lib/newsletter/constants";
 
 // 뉴스레터 호 하단 "팀퍼스트에 상담 신청하기" — 브랜드명·월 마케팅 예산·연락처 → pb_leads (운영자 즉시 알림)
@@ -20,16 +18,18 @@ export function NewsletterConsultForm({ slug, defaultBrand }: { slug: string; de
 
   if (done) {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-center">
-        <p className="font-bold text-emerald-800">✅ 상담 신청이 접수되었습니다</p>
-        <p className="mt-1 text-xs text-emerald-700">담당자가 영업일 기준 1일 내에 연락드립니다.</p>
+      <div className="border-t border-secondary pt-4">
+        <p className="text-sm font-semibold text-secondary">상담 신청이 접수되었습니다.</p>
+        <p className="mt-1 text-xs text-muted-foreground">담당자가 영업일 기준 1일 내에 연락드립니다.</p>
       </div>
     );
   }
 
+  const field = "h-11 w-full border-b border-border bg-transparent px-0 text-[15px] text-foreground placeholder:text-muted-foreground/70 focus:border-secondary focus:outline-none";
+
   return (
     <form
-      className="grid gap-2 sm:grid-cols-3"
+      className="space-y-4"
       onSubmit={(e) => {
         e.preventDefault();
         if (!valid || pending) return;
@@ -40,7 +40,7 @@ export function NewsletterConsultForm({ slug, defaultBrand }: { slug: string; de
             phone,
             budget,
             source: `nl:${slug}`.slice(0, 40),
-            label: "📰 뉴스레터 상담 신청",
+            label: "뉴스레터 상담 신청",
             budgetLabel: "월 마케팅 예산",
           });
           if (!r.ok) {
@@ -52,19 +52,34 @@ export function NewsletterConsultForm({ slug, defaultBrand }: { slug: string; de
         });
       }}
     >
-      <Input placeholder="브랜드명 *" value={brand} onChange={(e) => setBrand(e.target.value)} maxLength={100} required aria-label="브랜드명" />
-      <select aria-label="월 마케팅 예산" value={budget} onChange={(e) => setBudget(Number(e.target.value))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-        {BUDGET_OPTIONS.map((b) => (
-          <option key={b.value} value={b.value}>
-            월 마케팅 예산 · {b.label}
-          </option>
-        ))}
-      </select>
-      <Input placeholder="연락처 * (010-0000-0000)" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" maxLength={20} required aria-label="연락처" />
-      {err ? <p className="text-xs text-red-600 sm:col-span-3">{err}</p> : null}
-      <Button type="submit" disabled={!valid || pending} className="sm:col-span-3">
-        {pending ? "접수 중…" : "팀퍼스트에 상담 신청하기"}
-      </Button>
+      <div className="grid gap-x-6 gap-y-1 sm:grid-cols-3">
+        <label className="block">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">브랜드명</span>
+          <input value={brand} onChange={(e) => setBrand(e.target.value)} className={field} maxLength={100} required placeholder="브랜드명" />
+        </label>
+        <label className="block">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">월 마케팅 예산</span>
+          <select value={budget} onChange={(e) => setBudget(Number(e.target.value))} className={field + " cursor-pointer"}>
+            {BUDGET_OPTIONS.map((b) => (
+              <option key={b.value} value={b.value}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">연락처</span>
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} className={field} inputMode="tel" maxLength={20} required placeholder="010-0000-0000" />
+        </label>
+      </div>
+      {err ? <p className="text-xs text-red-600">{err}</p> : null}
+      <button
+        type="submit"
+        disabled={!valid || pending}
+        className="inline-flex h-11 items-center justify-center bg-secondary px-6 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-secondary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+      >
+        {pending ? "접수 중" : "상담 신청하기"}
+      </button>
     </form>
   );
 }

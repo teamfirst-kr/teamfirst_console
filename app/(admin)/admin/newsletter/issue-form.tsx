@@ -40,7 +40,7 @@ export function IssueForm({
             <select id="category" name="category" defaultValue={initial?.category ?? "general"} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
               {NEWSLETTER_CATEGORIES.map((c) => (
                 <option key={c.value} value={c.value}>
-                  {c.emoji} {c.label}
+                  {c.code} · {c.label}
                 </option>
               ))}
             </select>

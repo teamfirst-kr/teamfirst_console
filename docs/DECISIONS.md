@@ -515,4 +515,5 @@
 - **발송**: Resend batch API 50통 단위, 클라이언트가 remaining=0까지 반복(서버리스 타임아웃 회피). 수신자별 BCC 대신 최초 배치에 검수 사본 1통. 테스트 발송은 운영자 본인 메일.
 - **Cowork 자동화**: `NEWSLETTER_API_KEY`(Bearer)로 `/api/newsletter/upload`(이미지) · `/api/newsletter/issues`(GET 목록 / POST 생성·수정, 기본 초안). 프롬프트는 `docs/COWORK_NEWSLETTER_PROMPT.md`. 공개·발송은 운영자가 콘솔에서.
 - **노출**: 헤더·푸터 "뉴스레터", 랜딩 하단 구독 섹션, `/newsletter`(카테고리 필터·지난 호), 사이트맵. 운영자 콘솔 콘텐츠 그룹에 "뉴스레터"(호·발송·구독자 CSV), 대시보드 구독자·발행 호 카드.
+- **디자인 톤(사용자 피드백)**: "AI 티"를 줄이고 나스미디어·화해 비즈니스·아이보스·아드리엘·원포인트 같은 리포트형 에디토리얼 톤으로 — 이모지 전면 제거(카테고리는 영문 코드 MEDIA/INSIGHT/BRAND/CONTENT/AI/DIGEST), 흰 배경·괘선·넘버링 목록·언더라인 탭·밑줄형 입력 필드·사각 네이비 버튼, 본문은 소제목 상단 괘선·연회색 표 헤더, 메일도 동일 톤(상단 네이비 바·워드마크·CONSULTING 블록). Cowork 프롬프트에 이모지·느낌표 금지 규칙 추가.
 

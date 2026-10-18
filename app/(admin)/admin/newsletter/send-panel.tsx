@@ -20,16 +20,16 @@ export function SendPanel({ issueId, published, sentCount, subscriberCount }: { 
       for (let guard = 0; guard < 200; guard++) {
         const r = await sendIssueBatch(issueId);
         if (!r.ok) {
-          push(`❌ ${r.error}`);
+          push(`[오류] ${r.error}`);
           return;
         }
         acc += r.sent;
         setProgress({ sent: r.total - r.remaining, total: r.total });
         if (r.remaining === 0) {
-          push(acc === 0 ? "✅ 보낼 구독자가 없습니다 (전원 발송 완료)." : `✅ ${acc}명에게 발송을 완료했습니다.`);
+          push(acc === 0 ? "[완료] 보낼 구독자가 없습니다 (전원 발송 완료)." : `[완료] ${acc}명에게 발송을 완료했습니다.`);
           return;
         }
-        push(`… ${r.sent}명 발송, 남은 ${r.remaining}명`);
+        push(`[진행] ${r.sent}명 발송, 남은 ${r.remaining}명`);
       }
     });
   }
@@ -51,7 +51,7 @@ export function SendPanel({ issueId, published, sentCount, subscriberCount }: { 
             onClick={() =>
               start(async () => {
                 const r = await sendTestIssue(issueId);
-                push(r.ok ? `📨 테스트 메일을 ${r.to} 로 보냈습니다.` : `❌ ${r.error}`);
+                push(r.ok ? `[테스트] ${r.to} 로 보냈습니다.` : `[오류] ${r.error}`);
               })
             }
           >
@@ -68,7 +68,7 @@ export function SendPanel({ issueId, published, sentCount, subscriberCount }: { 
             onClick={() => {
               if (window.confirm("이 호를 삭제할까요?")) start(async () => {
                 const r = await deleteIssue(issueId);
-                if (r && !r.ok) push(`❌ ${r.error}`);
+                if (r && !r.ok) push(`[오류] ${r.error}`);
               });
             }}
           >

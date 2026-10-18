@@ -42,7 +42,7 @@ describe("뉴스레터 마크다운 렌더러", () => {
 
   it("메일 모드는 인라인 스타일을 붙인다", () => {
     const html = renderMarkdown("## 메타\n문단", "email");
-    expect(html).toMatch(/<h2 style="[^"]*border-left/);
+    expect(html).toMatch(/<h2 style="[^"]*border-top/);
     expect(html).toMatch(/<p style="/);
     expect(html).not.toContain("class=");
   });
