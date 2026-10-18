@@ -41,6 +41,10 @@ export function NewsletterSubscribeForm({
         setErr(r.error);
         return;
       }
+      if (r.mismatch) {
+        setErr("이미 등록된 이메일인데 사업자등록번호가 등록 정보와 다릅니다. 등록 당시 번호로 다시 입력하거나, 받으신 메일의 '웹에서 보기' 링크로 열람해주세요.");
+        return;
+      }
       trackEvent("newsletter_subscribe", { source, org_type: orgType, already: !!r.already });
       if (refreshOnSuccess) {
         router.refresh();

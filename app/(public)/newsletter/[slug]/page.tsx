@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { NewsletterConsultForm } from "@/components/newsletter/consult-form";
 import { NewsletterSubscribeForm } from "@/components/newsletter/subscribe-form";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentRole } from "@/lib/auth";
 import { getNewsletterViewer } from "@/lib/newsletter/access";
 import { CATEGORY_MAP, DEFAULT_CTA } from "@/lib/newsletter/constants";
@@ -13,15 +14,31 @@ import type { NewsletterIssueRow } from "@/types/database";
 
 export const dynamic = "force-dynamic";
 
-async function loadIssue(slug: string): Promise<NewsletterIssueRow | null> {
+const PUBLIC_COLS = "id, slug, issue_no, title, summary, category, cover_url, status, published_at, sent_at, sent_count, created_at, updated_at";
+type PublicIssue = Omit<NewsletterIssueRow, "body_md" | "cta_title" | "cta_body">;
+type BodyCols = Pick<NewsletterIssueRow, "body_md" | "cta_title" | "cta_body">;
+
+// 공개 컬럼만 (033: anon/authenticated 는 본문 컬럼을 읽을 수 없다). RLS: 공개는 published만, 운영자는 draft도.
+async function loadIssue(slug: string): Promise<PublicIssue | null> {
   const supabase = await createClient();
-  // RLS: 공개는 published만, 운영자는 draft도 조회 가능(미리보기)
-  const { data } = await supabase.from("newsletter_issues").select("*").eq("slug", slug).maybeSingle();
-  return (data as NewsletterIssueRow | null) ?? null;
+  const { data } = await supabase.from("newsletter_issues").select(PUBLIC_COLS).eq("slug", slug).maybeSingle();
+  return (data as PublicIssue | null) ?? null;
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const { slug } = await params;
+// 본문·CTA — 등록 확인(unlocked) 뒤에만 service_role 로 읽는다
+async function loadBody(id: string): Promise<BodyCols | null> {
+  try {
+    const { data } = await createAdminClient().from("newsletter_issues").select("body_md, cta_title, cta_body").eq("id", id).maybeSingle();
+    return (data as BodyCols | null) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ t?: string }> }): Promise<Metadata> {
+  const [{ slug }, { t }] = await Promise.all([params, searchParams]);
+  // 메타데이터 단계에서 먼저 토큰 교환 라우트로 보내 토큰이 어떤 응답에도 남지 않게 한다
+  if (t) redirect(`/newsletter/open?t=${encodeURIComponent(t)}&slug=${encodeURIComponent(slug)}`);
   const issue = await loadIssue(slug);
   if (!issue) notFound(); // 메타데이터 단계에서 404 → 스트리밍 전에 상태코드 확정
   return {
@@ -40,15 +57,18 @@ export default async function NewsletterIssuePage({
   searchParams: Promise<{ t?: string }>;
 }) {
   const [{ slug }, { t }] = await Promise.all([params, searchParams]);
+  // 메일 링크의 토큰은 쿠키로 바꾸고 주소에서 제거 (분석 도구·브라우저 기록·전달 메일에 남지 않게)
+  if (t) redirect(`/newsletter/open?t=${encodeURIComponent(t)}&slug=${encodeURIComponent(slug)}`);
   const issue = await loadIssue(slug);
   if (!issue) notFound();
-  const [viewer, role] = await Promise.all([getNewsletterViewer(t), getCurrentRole()]);
+  const [viewer, role] = await Promise.all([getNewsletterViewer(), getCurrentRole()]);
   const unlocked = !!viewer || role === "admin";
+  const body = unlocked ? await loadBody(issue.id) : null;
   const cat = CATEGORY_MAP[issue.category];
   const dateText = (issue.published_at ?? issue.created_at).slice(0, 10).replace(/-/g, ".");
   const cta = {
-    title: issue.cta_title?.trim() || DEFAULT_CTA.title,
-    body: issue.cta_body?.trim() || DEFAULT_CTA.body,
+    title: body?.cta_title?.trim() || DEFAULT_CTA.title,
+    body: body?.cta_body?.trim() || DEFAULT_CTA.body,
   };
 
   return (
@@ -89,7 +109,7 @@ export default async function NewsletterIssuePage({
       {unlocked ? (
         <>
           <div className="mx-auto max-w-3xl px-6 py-10">
-            <div className="nl-body" dangerouslySetInnerHTML={{ __html: renderMarkdown(issue.body_md, "web") }} />
+            <div className="nl-body" dangerouslySetInnerHTML={{ __html: renderMarkdown(body?.body_md ?? "", "web") }} />
           </div>
 
           {/* 주제와 이어지는 CTA + 상담 신청 양식 */}

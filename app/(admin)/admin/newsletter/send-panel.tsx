@@ -25,6 +25,7 @@ export function SendPanel({ issueId, published, sentCount, subscriberCount }: { 
         }
         acc += r.sent;
         setProgress({ sent: r.total - r.remaining, total: r.total });
+        if (r.failed > 0) push(`[주의] 주소 오류로 ${r.failed}건 발송 실패 (이력에 failed로 기록, 재시도 대상에서 제외)`);
         if (r.remaining === 0) {
           push(acc === 0 ? "[완료] 보낼 구독자가 없습니다 (전원 발송 완료)." : `[완료] ${acc}명에게 발송을 완료했습니다.`);
           return;

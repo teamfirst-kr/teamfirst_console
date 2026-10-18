@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { NewsletterIssueRow } from "@/types/database";
 
 import { updateIssue } from "../actions";
@@ -13,8 +14,9 @@ export const dynamic = "force-dynamic";
 export default async function EditIssuePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
+  // 본문 컬럼은 033 이후 세션 클라이언트로 읽을 수 없어 service_role 사용 (이 페이지는 (admin) 레이아웃의 requireRole("admin") 뒤에서만 렌더)
   const [{ data }, { count: subscriberCount }] = await Promise.all([
-    supabase.from("newsletter_issues").select("*").eq("id", id).maybeSingle(),
+    createAdminClient().from("newsletter_issues").select("*").eq("id", id).maybeSingle(),
     supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }).eq("status", "subscribed"),
   ]);
   if (!data) notFound();

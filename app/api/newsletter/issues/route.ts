@@ -109,8 +109,14 @@ export async function POST(request: Request) {
   };
 
   if (d.id) {
-    const { data: cur } = await admin.from("newsletter_issues").select("id, slug, status, published_at").eq("id", d.id).maybeSingle();
+    const { data: cur } = await admin.from("newsletter_issues").select("id, slug, status, published_at, sent_count").eq("id", d.id).maybeSingle();
     if (!cur) return NextResponse.json({ error: "해당 id의 호가 없습니다." }, { status: 404 });
+    // slug는 명시했을 때만 변경(제목만 고쳐도 URL이 바뀌지 않게), 발송된 호는 메일 링크 보호를 위해 변경 불가
+    const nextSlug = d.slug ? slugify(d.slug) : cur.slug;
+    if (nextSlug !== cur.slug && cur.sent_count > 0) {
+      return NextResponse.json({ error: "이미 발송된 호의 slug는 변경할 수 없습니다 (메일 링크 보호)." }, { status: 400 });
+    }
+    fields.slug = nextSlug;
     const { error } = await admin
       .from("newsletter_issues")
       .update({ ...fields, status: d.publish ? "published" : cur.status, published_at: d.publish ? (cur.published_at ?? now) : cur.published_at })

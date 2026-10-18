@@ -52,16 +52,16 @@ export async function sendEmail({
   }
 }
 
-// 대량 발송(뉴스레터): Resend batch API — 호출 1회에 최대 100통. 수신자별 BCC는 붙이지 않는다
-// (사본은 호출부에서 검수용 1통만 별도 발송). 항목별 성공 여부를 돌려준다.
-export type BatchEmailItem = { to: string; subject: string; html: string };
+// 대량 발송(뉴스레터): Resend batch API — 호출 1회에 최대 100통, permissive 검증(불량 주소 1건이 배치 전체를 막지 않음).
+// 수신자별 BCC는 붙이지 않는다(사본은 호출부에서 검수용 1통만 별도 발송). 실패 항목은 index로 돌려준다.
+export type BatchEmailItem = { to: string; subject: string; html: string; headers?: Record<string, string> };
 export async function sendEmailBatch(
   items: BatchEmailItem[],
-): Promise<{ ok: boolean; skipped?: boolean; error?: string; sent: number }> {
-  if (items.length === 0) return { ok: true, sent: 0 };
+): Promise<{ ok: boolean; skipped?: boolean; error?: string; failures: { index: number; message: string }[] }> {
+  if (items.length === 0) return { ok: true, failures: [] };
   if (!resend) {
     console.warn("[email] RESEND_API_KEY 미설정 — 배치 발송 생략:", items.length);
-    return { ok: false, skipped: true, sent: 0 };
+    return { ok: false, skipped: true, failures: [] };
   }
   try {
     const { data, error } = await resend.batch.send(
@@ -71,17 +71,20 @@ export async function sendEmailBatch(
         subject: i.subject,
         html: i.html,
         ...(replyTo ? { replyTo } : {}),
+        ...(i.headers ? { headers: i.headers } : {}),
       })),
+      { batchValidation: "permissive" },
     );
     if (error) {
       console.error("[email] 배치 발송 실패:", error);
-      return { ok: false, error: error.message, sent: 0 };
+      return { ok: false, error: error.message, failures: [] };
     }
-    return { ok: true, sent: data?.data?.length ?? items.length };
+    const failures = (data?.errors ?? []).map((e) => ({ index: e.index, message: e.message }));
+    return { ok: true, failures };
   } catch (e) {
     const message = e instanceof Error ? e.message : "unknown error";
     console.error("[email] 배치 예외:", message);
-    return { ok: false, error: message, sent: 0 };
+    return { ok: false, error: message, failures: [] };
   }
 }
 
