@@ -3,12 +3,17 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { CATEGORY_MAP } from "@/lib/newsletter/constants";
+import { formatKstDateTime, issueStage } from "@/lib/newsletter/highlight";
 import type { NewsletterIssueRow } from "@/types/database";
 
 export const dynamic = "force-dynamic";
 
-type ListRow = Pick<NewsletterIssueRow, "id" | "slug" | "issue_no" | "title" | "category" | "status" | "published_at" | "sent_at" | "sent_count" | "updated_at">;
+type ListRow = Pick<
+  NewsletterIssueRow,
+  "id" | "slug" | "issue_no" | "title" | "category" | "status" | "published_at" | "sent_at" | "sent_count" | "updated_at" | "review_requested_at" | "approved_at" | "send_scheduled_at" | "send_started_at" | "send_completed_at"
+>;
 
 export default async function AdminNewsletterPage() {
   const supabase = await createClient();
@@ -16,9 +21,10 @@ export default async function AdminNewsletterPage() {
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
   const [{ data: issueData, error: issueError }, { count: subscribed }, { count: unsubscribed }, { count: newThisMonth }, { count: brands }, { count: agencies }] = await Promise.all([
-    supabase
+    // 검수·예약 상태 컬럼은 034 원칙상 service_role 로만 읽는다 ((admin) 레이아웃 가드 뒤)
+    createAdminClient()
       .from("newsletter_issues")
-      .select("id, slug, issue_no, title, category, status, published_at, sent_at, sent_count, updated_at")
+      .select("id, slug, issue_no, title, category, status, published_at, sent_at, sent_count, updated_at, review_requested_at, approved_at, send_scheduled_at, send_started_at, send_completed_at")
       .order("created_at", { ascending: false }),
     supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }).eq("status", "subscribed"),
     supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }).eq("status", "unsubscribed"),
@@ -35,7 +41,7 @@ export default async function AdminNewsletterPage() {
         <div>
           <h1 className="text-2xl font-bold text-secondary">뉴스레터</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            호를 작성·공개하고 구독자에게 발송합니다. 열람·수신에는 사업자번호·브랜드명·이메일 등록이 필요해 브랜드사·대행사 DB가 쌓입니다.
+            흐름: 초안(Cowork 작성) → 검수 요청 → 운영자 승인·발송 예약 → 예약 시각(월·수·금 09:00 KST)에 자동 공개·발송 → 결과 메일. 열람·수신에는 사업자번호·브랜드명·이메일 등록이 필요합니다.
           </p>
         </div>
         <div className="flex gap-2">
@@ -58,7 +64,7 @@ export default async function AdminNewsletterPage() {
         <Stat label="구독 중" value={subscribed ?? 0} hint={`브랜드사 ${brands ?? 0} · 대행사 ${agencies ?? 0}`} href="/admin/newsletter/subscribers" />
         <Stat label="이번 달 신규 등록" value={newThisMonth ?? 0} hint="사업자번호·브랜드명 포함 DB" href="/admin/newsletter/subscribers" />
         <Stat label="수신거부" value={unsubscribed ?? 0} hint="발송 대상에서 제외" href="/admin/newsletter/subscribers?status=unsubscribed" />
-        <Stat label="발행 호" value={issues.filter((i) => i.status === "published").length} hint={`초안 ${issues.filter((i) => i.status === "draft").length}`} />
+        <Stat label="발송 완료 호" value={issues.filter((i) => issueStage(i) === "sent").length} hint={`검수 대기 ${issues.filter((i) => issueStage(i) === "review").length} · 발송 예약 ${issues.filter((i) => issueStage(i) === "scheduled").length}`} />
       </div>
 
       <div className={"rounded-lg border p-3 text-xs " + (apiEnabled ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800")}>
@@ -100,7 +106,15 @@ export default async function AdminNewsletterPage() {
                         <span className="font-semibold text-primary">{cat.code}</span> · {cat.label}
                       </td>
                       <td className="px-4 py-2.5">
-                        {i.status === "published" ? <Badge variant="success">공개 {(i.published_at ?? "").slice(0, 10)}</Badge> : <Badge variant="warning">초안</Badge>}
+                        {(() => {
+                          const st = issueStage(i);
+                          if (st === "sent") return <Badge variant="success">발송 완료 {i.sent_count}명</Badge>;
+                          if (st === "sending") return <Badge variant="default">발송 중</Badge>;
+                          if (st === "scheduled") return <Badge variant="default">발송 예약 {i.send_scheduled_at ? formatKstDateTime(i.send_scheduled_at) : ""}</Badge>;
+                          if (st === "review") return <Badge variant="warning">검수 대기</Badge>;
+                          if (st === "published") return <Badge variant="muted">공개 · 미발송</Badge>;
+                          return <Badge variant="muted">초안</Badge>;
+                        })()}
                       </td>
                       <td className="px-4 py-2.5 text-xs text-muted-foreground">{i.sent_count > 0 ? `${i.sent_count}명 · ${(i.sent_at ?? "").slice(0, 10)}` : "미발송"}</td>
                       <td className="px-4 py-2.5 text-xs text-muted-foreground">{i.updated_at.slice(0, 10)}</td>

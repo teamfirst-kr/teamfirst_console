@@ -67,6 +67,18 @@ export type NewsletterIssueRow = {
   published_at: string | null;
   sent_at: string | null;
   sent_count: number;
+  // 034: 메일 하이라이트 + 검수·승인·예약 발송
+  email_tags: string | null;
+  email_headline: string | null;
+  email_intro: string | null;
+  email_teasers: string[] | null;
+  email_button_label: string | null;
+  review_note: string | null; // 운영자 전용 — 웹·구독자 메일 노출 금지
+  review_requested_at: string | null;
+  approved_at: string | null;
+  send_scheduled_at: string | null;
+  send_started_at: string | null;
+  send_completed_at: string | null;
   created_at: string;
   updated_at: string;
 };

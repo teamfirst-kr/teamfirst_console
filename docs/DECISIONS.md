@@ -527,3 +527,12 @@
 - **정리**: 개별 요금 계산(D-083: CatchLog PV 구간·고정가·번들 할인)·요금 빌더 삭제. `lib/solution-pricing.ts`는 개편 전 문의 source 해석용으로만 유지. `pb_app_settings.solution_pricing` 키와 030 정책은 미사용으로 남김. 페이백 포털(`pb_solutions`·`pb_entitlements`)은 별도 카탈로그라 이번 범위에서 손대지 않음 — 마켓 카탈로그와의 통합은 후속 검토.
 - **요금 점검 도구**: 플랜 설정 화면에 앱당·인당 월 단가와 `pricingWarnings`(하위 플랜 여러 개가 상위 플랜보다 싸지는 역전, 현재 오픈 앱 수 대비 플랜 간 차이 없음) 경고 표시. 기본값 기준으로 "플러스 2개(98,000원)가 프로(149,000원)보다 저렴" 경고가 뜬다 — 프로 ≤ 89,000원 또는 플러스 ≥ 79,000원이면 해소.
 - **DB**: `033_solution_market.sql` (solution_apps + RLS·시드 3종, solution_subscriptions.plan/member_emails, solution_market 키 공개 조회 정책).
+
+### D-087. 뉴스레터 — 하이라이트형 메일 · 검수→승인→예약 자동 발송 · 정보통신망법 §50 대응 (2026-10-18)
+- **역할 분담(사용자 지시)**: 작성은 Cowork가 주 3회(월·수·금) 어드민 작성 화면에 브라우저 자동화로 입력 → [검수 요청]. 운영자(정기윤)는 검수 메일을 보고 [승인·발송 예약]만. 콘솔이 예약 시각에 공개·발송·결과 통보. API(/api/newsletter/issues)는 유지하되 새 필드를 선택 입력으로만 확장.
+- **메일 = 하이라이트만** (034 `email_tags/headline/intro/teasers/button_label`, `review_note`): 태그 → 헤드라인 → 커버 → 도입(**굵게**만) → 티저 3줄 → "전문 보러가기"(토큰 교환 링크) → 상담 안내 한 줄(보조 링크) → 법정 표기·수신거부. **본문 전체와 서비스 홍보 블록은 메일에 넣지 않는다**(운영자 지시) — 결론·CTA·상담 양식은 웹 전문에서만. 비었을 때 대체값: 태그=카테고리 라벨, 도입=summary, 티저=본문 `## ` 소제목 3개, 버튼="전문 보러가기" (`lib/newsletter/highlight.ts`, 테스트).
+- **발행 흐름**: `review_requested_at`(검수 메일 = 구독자 메일 그대로(더미 토큰) + 상단 검수 메모·편집 링크, 제목 `[검수 요청] (광고) …`) → `approved_at`+`send_scheduled_at`(기본 다음 월·수·금 09:00 KST, 화면 안 확인·체크박스, 발송 전 취소 가능) → 크론이 `status=published`·`send_started_at` → `sendIssueBatchCore` 반복(시간 예산 내, 못 보내면 다음 실행에서 이어감) → `send_completed_at` + 결과 메일(`NEWSLETTER_REVIEW_EMAIL`, 기본 rldbs06@naver.com). 어드민 버튼은 모두 화면 안 확인(`window.confirm` 금지 — 브라우저 자동화 중단 방지). 승인은 `NEWSLETTER_APPROVER_EMAIL` 설정 시 해당 계정만.
+- **크론**: Vercel 플랜의 크론 제한(Hobby: 2개·1일 1회)을 세션에서 확인할 수 없어 **vercel.json 변경 없이 기존 pb-morning(09:00 KST)에서 예약 발송을 함께 실행**. 전용 라우트 `/api/cron/newsletter-send`(CRON_SECRET)는 준비만 해 두고, Pro 플랜이면 15분 간격으로 등록해 예약 시각 정밀도를 올린다. 따라서 현재 예약 시각은 사실상 "해당 날짜 09:00" — 화면에 안내.
+- **법 준수**: 구독자 발송 제목은 정확히 `(광고) `로 시작(테스트·검수는 `[테스트]`/`[검수 요청]` 접두). 동의 문구 "뉴스레터 및 광고성 정보(서비스 홍보·상담 안내) 수신에 동의". 발송 주기 문구 "주 3회(월·수·금)". 신규 구독·재구독·수신거부 시 처리 결과 안내 메일 즉시 발송(전송자·동의 사실·일시·처리 결과·수신거부 링크, `(광고)` 없음). 2년 주기 재확인은 OPEN_QUESTIONS Q15.
+- **열람 게이트와의 정합**: 메일 버튼 → `/newsletter/open?t=…` → 쿠키 교환 → 전문 + 하단 상담 양식. 새 컬럼은 033 원칙대로 anon/authenticated 에 GRANT 하지 않고 어드민 화면·크론은 service_role 로 읽는다.
+

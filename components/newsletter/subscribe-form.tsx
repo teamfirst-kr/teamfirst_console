@@ -106,7 +106,7 @@ export function NewsletterSubscribeForm({
       <label className="flex cursor-pointer items-start gap-2 text-xs leading-relaxed text-muted-foreground">
         <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[#000C31]" />
         <span>
-          팀퍼스트 뉴스레터와 서비스 안내 메일 수신에 동의합니다. 입력한 정보는 뉴스레터 발송과 서비스 안내에만 사용되며, 언제든 메일 하단에서 수신거부할 수 있습니다.{" "}
+          팀퍼스트 뉴스레터 및 광고성 정보(서비스 홍보·상담 안내) 수신에 동의합니다. 입력한 정보는 뉴스레터 발송과 서비스 안내에만 사용되며, 언제든 메일 하단에서 수신거부할 수 있습니다.{" "}
           <Link href="/privacy" className="underline underline-offset-2" target="_blank">
             개인정보처리방침
           </Link>

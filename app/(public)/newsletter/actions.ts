@@ -6,6 +6,8 @@ import { cookies, headers } from "next/headers";
 
 import { NL_COOKIE, NL_COOKIE_MAX_AGE } from "@/lib/newsletter/access";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendEmail } from "@/lib/email/resend";
+import { subscribeNoticeEmail, unsubscribeNoticeEmail } from "@/lib/email/newsletter-notices";
 import type { NewsletterOrgType } from "@/types/database";
 
 // 베스트에포트 rate limit (서버리스 인스턴스 단위) — IP당 10분 10회
@@ -26,6 +28,28 @@ const EMAIL_RE = /^[a-z0-9._+-]+@[a-z0-9-]+(\.[a-z0-9-]+)+$/;
 export type SubscribeResult =
   | { ok: true; already?: boolean; mismatch?: boolean } // mismatch: 기존 등록 이메일이지만 사업자번호가 달라 열람 권한을 주지 않음
   | { ok: false; error: string };
+
+function base(): string {
+  return (process.env.NEXT_PUBLIC_APP_URL || "https://console.teamfirst.kr").replace(/\/$/, "");
+}
+
+// 처리 결과 안내 메일 (정보통신망법 제50조 — 동의·수신거부 처리 결과를 즉시 통지). 실패해도 흐름을 막지 않는다.
+async function notifySubscribed(email: string, brandName: string, token: string, consentedAt: string, resubscribed: boolean) {
+  try {
+    const m = subscribeNoticeEmail({ brandName, consentedAt, resubscribed, unsubscribeUrl: `${base()}/newsletter/unsubscribe?token=${token}`, archiveUrl: `${base()}/newsletter` });
+    await sendEmail({ to: email, subject: m.subject, html: m.html });
+  } catch (e) {
+    console.error("[newsletter] 구독 안내 메일 실패:", e);
+  }
+}
+async function notifyUnsubscribed(email: string, token: string, at: string) {
+  try {
+    const m = unsubscribeNoticeEmail({ email, at, resubscribeUrl: `${base()}/newsletter/unsubscribe?token=${token}` });
+    await sendEmail({ to: email, subject: m.subject, html: m.html });
+  } catch (e) {
+    console.error("[newsletter] 수신거부 안내 메일 실패:", e);
+  }
+}
 
 async function setViewerCookie(token: string) {
   (await cookies()).set(NL_COOKIE, token, {
@@ -91,6 +115,7 @@ export async function subscribeNewsletter(input: {
         .eq("id", existing.id);
       if (error) return { ok: false, error: "등록 처리에 실패했습니다. 잠시 후 다시 시도해주세요." };
       await setViewerCookie(existing.token);
+      if (existing.status !== "subscribed") await notifySubscribed(email, brandName, existing.token, now, true);
       return { ok: true, already: existing.status === "subscribed" };
     }
     const token = randomBytes(24).toString("hex");
@@ -107,6 +132,7 @@ export async function subscribeNewsletter(input: {
     });
     if (error) return { ok: false, error: "등록 처리에 실패했습니다. 잠시 후 다시 시도해주세요." };
     await setViewerCookie(token);
+    await notifySubscribed(email, brandName, token, now, false);
     return { ok: true };
   } catch {
     return { ok: false, error: "등록 처리에 실패했습니다. 잠시 후 다시 시도해주세요." };
@@ -120,13 +146,24 @@ export async function setSubscriptionByToken(token: string, status: "subscribed"
   try {
     const admin = createAdminClient();
     const now = new Date().toISOString();
+    const { data: cur } = await admin.from("newsletter_subscribers").select("status, email, brand_name").eq("token", t).maybeSingle();
+    if (!cur) return { ok: false };
     const { data, error } = await admin
       .from("newsletter_subscribers")
-      .update({ status, unsubscribed_at: status === "unsubscribed" ? now : null, updated_at: now })
+      .update({
+        status,
+        unsubscribed_at: status === "unsubscribed" ? now : null,
+        ...(status === "subscribed" ? { consented_at: now } : {}), // 재구독 = 새 동의 일시
+        updated_at: now,
+      })
       .eq("token", t)
-      .select("email")
+      .select("email, brand_name")
       .maybeSingle();
     if (error || !data) return { ok: false };
+    if (cur.status !== status) {
+      if (status === "unsubscribed") await notifyUnsubscribed(data.email, t, now);
+      else await notifySubscribed(data.email, data.brand_name, t, now, true);
+    }
     return { ok: true, email: data.email };
   } catch {
     return { ok: false };

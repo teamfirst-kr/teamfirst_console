@@ -1,7 +1,7 @@
 import "server-only";
 
-import { CATEGORY_MAP, DEFAULT_CTA } from "@/lib/newsletter/constants";
-import { escapeHtml, renderMarkdown } from "@/lib/newsletter/markdown";
+import { DEFAULT_BUTTON_LABEL, resolveHighlight, subjectFor } from "@/lib/newsletter/highlight";
+import { escapeHtml, renderInline } from "@/lib/newsletter/markdown";
 import type { NewsletterIssueRow } from "@/types/database";
 
 const NAVY = "#111E38";
@@ -13,24 +13,45 @@ export function appUrl(): string {
   return (process.env.NEXT_PUBLIC_APP_URL || "https://console.teamfirst.kr").replace(/\/$/, "");
 }
 
-// 뉴스레터 메일 — 에디토리얼 톤. 호 본문 + 주제와 이어지는 CTA(상담 신청 버튼) + 수신거부 링크.
+export type NewsletterMailVariant = "subscriber" | "test" | "review";
+
+// 하이라이트형 뉴스레터 메일 — 메일에는 핵심만, 전문·상담 양식은 웹에서.
+// 구성: 헤더 → "오늘의 하이라이트" → 태그 → 헤드라인 → 커버 → 도입(**굵게**만) → 티저 3줄 → 전문 버튼
+//       → 작은 상담 안내 한 줄(보조 링크) → 법정 표기·수신거부. body_md 전체는 넣지 않는다.
+// 서비스 홍보 블록은 두지 않는다 (운영자 지시) — 상담 유도는 웹 전문 하단에서.
 export function newsletterEmail(params: {
   issue: NewsletterIssueRow;
   recipientName?: string | null;
   unsubscribeUrl: string;
   webUrl: string; // /newsletter/open?t=…&slug=… (토큰을 쿠키로 바꾸고 깨끗한 URL로 이동)
+  variant?: NewsletterMailVariant;
+  reviewHeader?: { note: string | null; adminUrl: string; requestedAt: string }; // 검수 메일 상단 블록 (운영자 전용)
 }): { subject: string; html: string } {
   const { issue } = params;
-  const cat = CATEGORY_MAP[issue.category];
-  const dateText = (issue.published_at ?? issue.created_at).slice(0, 10).replace(/-/g, ".");
-  const cta = {
-    title: issue.cta_title?.trim() || DEFAULT_CTA.title,
-    body: issue.cta_body?.trim() || DEFAULT_CTA.body,
-  };
-  const consultUrl = `${params.webUrl}&to=consult`; // 웹 상담 신청 양식 (브랜드명·월 마케팅 예산·연락처)
-  const preheader = escapeHtml(issue.summary ?? issue.title);
-  const body = renderMarkdown(issue.body_md, "email");
+  const variant = params.variant ?? "subscriber";
+  const h = resolveHighlight(issue);
+  const dateText = (issue.send_scheduled_at ?? issue.published_at ?? issue.created_at).slice(0, 10).replace(/-/g, ".");
+  const consultUrl = `${params.webUrl}&to=consult`;
+  const preheader = escapeHtml(h.intro || h.headline);
   const volText = issue.issue_no ? `Vol.${issue.issue_no}` : "";
+  const intro = renderInline(escapeHtml(h.intro), "email").replace(/\n/g, "<br/>");
+
+  const reviewBlock = params.reviewHeader
+    ? `<tr><td style="padding:18px 36px;background:#fff7ed;border-bottom:1px solid #fed7aa;font-size:13px;line-height:1.7;color:#7c2d12;">
+         <p style="margin:0 0 6px;font-weight:800;">검수 요청 — 운영자 전용 블록 (구독자에게는 보이지 않습니다)</p>
+         <p style="margin:0 0 6px;">요청 시각 ${escapeHtml(params.reviewHeader.requestedAt)} · <a href="${escapeHtml(params.reviewHeader.adminUrl)}" style="color:${BLUE};">어드민에서 편집·승인</a></p>
+         ${params.reviewHeader.note ? `<p style="margin:0;white-space:pre-wrap;">${escapeHtml(params.reviewHeader.note)}</p>` : `<p style="margin:0;color:#9a3412;">검수 메모 없음</p>`}
+       </td></tr>`
+    : "";
+
+  const teaserRows = h.teasers
+    .map(
+      (t, i) => `<tr>
+        <td style="width:28px;padding:11px 0;border-top:1px solid #e5e7eb;font-size:11px;font-weight:700;letter-spacing:0.08em;color:#9ca3af;vertical-align:top;">0${i + 1}</td>
+        <td style="padding:11px 0;border-top:1px solid #e5e7eb;font-size:15px;line-height:1.6;color:#1f2937;">${renderInline(escapeHtml(t), "email")}</td>
+      </tr>`,
+    )
+    .join("");
 
   const html = `
   <div style="margin:0;padding:32px 12px;background:#f4f5f7;font-family:${FONT};">
@@ -45,43 +66,39 @@ export function newsletterEmail(params: {
           </tr></table>
         </td>
       </tr>
+      ${reviewBlock}
       <tr>
-        <td style="padding:36px 36px 8px;">
-          <p style="margin:0 0 14px;font-size:11px;letter-spacing:0.18em;font-weight:700;color:${BLUE};">${cat.code} · <span style="color:#6b7280;">${escapeHtml(cat.label)}</span></p>
-          <h1 style="margin:0 0 14px;font-size:28px;line-height:1.3;font-weight:800;letter-spacing:-0.02em;color:${INK};">${escapeHtml(issue.title)}</h1>
-          ${issue.summary ? `<p style="margin:0 0 6px;font-size:16px;line-height:1.7;color:#4b5563;">${escapeHtml(issue.summary)}</p>` : ""}
-          ${params.recipientName ? `<p style="margin:10px 0 0;font-size:13px;color:#6b7280;">${escapeHtml(params.recipientName)}님께 보내드립니다.</p>` : ""}
+        <td style="padding:34px 36px 6px;">
+          <p style="margin:0 0 12px;font-size:11px;letter-spacing:0.2em;font-weight:700;color:#6b7280;">오늘의 하이라이트</p>
+          <p style="margin:0 0 14px;font-size:12px;font-weight:700;color:${BLUE};">${h.tags.map((t) => `#${escapeHtml(t)}`).join("&nbsp;&nbsp;")}</p>
+          <h1 style="margin:0 0 6px;font-size:27px;line-height:1.3;font-weight:800;letter-spacing:-0.02em;color:${INK};">${escapeHtml(h.headline)}</h1>
+          ${params.recipientName ? `<p style="margin:8px 0 0;font-size:13px;color:#6b7280;">${escapeHtml(params.recipientName)}님께 보내드립니다.</p>` : ""}
         </td>
       </tr>
-      ${issue.cover_url ? `<tr><td style="padding:22px 36px 0;"><img src="${escapeHtml(issue.cover_url)}" alt="" width="568" style="display:block;width:100%;max-width:568px;height:auto;"/></td></tr>` : ""}
+      ${issue.cover_url ? `<tr><td style="padding:20px 36px 0;"><img src="${escapeHtml(issue.cover_url)}" alt="" width="568" style="display:block;width:100%;max-width:568px;height:auto;"/></td></tr>` : ""}
+      ${intro ? `<tr><td style="padding:22px 36px 4px;font-size:16px;line-height:1.8;color:#1f2937;">${intro}</td></tr>` : ""}
+      ${teaserRows ? `<tr><td style="padding:18px 36px 6px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border-bottom:1px solid #e5e7eb;">${teaserRows}</table></td></tr>` : ""}
       <tr>
-        <td style="padding:16px 36px 24px;">
-          ${body}
+        <td style="padding:26px 36px 10px;">
+          <a href="${escapeHtml(params.webUrl)}" style="display:inline-block;padding:14px 28px;background:${INK};color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:0.02em;">${escapeHtml(h.buttonLabel || DEFAULT_BUTTON_LABEL)}</a>
+          <p style="margin:12px 0 0;font-size:12px;line-height:1.7;color:#9ca3af;">자세한 내용과 결론은 전문에서 확인하실 수 있습니다. 등록하신 분은 버튼만 누르면 바로 열립니다.</p>
         </td>
       </tr>
       <tr>
-        <td style="padding:0 36px 36px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:2px solid ${INK};border-collapse:collapse;">
-            <tr><td style="padding:26px 0 0;">
-              <p style="margin:0 0 10px;font-size:11px;letter-spacing:0.18em;font-weight:700;color:#6b7280;">CONSULTING</p>
-              <p style="margin:0 0 10px;font-size:21px;line-height:1.4;font-weight:800;letter-spacing:-0.01em;color:${INK};">${escapeHtml(cta.title)}</p>
-              <p style="margin:0 0 20px;font-size:14px;line-height:1.75;color:#4b5563;">${escapeHtml(cta.body)}</p>
-              <a href="${escapeHtml(consultUrl)}" style="display:inline-block;padding:13px 26px;background:${INK};color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:0.02em;">팀퍼스트에 상담 신청하기</a>
-              <p style="margin:12px 0 0;font-size:12px;color:#9ca3af;">브랜드명 · 월 마케팅 예산 · 연락처만 남기시면 담당자가 연락드립니다.</p>
-            </td></tr>
-          </table>
+        <td style="padding:12px 36px 32px;font-size:12px;line-height:1.7;color:#6b7280;">
+          이 주제와 관련해 상담이 필요하시면 전문 페이지 하단에서 신청하실 수 있습니다. <a href="${escapeHtml(consultUrl)}" style="color:${NAVY};">상담 신청 바로가기</a>
         </td>
       </tr>
       <tr>
         <td style="padding:22px 36px 28px;background:#f8fafc;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;line-height:1.8;">
-          <p style="margin:0;">본 메일은 팀퍼스트 뉴스레터 수신에 동의하신 분께 발송됩니다.
+          <p style="margin:0;">본 메일은 팀퍼스트 뉴스레터 및 광고성 정보 수신에 동의하신 분께 발송됩니다.
             <a href="${escapeHtml(params.webUrl)}" style="color:${NAVY};">웹에서 보기</a> ·
             <a href="${escapeHtml(params.unsubscribeUrl)}" style="color:#6b7280;">수신거부</a></p>
-          <p style="margin:8px 0 0;color:#9ca3af;font-size:11px;">팀퍼스트(TeamFirst) · 사업자등록번호 102-16-97516 · 20, Yonghae-ro, Seo-gu, Incheon · team1st2025@gmail.com</p>
+          <p style="margin:8px 0 0;color:#9ca3af;font-size:11px;">전송자: 팀퍼스트(TeamFirst) · 사업자등록번호 102-16-97516 · 20, Yonghae-ro, Seo-gu, Incheon · 문의 team1st2025@gmail.com</p>
         </td>
       </tr>
     </table>
   </div>`;
 
-  return { subject: `[팀퍼스트 뉴스레터${volText ? ` ${volText}` : ""}] ${issue.title}`, html };
+  return { subject: subjectFor(issue, variant), html };
 }
