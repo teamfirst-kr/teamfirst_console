@@ -15,7 +15,7 @@ const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
-  const count = (table: "partners" | "matching_requests" | "settlements" | "pb_applications" | "pb_clients" | "pb_monthly_settlements" | "marketer_requests" | "marketers" | "case_studies" | "pb_leads" | "solution_subscriptions", col: string, values: string[]) =>
+  const count = (table: "partners" | "matching_requests" | "settlements" | "pb_applications" | "pb_clients" | "pb_monthly_settlements" | "marketer_requests" | "marketers" | "case_studies" | "pb_leads" | "solution_subscriptions" | "newsletter_subscribers" | "newsletter_issues", col: string, values: string[]) =>
     supabase.from(table).select("id", { count: "exact", head: true }).in(col, values);
   const partnerCount = (status: PartnerStatus) => count("partners", "status", [status]);
   const requestCount = (statuses: RequestStatus[]) => count("matching_requests", "status", statuses);
@@ -47,6 +47,8 @@ export default async function AdminDashboardPage() {
     { count: mkPublished },
     { count: casePublished },
     { count: caseDraft },
+    { count: nlSubscribers },
+    { count: nlIssues },
     { data: subLeadRows },
     { data: subRows },
     ...stageResults
@@ -69,6 +71,8 @@ export default async function AdminDashboardPage() {
     count("marketers", "status", ["published"]),
     count("case_studies", "status", ["published"]),
     count("case_studies", "status", ["draft"]),
+    count("newsletter_subscribers", "status", ["subscribed"]),
+    count("newsletter_issues", "status", ["published"]),
     supabase.from("pb_leads").select("id").eq("status", "new").like("source", "sub:%"),
     supabase.from("solution_subscriptions").select("status, amount, billing"),
     ...STAGES.map((s) => requestCount(s.statuses)),
@@ -169,8 +173,10 @@ export default async function AdminDashboardPage() {
         </Grid>
       </Section>
 
-      <Section title="콘텐츠" desc="공개 사이트에 노출되는 성공 사례" href="/admin/cases" linkLabel="사례 관리">
-        <Grid cols={2}>
+      <Section title="콘텐츠" desc="뉴스레터(브랜드사·대행사 DB 수집) · 성공 사례" href="/admin/newsletter" linkLabel="뉴스레터 관리">
+        <Grid cols={4}>
+          <StatCard label="뉴스레터 구독자" value={nlSubscribers ?? 0} hint="사업자번호·브랜드명 등록 DB" href="/admin/newsletter/subscribers" />
+          <StatCard label="발행 호" value={nlIssues ?? 0} hint="/newsletter 노출 중" href="/admin/newsletter" />
           <StatCard label="발행된 사례" value={casePublished ?? 0} hint="/cases 노출 중" href="/admin/cases" />
           <StatCard label="작성 중 사례" value={caseDraft ?? 0} hint="발행 대기" href="/admin/cases" />
         </Grid>

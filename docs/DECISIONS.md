@@ -505,3 +505,15 @@
 - **배경(사용자 리포트)**: 광고주 안내 메일의 결과 페이지 링크(`/client/request/{id}`)를 운영자가 클릭하면 `requireRole('client')`가 운영자 대시보드로 리다이렉트해 메일에 실린 랜딩을 검수할 수 없었음.
 - **결정**: `requireRole(role, { allowAdmin: true })` 옵션 추가 — 광고주 레이아웃에서만 운영자 통과를 허용하고, 통과 시 상단에 "운영자 검수 모드" 앰버 배너를 표시(광고주 작업 미실행 안내 + 운영자 콘솔 복귀 링크). 데이터 조회는 RLS admin_all로 자연 허용되며, 광고주 전용 서버 액션(관심 표시·분석권한·미팅 제안·소진액)은 기존 `role !== 'client'` 가드가 그대로 막아 오조작 불가. 어드민 요청 상세 헤더에 "👁 광고주 화면 보기" 진입 링크 추가.
 - **비고**: 파트너 화면은 `getCurrentPartnerId()` 기반 스코프라 동일 옵션만으로는 동작하지 않아 이번 범위에서 제외(필요 시 별도 작업). 광고주 대시보드는 검수 모드에서 전체 요청이 보임(운영자 권한 범위와 동일).
+
+### D-086. 뉴스레터 — 정보 제공 + 브랜드사·대행사 DB 수집 + Cowork 작성 자동화 (2026-10-18)
+- **목적(사용자)**: 매체 업데이트(메타·구글·네이버)·컨퍼런스 인사이트·브랜드/콘텐츠 트렌드·AI 업무 효율화 노하우를 뉴스레터로 제공하면서 DB를 모으고, 수집된 DB에 지속적으로 메일을 보내 팀퍼스트 서비스를 제안한다.
+- **열람·수신 게이트**: 호 본문은 **사업자번호 + 브랜드명 + 이메일**을 등록한 구독자(httpOnly 쿠키 `tf_nl` 토큰 또는 메일 링크 `?t=`)와 운영자에게만 보인다. 등록 = 구독. 수신거부는 메일 하단 토큰 링크(원클릭) + 재구독 버튼.
+- **DB(032)**: `newsletter_subscribers`(email unique(lower), brand_name·biz_reg_no 필수, org_type, source, status, token, consented_at) / `newsletter_issues`(slug, issue_no, category 6종, body_md, cta_title/body, status draft/published, sent_count) / `newsletter_deliveries`(issue×subscriber unique → 중복 발송 방지·재개 가능) / 스토리지 `newsletter-images`(public read). 쓰기는 서버 액션·API(service_role), 조회는 운영자만(issues는 published 공개).
+- **본문 형식**: 마크다운 단일 저장(`lib/newsletter/markdown.ts` 자체 렌더러 — 제목·목록·표·인용·이미지·링크, 입력 전부 이스케이프, web/email 모드). API는 "타이틀-이미지-글" 구조의 `sections[]`를 받아 마크다운으로 변환. 이미지는 커버 포함 호당 최대 4장(API 검증).
+- **마무리 CTA**: 호별 `cta_title/body`(주제와 이어지는 문구) + 고정 "팀퍼스트에 상담 신청하기" 양식(브랜드명·월 마케팅 예산·연락처) → `pb_leads`(source `nl:<slug>`, 운영자 즉시 알림). 메일은 양식 대신 `?t=토큰#consult` 버튼.
+- **발송**: Resend batch API 50통 단위, 클라이언트가 remaining=0까지 반복(서버리스 타임아웃 회피). 수신자별 BCC 대신 최초 배치에 검수 사본 1통. 테스트 발송은 운영자 본인 메일.
+- **Cowork 자동화**: `NEWSLETTER_API_KEY`(Bearer)로 `/api/newsletter/upload`(이미지) · `/api/newsletter/issues`(GET 목록 / POST 생성·수정, 기본 초안). 프롬프트는 `docs/COWORK_NEWSLETTER_PROMPT.md`. 공개·발송은 운영자가 콘솔에서.
+- **노출**: 헤더·푸터 "뉴스레터", 랜딩 하단 구독 섹션, `/newsletter`(카테고리 필터·지난 호), 사이트맵. 운영자 콘솔 콘텐츠 그룹에 "뉴스레터"(호·발송·구독자 CSV), 대시보드 구독자·발행 호 카드.
+- **디자인 톤(사용자 피드백)**: "AI 티"를 줄이고 나스미디어·화해 비즈니스·아이보스·아드리엘·원포인트 같은 리포트형 에디토리얼 톤으로 — 이모지 전면 제거(카테고리는 영문 코드 MEDIA/INSIGHT/BRAND/CONTENT/AI/DIGEST), 흰 배경·괘선·넘버링 목록·언더라인 탭·밑줄형 입력 필드·사각 네이비 버튼, 본문은 소제목 상단 괘선·연회색 표 헤더, 메일도 동일 톤(상단 네이비 바·워드마크·CONSULTING 블록). Cowork 프롬프트에 이모지·느낌표 금지 규칙 추가.
+

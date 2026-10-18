@@ -51,3 +51,40 @@ export async function sendEmail({
     return { ok: false, error: message };
   }
 }
+
+// 대량 발송(뉴스레터): Resend batch API — 호출 1회에 최대 100통. 수신자별 BCC는 붙이지 않는다
+// (사본은 호출부에서 검수용 1통만 별도 발송). 항목별 성공 여부를 돌려준다.
+export type BatchEmailItem = { to: string; subject: string; html: string };
+export async function sendEmailBatch(
+  items: BatchEmailItem[],
+): Promise<{ ok: boolean; skipped?: boolean; error?: string; sent: number }> {
+  if (items.length === 0) return { ok: true, sent: 0 };
+  if (!resend) {
+    console.warn("[email] RESEND_API_KEY 미설정 — 배치 발송 생략:", items.length);
+    return { ok: false, skipped: true, sent: 0 };
+  }
+  try {
+    const { data, error } = await resend.batch.send(
+      items.slice(0, 100).map((i) => ({
+        from: `TeamFirst <${fromEmail}>`,
+        to: i.to,
+        subject: i.subject,
+        html: i.html,
+        ...(replyTo ? { replyTo } : {}),
+      })),
+    );
+    if (error) {
+      console.error("[email] 배치 발송 실패:", error);
+      return { ok: false, error: error.message, sent: 0 };
+    }
+    return { ok: true, sent: data?.data?.length ?? items.length };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "unknown error";
+    console.error("[email] 배치 예외:", message);
+    return { ok: false, error: message, sent: 0 };
+  }
+}
+
+export function bccAddress(): string | null {
+  return bccEmail || null;
+}

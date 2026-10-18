@@ -46,6 +46,9 @@ export default async function PublicLayout({
                 마케터 매칭
               </Link>
             ) : null}
+            <Link href="/newsletter" className="hover:text-white">
+              뉴스레터
+            </Link>
             <Link href="/about" className="hover:text-white">
               About us
             </Link>
@@ -114,6 +117,9 @@ export default async function PublicLayout({
                 </Link>
                 <Link href="/agency" className="block hover:text-white">
                   대행사 등록 신청
+                </Link>
+                <Link href="/newsletter" className="block hover:text-white">
+                  뉴스레터
                 </Link>
               </div>
               <div className="space-y-2">

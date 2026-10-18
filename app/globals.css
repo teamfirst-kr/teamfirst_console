@@ -187,3 +187,24 @@ html {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--border)) transparent;
 }
+
+/* 뉴스레터 본문 (lib/newsletter/markdown.ts web 모드) — 에디토리얼 톤 */
+.nl-body { color: #1f2937; font-size: 16.5px; line-height: 1.85; letter-spacing: -0.005em; }
+.nl-body .nl-h1 { margin: 2.25rem 0 0.75rem; font-size: 1.6rem; font-weight: 800; line-height: 1.35; letter-spacing: -0.02em; color: #000c31; }
+.nl-body .nl-h2 { margin: 2.75rem 0 0.9rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; font-size: 1.35rem; font-weight: 800; line-height: 1.4; letter-spacing: -0.02em; color: #000c31; }
+.nl-body .nl-h3 { margin: 1.6rem 0 0.5rem; font-size: 1.08rem; font-weight: 700; letter-spacing: -0.01em; color: #000c31; }
+.nl-body .nl-p { margin: 0 0 1.1rem; word-break: keep-all; }
+.nl-body .nl-ul { margin: 0 0 1.25rem; padding-left: 1.3rem; }
+.nl-body ol.nl-ul { list-style: decimal; }
+.nl-body ul.nl-ul { list-style: disc; }
+.nl-body .nl-li { margin: 0 0 0.4rem; word-break: keep-all; }
+.nl-body .nl-li::marker { color: #94a3b8; }
+.nl-body .nl-quote { margin: 0 0 1.4rem; padding: 1rem 1.2rem; border-left: 3px solid #000c31; background: #f8fafc; color: #334155; font-size: 0.95rem; }
+.nl-body .nl-hr { margin: 2.5rem 0; border: 0; border-top: 1px solid #e5e7eb; }
+.nl-body .nl-img { display: block; max-width: 100%; height: auto; margin: 0.25rem 0 1.5rem; border-radius: 4px; }
+.nl-body .nl-table { width: 100%; margin: 0 0 1.5rem; border-collapse: collapse; font-size: 0.9rem; }
+.nl-body .nl-th { padding: 0.6rem 0.75rem; background: #f1f5f9; color: #000c31; text-align: left; font-weight: 700; border-top: 1px solid #000c31; border-bottom: 1px solid #e5e7eb; }
+.nl-body .nl-td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+.nl-body .nl-a { color: #004aad; text-decoration: underline; text-underline-offset: 3px; }
+.nl-body .nl-code { font-family: ui-monospace, Menlo, monospace; font-size: 0.85em; padding: 0.1em 0.35em; border-radius: 0.25rem; background: #f1f5f9; }
+.nl-body .nl-strong { font-weight: 700; color: #000c31; }
