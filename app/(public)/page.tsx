@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Reveal } from "@/components/reveal";
 import { SectionHeader } from "@/components/section-header";
 import { ApplyCtaLink } from "@/components/analytics/apply-cta";
@@ -5,6 +7,7 @@ import { HeroCalculator } from "@/components/payback/hero-calculator";
 import { SolutionsShowcase } from "@/components/payback/solutions-showcase";
 import { MarketerSlider } from "@/components/payback/marketer-slider";
 import { ApplyExitSurvey } from "@/components/payback/exit-survey";
+import { NewsletterSubscribeForm } from "@/components/newsletter/subscribe-form";
 import { createClient } from "@/lib/supabase/server";
 import { manLabel, rateTableFromRow, tierLabelOf, type RateTable } from "@/lib/payback";
 
@@ -460,6 +463,34 @@ export default async function PaybackLanding() {
               </details>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* 8.5 뉴스레터 구독 — 정보 제공 + 브랜드사·대행사 DB 수집 */}
+      <section className="border-t bg-background py-16 md:py-20">
+        <div className="mx-auto grid max-w-5xl gap-8 px-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:items-center">
+          <Reveal>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">NEWSLETTER</p>
+            <h2 className="mt-3 break-keep text-2xl font-extrabold leading-snug text-secondary md:text-[30px]">
+              📬 마케터가 매달 챙겨야 할 것만
+              <br />
+              한 통으로 정리해 드립니다
+            </h2>
+            <ul className="mt-4 space-y-1.5 text-sm text-muted-foreground">
+              <li>📌 메타·구글·네이버 광고 기능 업데이트</li>
+              <li>🎤 마케팅 컨퍼런스 핵심 인사이트</li>
+              <li>📈 브랜드 마케팅 · 🎬 콘텐츠 트렌드</li>
+              <li>🤖 AI로 업무 시간 줄이는 마케터 노하우</li>
+            </ul>
+            <Link href="/newsletter" className="mt-4 inline-block text-sm font-semibold text-primary hover:underline">
+              지난 호 보기 →
+            </Link>
+          </Reveal>
+          <Reveal>
+            <div className="rounded-2xl border bg-card p-6 shadow-sm">
+              <NewsletterSubscribeForm source="landing" />
+            </div>
+          </Reveal>
         </div>
       </section>
 
