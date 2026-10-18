@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatKstDateTime, issueStage, STAGE_LABEL } from "@/lib/newsletter/highlight";
 import type { NewsletterIssueRow } from "@/types/database";
 
-import { updateIssue } from "../actions";
+import { isApprover, updateIssue } from "../actions";
 import { IssueForm } from "../issue-form";
 import { SendPanel } from "../send-panel";
 
@@ -25,6 +25,8 @@ export default async function EditIssuePage({ params, searchParams }: { params: 
   const bound = updateIssue.bind(null, issue.id);
   const stage = issueStage(issue);
   const approver = process.env.NEWSLETTER_APPROVER_EMAIL?.trim();
+  const canApprove = await isApprover();
+  const locked = stage === "scheduled";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -51,9 +53,14 @@ export default async function EditIssuePage({ params, searchParams }: { params: 
 
       {reviewed ? <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">저장과 검수 요청이 완료되었습니다. 운영자 검수 후 승인·발송 예약이 진행됩니다.</p> : null}
 
-      <SendPanel issue={issue} subscriberCount={subscriberCount ?? 0} approverHint={approver ? `승인은 ${approver} 계정만 가능합니다.` : null} />
+      <SendPanel issue={issue} subscriberCount={subscriberCount ?? 0} approverHint={approver ? `승인은 ${approver} 계정만 가능합니다.` : null} isApprover={canApprove} />
 
-      <IssueForm action={bound} initial={issue} submitLabel="변경 사항 저장" />
+      {locked ? (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          승인·발송 예약된 호는 수정이 잠겨 있습니다. 수정하려면 위에서 예약을 취소한 뒤 저장하고 다시 검수 요청하세요.
+        </p>
+      ) : null}
+      <IssueForm action={bound} initial={issue} submitLabel="변경 사항 저장" allowReviewRequest={!locked} />
     </div>
   );
 }

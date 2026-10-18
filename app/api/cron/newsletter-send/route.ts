@@ -9,7 +9,8 @@ export const maxDuration = 60;
 // 기본 배포에서는 pb-morning(09:00 KST) 크론이 같은 로직을 함께 실행한다.
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!secret) return NextResponse.json({ error: "CRON_SECRET이 설정되지 않아 비활성" }, { status: 503 });
+  if (request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   try {

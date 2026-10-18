@@ -86,7 +86,7 @@ export type NewsletterDeliveryRow = {
   id: string;
   issue_id: string;
   subscriber_id: string;
-  status: "sent" | "failed";
+  status: "queued" | "sent" | "failed"; // queued: 발송 선점(035) — 발송 직전 삽입, 결과에 따라 sent/failed 로 갱신
   error: string | null;
   sent_at: string;
 };

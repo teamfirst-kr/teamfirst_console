@@ -97,8 +97,8 @@ export function isDueForSend(issue: DueSource, now: Date = new Date()): boolean 
 export type IssueStage = "draft" | "published" | "review" | "scheduled" | "sending" | "sent";
 type StageSource = Pick<NewsletterIssueRow, "status" | "review_requested_at" | "approved_at" | "send_scheduled_at" | "send_started_at" | "send_completed_at" | "sent_count">;
 export function issueStage(i: StageSource): IssueStage {
-  if (i.send_completed_at || (i.sent_count > 0 && !i.send_started_at)) return "sent";
-  if (i.send_started_at) return "sending";
+  if (i.send_completed_at) return "sent";
+  if (i.send_started_at || i.sent_count > 0) return "sending"; // 수동·자동 모두 완료 전까지는 '발송 중' (이어서 보낼 수 있게)
   if (i.approved_at && i.send_scheduled_at) return "scheduled";
   if (i.review_requested_at) return "review";
   return i.status === "published" ? "published" : "draft";

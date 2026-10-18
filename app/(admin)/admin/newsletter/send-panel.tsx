@@ -12,7 +12,7 @@ type IssueLite = Pick<NewsletterIssueRow, "id" | "status" | "sent_count" | "revi
 
 // 호 상세의 발행 패널: 검수 요청 → 승인·발송 예약(화면 안 확인) → 예약 시각 자동 발송. 비상용 수동 발송·삭제 포함.
 // 브라우저 자동화(Cowork)가 누르는 버튼이므로 window.confirm 등 브라우저 확인 창은 쓰지 않는다.
-export function SendPanel({ issue, subscriberCount, approverHint }: { issue: IssueLite; subscriberCount: number; approverHint?: string | null }) {
+export function SendPanel({ issue, subscriberCount, approverHint, isApprover = true }: { issue: IssueLite; subscriberCount: number; approverHint?: string | null; isApprover?: boolean }) {
   const [pending, start] = useTransition();
   const [log, setLog] = useState<string[]>([]);
   const [progress, setProgress] = useState<{ sent: number; total: number } | null>(null);
@@ -92,12 +92,12 @@ export function SendPanel({ issue, subscriberCount, approverHint }: { issue: Iss
               {stage === "review" ? "검수 메일 다시 보내기" : "검수 요청"}
             </Button>
           ) : null}
-          {stage === "draft" || stage === "published" || stage === "review" ? (
+          {(stage === "draft" || stage === "published" || stage === "review") && isApprover ? (
             <Button type="button" disabled={pending} onClick={() => setModal("schedule")}>
               승인·발송 예약
             </Button>
           ) : null}
-          {stage === "scheduled" ? (
+          {stage === "scheduled" && isApprover ? (
             <Button
               type="button"
               variant="outline"
@@ -112,9 +112,11 @@ export function SendPanel({ issue, subscriberCount, approverHint }: { issue: Iss
               예약 취소·시각 변경
             </Button>
           ) : null}
-          <Button type="button" variant="ghost" disabled={pending || !published || subscriberCount === 0} onClick={() => setModal("send")}>
-            {issue.sent_count > 0 ? "미발송 구독자에게 수동 발송" : "수동 발송 (비상용)"}
-          </Button>
+          {isApprover ? (
+            <Button type="button" variant="ghost" disabled={pending || !published || subscriberCount === 0} onClick={() => setModal("send")}>
+              {issue.sent_count > 0 ? "미발송 구독자에게 수동 발송" : "수동 발송 (비상용)"}
+            </Button>
+          ) : null}
           <Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10" disabled={pending || issue.sent_count > 0} onClick={() => setModal("delete")}>
             삭제
           </Button>
@@ -125,7 +127,7 @@ export function SendPanel({ issue, subscriberCount, approverHint }: { issue: Iss
         <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-4">
           <p className="text-sm font-bold text-secondary">승인·발송 예약</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            예약 시각에 서버가 자동으로 공개하고 구독 중 {subscriberCount}명에게 발송합니다. 기본값은 다음 발행일(월·수·금) 오전 9시입니다.
+            예약 시각에 서버가 자동으로 공개하고 구독 중 {subscriberCount}명에게 발송합니다. 기본값은 다음 발행일(월·수·금) 오전 9시입니다. 예약 후에는 내용을 수정할 수 없으며, 수정하려면 예약을 취소한 뒤 다시 검수 요청해야 합니다.
             {approverHint ? ` ${approverHint}` : ""}
           </p>
           <p className="mt-1 text-xs text-amber-700">현재 자동 발송은 매일 09:00 KST에 실행됩니다. 09:00 이후 시각으로 예약하면 다음 날 09:00에 발송됩니다.</p>
@@ -165,7 +167,7 @@ export function SendPanel({ issue, subscriberCount, approverHint }: { issue: Iss
       {modal === "send" ? (
         <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-4">
           <p className="text-sm font-bold text-secondary">지금 바로 구독 중 {subscriberCount}명에게 발송할까요?</p>
-          <p className="mt-1 text-xs text-muted-foreground">이미 받은 구독자는 자동으로 제외됩니다. 이 탭을 닫으면 발송이 중단되고, 다시 누르면 이어서 보냅니다.</p>
+          <p className="mt-1 text-xs text-muted-foreground">이미 받은(또는 발송 진행 중인) 구독자는 자동으로 제외됩니다. 예약 자동 발송과 겹쳐도 중복으로 보내지 않습니다. 이 탭을 닫으면 멈추고, 다시 누르면 이어서 보냅니다.</p>
           <div className="mt-3 flex gap-2">
             <Button type="button" size="sm" onClick={sendAll} disabled={pending}>
               발송 시작

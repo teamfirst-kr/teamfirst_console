@@ -26,7 +26,7 @@ function frame(title: string, rows: [string, string][], note: string, extraHtml 
         ${extraHtml}
         <p style="margin:16px 0 0;font-size:13px;line-height:1.7;color:#6b7280;">${note}</p>
       </td></tr>
-      <tr><td style="padding:18px 32px 24px;background:#f8fafc;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:11px;line-height:1.7;">전송자: 팀퍼스트(TeamFirst) · 사업자등록번호 102-16-97516 · 20, Yonghae-ro, Seo-gu, Incheon · 문의 team1st2025@gmail.com</td></tr>
+      <tr><td style="padding:18px 32px 24px;background:#f8fafc;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:11px;line-height:1.7;">전송자: 팀퍼스트(TeamFirst) · 사업자등록번호 102-16-97516 · 20, Yonghae-ro, Seo-gu, Incheon · 전화 010-9543-2625 · 이메일 team1st2025@gmail.com</td></tr>
     </table>
   </div>`;
 }
@@ -73,20 +73,38 @@ export function unsubscribeNoticeEmail(params: { email: string; at: string; resu
   };
 }
 
-// 자동 발송 결과 (운영자)
-export function sendResultEmail(params: { title: string; issueNo: number | null; sent: number; failed: number; total: number; publicUrl: string; adminUrl: string; errors?: string[] }): {
-  subject: string;
-  html: string;
-} {
+// 자동 발송 결과 (운영자) — completed: 전원 발송 완료 / aborted: 오류로 중단(다음 실행에서 재시도, 선점 행으로 중복 없음)
+export function sendResultEmail(params: {
+  kind: "completed" | "aborted";
+  title: string;
+  issueNo: number | null;
+  sent: number;
+  failed: number;
+  total: number | null; // null = 알 수 없음(행 생략)
+  publicUrl: string;
+  adminUrl: string;
+  errors?: string[];
+}): { subject: string; html: string } {
   const vol = params.issueNo ? `Vol.${params.issueNo} ` : "";
   const rows: [string, string][] = [
     ["호", escapeHtml(`${vol}${params.title}`)],
     ["발송", `${params.sent}명`],
     ["실패", `${params.failed}건`],
-    ["구독 중", `${params.total}명`],
+    ...(params.total === null ? [] : ([["구독 중", `${params.total}명`]] as [string, string][])),
     ["공개 주소", `<a href="${escapeHtml(params.publicUrl)}" style="color:${NAVY};">${escapeHtml(params.publicUrl)}</a>`],
   ];
   const extra = params.errors?.length ? `<p style="margin:14px 0 0;font-size:12px;color:#b91c1c;white-space:pre-wrap;">${escapeHtml(params.errors.slice(0, 10).join("\n"))}</p>` : "";
+  if (params.kind === "aborted") {
+    return {
+      subject: `[발송 중단] ${vol}${params.title} — 오류, 다음 실행에서 재시도`,
+      html: frame(
+        "뉴스레터 자동 발송이 중단되었습니다",
+        rows,
+        `오류를 확인한 뒤 그대로 두면 다음 크론 실행에서 남은 구독자에게 이어서 보냅니다(이미 보낸 구독자는 제외). 상세는 <a href="${escapeHtml(params.adminUrl)}" style="color:${NAVY};">어드민</a>에서 확인하세요.`,
+        extra,
+      ),
+    };
+  }
   return {
     subject: `[발송 완료] ${vol}${params.title} — ${params.sent}명 발송${params.failed ? `, ${params.failed}건 실패` : ""}`,
     html: frame("뉴스레터 자동 발송이 완료되었습니다", rows, `상세 이력은 <a href="${escapeHtml(params.adminUrl)}" style="color:${NAVY};">어드민</a>에서 확인하세요.`, extra),

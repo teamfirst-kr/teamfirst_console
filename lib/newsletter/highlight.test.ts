@@ -74,6 +74,7 @@ describe("예약 발송 대상·상태", () => {
     expect(issueStage({ ...s, review_requested_at: "r", approved_at: "a", send_scheduled_at: "t" })).toBe("scheduled");
     expect(issueStage({ ...s, approved_at: "a", send_scheduled_at: "t", send_started_at: "s" })).toBe("sending");
     expect(issueStage({ ...s, approved_at: "a", send_scheduled_at: "t", send_started_at: "s", send_completed_at: "c" })).toBe("sent");
-    expect(issueStage({ ...s, status: "published", sent_count: 12 })).toBe("sent"); // 수동 발송 완료
+    expect(issueStage({ ...s, status: "published", sent_count: 12 })).toBe("sending"); // 수동 발송 중(완료 시각 전)
+    expect(issueStage({ ...s, status: "published", sent_count: 12, send_started_at: "s", send_completed_at: "c" })).toBe("sent");
   });
 });
