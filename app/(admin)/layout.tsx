@@ -23,10 +23,11 @@ export default async function AdminLayout({
           ],
         },
         {
-          label: "솔루션 구독",
+          label: "솔루션 마켓",
           items: [
             { href: "/admin/solutions", label: "구독 문의·고객" },
-            { href: "/admin/solutions/pricing", label: "요금 설정" },
+            { href: "/admin/solutions/pricing", label: "플랜·요금" },
+            { href: "/admin/solutions/apps", label: "앱 카탈로그" },
           ],
         },
         {

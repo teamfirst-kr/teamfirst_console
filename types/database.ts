@@ -97,6 +97,24 @@ export type SolutionSubscriptionRow = {
   solution_login_id: string | null;
   memo: string | null;
   lead_id: string | null;
+  plan: "choice" | "plus" | "pro" | "max" | null; // 033 (NULL = 기존 개별 요금제 구독)
+  member_emails: string[]; // 033 초대 직원 계정
+  created_at: string;
+  updated_at: string;
+};
+// 033: 솔루션 마켓 앱 카탈로그
+export type SolutionAppStatus = "available" | "coming_soon" | "hidden";
+export type SolutionAppRow = {
+  key: string;
+  name: string;
+  brand: string | null;
+  category: string; // lib/solution-market APP_CATEGORY_KEYS
+  summary: string;
+  description: string | null;
+  features: string[];
+  video_id: string | null;
+  status: SolutionAppStatus;
+  sort: number;
   created_at: string;
   updated_at: string;
 };
@@ -442,6 +460,7 @@ export type Database = {
         created_at: string;
       }>;
       solution_subscriptions: PbTable<SolutionSubscriptionRow>; // 029
+      solution_apps: PbTable<SolutionAppRow>; // 033
       newsletter_subscribers: PbTable<NewsletterSubscriberRow>; // 032
       newsletter_issues: PbTable<NewsletterIssueRow>; // 032
       newsletter_deliveries: PbTable<NewsletterDeliveryRow>; // 032

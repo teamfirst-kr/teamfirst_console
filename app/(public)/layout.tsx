@@ -30,7 +30,7 @@ export default async function PublicLayout({
               광고비 페이백
             </Link>
             <Link href="/solutions" className="hover:text-white">
-              솔루션 구독
+              솔루션 마켓
             </Link>
             <Link href="/matching" className="hover:text-white">
               대행사 매칭
@@ -107,7 +107,7 @@ export default async function PublicLayout({
                   광고비 페이백
                 </Link>
                 <Link href="/solutions" className="block hover:text-white">
-                  솔루션 구독
+                  솔루션 마켓
                 </Link>
                 <Link href="/matching" className="block hover:text-white">
                   대행사 매칭

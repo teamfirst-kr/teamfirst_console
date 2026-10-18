@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentRole } from "@/lib/auth";
-import type { SolutionKey } from "@/lib/solution-pricing";
+import { getPlan } from "@/lib/solution-market";
+import { getMarketApps, getMarketConfig } from "@/lib/solution-market-server";
 import { subscriptionSchema, type SubscriptionData, type SubscriptionInput } from "./schema";
 import type { Json, LeadStatus, SolutionSubscriptionRow, SolutionSubscriptionStatus } from "@/types/database";
 
@@ -67,17 +68,36 @@ export async function updateLeadStatus(leadId: string, status: LeadStatus, memo:
 
 // ── 구독 등록·수정 ──────────────────────────────────────────────────
 type Parsed = { ok: true; data: SubscriptionData } | { ok: false; error: string };
-function parse(input: unknown): Parsed {
+// 스키마 검증 + 카탈로그에 있는 앱인지 + 플랜 한도(앱 수·직원 수). 레거시(plan=null)는 한도 없음.
+async function parse(input: unknown): Promise<Parsed> {
   const r = subscriptionSchema.safeParse(input);
   if (!r.success) return { ok: false, error: r.error.issues[0]?.message ?? "입력값을 확인하세요." };
   const d = r.data;
-  return { ok: true, data: { ...d, pv: d.solutions.includes("log" as SolutionKey) ? d.pv : null } };
+
+  const { apps } = await getMarketApps();
+  const known = new Set(apps.map((a) => a.key));
+  const unknown = d.solutions.filter((k) => !known.has(k));
+  if (unknown.length > 0) return { ok: false, error: `카탈로그에 없는 앱입니다: ${unknown.join(", ")}` };
+
+  if (d.plan) {
+    const plan = getPlan(await getMarketConfig(), d.plan);
+    if (plan.apps !== null && d.solutions.length > plan.apps) {
+      return { ok: false, error: `${plan.name} 플랜은 앱 ${plan.apps}개까지 선택할 수 있습니다.` };
+    }
+    if (d.member_emails.length > plan.seats) {
+      return {
+        ok: false,
+        error: plan.seats === 0 ? `${plan.name} 플랜은 직원 초대가 없는 개인 플랜입니다.` : `${plan.name} 플랜은 직원 ${plan.seats}명까지 초대할 수 있습니다.`,
+      };
+    }
+  }
+  return { ok: true, data: d };
 }
 
 export async function createSubscription(input: SubscriptionInput): Promise<SolActionResult> {
   const guard = await assertAdmin();
   if (guard) return { ok: false, error: guard };
-  const p = parse(input);
+  const p = await parse(input);
   if (!p.ok) return { ok: false, error: p.error };
   try {
     const supabase = await createClient();
@@ -90,7 +110,7 @@ export async function createSubscription(input: SubscriptionInput): Promise<SolA
         .update({ status: "converted", handled_at: new Date().toISOString() })
         .eq("id", p.data.lead_id);
     }
-    await audit("subscription_create", "solution_subscription", data.id, { status: p.data.status, amount: p.data.amount });
+    await audit("subscription_create", "solution_subscription", data.id, { status: p.data.status, plan: p.data.plan, amount: p.data.amount });
     revalidate();
     return { ok: true, id: data.id };
   } catch (e) {
@@ -101,7 +121,7 @@ export async function createSubscription(input: SubscriptionInput): Promise<SolA
 export async function updateSubscription(id: string, input: SubscriptionInput): Promise<SolActionResult> {
   const guard = await assertAdmin();
   if (guard) return { ok: false, error: guard };
-  const p = parse(input);
+  const p = await parse(input);
   if (!p.ok) return { ok: false, error: p.error };
   try {
     const supabase = await createClient();
@@ -110,7 +130,7 @@ export async function updateSubscription(id: string, input: SubscriptionInput): 
       .update({ ...p.data, updated_at: new Date().toISOString() })
       .eq("id", id);
     if (error) return { ok: false, error: error.message };
-    await audit("subscription_update", "solution_subscription", id, { status: p.data.status, amount: p.data.amount });
+    await audit("subscription_update", "solution_subscription", id, { status: p.data.status, plan: p.data.plan, amount: p.data.amount });
     revalidate();
     return { ok: true, id };
   } catch (e) {

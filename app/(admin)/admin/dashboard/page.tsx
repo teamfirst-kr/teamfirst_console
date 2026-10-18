@@ -127,7 +127,7 @@ export default async function AdminDashboardPage() {
         </Grid>
       </Section>
 
-      <Section title="솔루션 구독" desc="CatchLog · AUTO REPORT · AUTO BID 유료 구독" href="/admin/solutions" linkLabel="구독 관리">
+      <Section title="솔루션 마켓" desc="플랜 구독 (앱 슬롯 · 직원 인원 · 월 구독료)" href="/admin/solutions" linkLabel="구독 관리">
         <Grid cols={4}>
           <StatCard label="신규 문의" value={subNewLeads} hint="연락 필요" href="/admin/solutions#leads" />
           <StatCard label="세팅 중" value={subPending} hint="계정 발급·활성화 대기" href="/admin/solutions#subs" />
