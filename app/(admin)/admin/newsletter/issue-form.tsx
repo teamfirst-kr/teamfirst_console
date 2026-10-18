@@ -15,7 +15,7 @@ import { ISSUE_TEMPLATE_MD } from "@/lib/newsletter/template";
 import type { NewsletterIssueRow } from "@/types/database";
 
 import { previewIssueEmail, type IssueActionState } from "./actions";
-import { ImageUploadInput } from "./image-upload";
+import { ImageUploadInput, uploadNewsletterImage } from "./image-upload";
 
 // 글자 수 안내 기준 (초과해도 저장은 되지만 메일에서 잘려 보일 수 있음)
 const LIMITS = { headline: 40, intro: 200, teaser: 45, button: 20 };
@@ -46,8 +46,42 @@ export function IssueForm({
   const [mailErr, setMailErr] = useState<string | null>(null);
   const [previewing, startPreview] = useTransition();
 
+  const [urlToInsert, setUrlToInsert] = useState("");
+  const [pasteMsg, setPasteMsg] = useState<string | null>(null);
+
   const imageCount = countImages(body, cover);
+  const remainingSlots = Math.max(0, MAX_IMAGES_PER_ISSUE - imageCount);
+  const bodyImages = Array.from(body.matchAll(/!\[([^\]]*)\]\(([^)\s]+)\)/g)).map((m) => ({ alt: m[1], url: m[2], raw: m[0] }));
   const teaserLines = teasers.split("\n").filter((t) => t.trim());
+
+  // 커서 위치(미리보기 중이거나 포커스가 없으면 맨 끝)에 ![alt](url) 한 줄로 삽입
+  function insertImageAtCursor(url: string, alt = "") {
+    const snippet = `![${alt.replace(/[\[\]]/g, "")}](${url})`;
+    const el = bodyRef.current;
+    setBody((prev) => {
+      const pos = el && !preview ? el.selectionStart : prev.length;
+      const before = prev.slice(0, pos);
+      const after = prev.slice(pos);
+      const pad = before && !before.endsWith("\n") ? "\n\n" : before.endsWith("\n") && !before.endsWith("\n\n") ? "\n" : "";
+      const tail = after && !after.startsWith("\n") ? "\n\n" : "\n";
+      return `${before}${pad}${snippet}${tail}${after}`;
+    });
+  }
+  function removeImage(raw: string) {
+    setBody((prev) => prev.replace(raw, "").replace(/\n{3,}/g, "\n\n"));
+  }
+  // 붙여넣기·드롭으로 들어온 이미지 파일 업로드 (사람이 쓸 때 편의)
+  async function uploadFiles(files: File[]) {
+    const picked = files.filter((f) => f.type.startsWith("image/")).slice(0, remainingSlots);
+    if (picked.length === 0) return;
+    setPasteMsg("업로드 중");
+    for (const f of picked) {
+      const r = await uploadNewsletterImage(f);
+      if (r.ok) insertImageAtCursor(r.url);
+      else setPasteMsg(`${f.name}: ${r.error}`);
+    }
+    setPasteMsg(null);
+  }
   const counter = (len: number, max: number) => <span className={"ml-2 text-[11px] " + (len > max ? "text-red-600" : "text-muted-foreground")}>{len}/{max}</span>;
 
   function loadTemplate() {
@@ -100,7 +134,7 @@ export function IssueForm({
           <div className="space-y-2">
             <Label htmlFor="cover_url">커버 이미지 URL</Label>
             <Input id="cover_url" name="cover_url" value={cover} onChange={(e) => setCover(e.target.value)} placeholder="https://" />
-            <ImageUploadInput label="커버 이미지 업로드 (png/jpg/webp, 5MB 이하)" onUploaded={(url) => setCover(url)} />
+            <ImageUploadInput id="cover_file" label="커버 이미지 파일 (png/jpg/webp, 5MB 이하)" onUploaded={(url) => setCover(url)} />
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="summary">요약 (목록 카드·메일 도입 대체값, 1~2문장)</Label>
@@ -127,24 +161,101 @@ export function IssueForm({
             {preview ? (
               <div className="nl-body min-h-[320px] rounded-md border bg-background p-5" dangerouslySetInnerHTML={{ __html: renderMarkdown(body, "web") }} />
             ) : (
-              <Textarea id="body_md" name="body_md" rows={22} value={body} onChange={(e) => setBody(e.target.value)} ref={bodyRef} className="font-mono text-[13px] leading-relaxed" />
+              <Textarea
+                id="body_md"
+                name="body_md"
+                rows={22}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                ref={bodyRef}
+                className="font-mono text-[13px] leading-relaxed"
+                onPaste={(e) => {
+                  const files = Array.from(e.clipboardData.files ?? []);
+                  if (files.length > 0) {
+                    e.preventDefault();
+                    void uploadFiles(files);
+                  }
+                }}
+                onDrop={(e) => {
+                  const files = Array.from(e.dataTransfer.files ?? []);
+                  if (files.length > 0) {
+                    e.preventDefault();
+                    void uploadFiles(files);
+                  }
+                }}
+              />
             )}
-            <ImageUploadInput
-              label="본문 이미지 업로드 (커서 위치에 삽입, 커버 포함 최대 4장)"
-              disabled={imageCount >= MAX_IMAGES_PER_ISSUE}
-              onUploaded={(url) => {
-                const snippet = `![](${url})`;
-                const el = bodyRef.current;
-                setBody((prev) => {
-                  const pos = el && !preview ? el.selectionStart : prev.length;
-                  const before = prev.slice(0, pos);
-                  const after = prev.slice(pos);
-                  const pad = before && !before.endsWith("\n") ? "\n\n" : "";
-                  const tail = after && !after.startsWith("\n") ? "\n\n" : "\n";
-                  return `${before}${pad}${snippet}${tail}${after}`;
-                });
-              }}
-            />
+            {/* 이미지 도구 — 파일 업로드(여러 장)·URL 삽입·현재 이미지 목록. 커서 위치에 ![](url) 로 들어간다 */}
+            <div className="space-y-2 rounded-md border bg-muted/20 p-3">
+              <p className="text-xs font-bold text-secondary">
+                본문 이미지 <span className="font-normal text-muted-foreground">— 파일을 고르면 커서 위치에 바로 삽입됩니다. 붙여넣기·드래그 앤 드롭도 됩니다. (남은 슬롯 {remainingSlots}장)</span>
+              </p>
+              <ImageUploadInput
+                id="body_image_files"
+                label="본문 이미지 파일 (여러 장 선택 가능)"
+                multiple
+                maxFiles={remainingSlots}
+                disabled={remainingSlots === 0}
+                onUploaded={(url) => insertImageAtCursor(url)}
+              />
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <label htmlFor="body_image_url" className="font-medium text-secondary">
+                  이미지 URL로 삽입
+                </label>
+                <input
+                  id="body_image_url"
+                  type="url"
+                  form="__no-form"
+                  value={urlToInsert}
+                  onChange={(e) => setUrlToInsert(e.target.value)}
+                  placeholder="https://…/image.png"
+                  className="h-8 w-72 rounded-md border bg-background px-2 text-xs"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  disabled={remainingSlots === 0 || !/^https?:\/\//.test(urlToInsert.trim())}
+                  onClick={() => {
+                    insertImageAtCursor(urlToInsert.trim());
+                    setUrlToInsert("");
+                  }}
+                >
+                  커서 위치에 삽입
+                </Button>
+                {pasteMsg ? <span className="text-muted-foreground">{pasteMsg}</span> : null}
+              </div>
+              {bodyImages.length > 0 || cover ? (
+                <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  {cover ? (
+                    <li className="rounded-md border bg-background p-2 text-[11px]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={cover} alt="" className="aspect-[16/9] w-full rounded object-cover" />
+                      <p className="mt-1 truncate font-semibold text-secondary">커버</p>
+                      <button type="button" className="mt-1 text-red-600 hover:underline" onClick={() => setCover("")}>
+                        커버 제거
+                      </button>
+                    </li>
+                  ) : null}
+                  {bodyImages.map((img, i) => (
+                    <li key={`${img.url}-${i}`} className="rounded-md border bg-background p-2 text-[11px]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img.url} alt={img.alt} className="aspect-[16/9] w-full rounded object-cover" />
+                      <p className="mt-1 truncate text-muted-foreground">본문 {i + 1}{img.alt ? ` · ${img.alt}` : ""}</p>
+                      <div className="mt-1 flex gap-2">
+                        <button type="button" className="text-primary hover:underline" onClick={() => setCover(img.url)}>
+                          커버로
+                        </button>
+                        <button type="button" className="text-red-600 hover:underline" onClick={() => removeImage(img.raw)}>
+                          제거
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
             {preview ? <input type="hidden" name="body_md" value={body} /> : null}
             <p className="text-xs text-muted-foreground">
               지원 문법: <code>## 제목</code> <code>### 소제목</code> <code>- 목록</code> <code>1. 번호</code> <code>**굵게**</code> <code>[링크](https://…)</code> <code>![이미지](https://…)</code>{" "}
