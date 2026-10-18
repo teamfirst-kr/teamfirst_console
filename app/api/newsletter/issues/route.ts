@@ -54,6 +54,17 @@ const issueSchema = z.object({
       body: z.string().trim().max(500).optional(),
     })
     .optional(),
+  // 메일 하이라이트 (034) — 모두 선택, 비우면 대체값
+  email: z
+    .object({
+      tags: z.array(z.string().trim().max(30)).max(3).optional(),
+      headline: z.string().trim().max(120).optional(),
+      intro: z.string().trim().max(600).optional(),
+      teasers: z.array(z.string().trim().max(120)).max(3).optional(),
+      button_label: z.string().trim().max(40).optional(),
+    })
+    .optional(),
+  review_note: z.string().trim().max(4000).optional(),
   publish: z.boolean().default(false),
 });
 
@@ -105,6 +116,12 @@ export async function POST(request: Request) {
     body_md,
     cta_title: d.cta?.title || null,
     cta_body: d.cta?.body || null,
+    email_tags: d.email?.tags?.filter(Boolean).join(",") || null,
+    email_headline: d.email?.headline || null,
+    email_intro: d.email?.intro || null,
+    email_teasers: d.email?.teasers?.filter(Boolean).length ? d.email.teasers.filter(Boolean) : null,
+    email_button_label: d.email?.button_label || null,
+    review_note: d.review_note || null,
     updated_at: now,
   };
 

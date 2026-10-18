@@ -42,7 +42,7 @@ export default async function NewsletterPage({ searchParams }: { searchParams: P
             <h1 className="mt-5 break-keep text-[32px] font-extrabold leading-[1.2] tracking-[-0.02em] text-secondary md:text-[44px]">
               광고 실무자를 위한
               <br />
-              월간 브리핑
+              주 3회 브리핑
             </h1>
             <p className="mt-6 max-w-lg break-keep text-[15px] leading-relaxed text-muted-foreground md:text-base">
               매체 업데이트부터 컨퍼런스 인사이트, 브랜드·콘텐츠 트렌드, AI 업무 효율화까지. 광고주와 대행사 실무자가 매달 확인해야 할 변화만 골라 팀퍼스트가 직접 정리합니다.
@@ -63,7 +63,7 @@ export default async function NewsletterPage({ searchParams }: { searchParams: P
             <div className="border border-border bg-card p-7 md:p-8">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Subscribe</p>
               <h2 className="mt-2 text-xl font-extrabold tracking-[-0.01em] text-secondary">구독 신청</h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">월 1~2회 발송. 사업자등록번호·브랜드명·이메일로 등록하면 지난 호 전문도 바로 열람할 수 있습니다.</p>
+              <p className="mt-1.5 text-sm text-muted-foreground">주 3회(월·수·금) 발송. 사업자등록번호·브랜드명·이메일로 등록하면 지난 호 전문도 바로 열람할 수 있습니다.</p>
               <div className="mt-6">
                 <NewsletterSubscribeForm source="newsletter" />
               </div>

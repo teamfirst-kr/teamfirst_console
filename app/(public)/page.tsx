@@ -474,7 +474,7 @@ export default async function PaybackLanding() {
             <h2 className="mt-4 break-keep text-[26px] font-extrabold leading-[1.25] tracking-[-0.02em] text-secondary md:text-[32px]">
               광고 실무자를 위한
               <br />
-              월간 브리핑
+              주 3회 브리핑
             </h2>
             <ol className="mt-6 divide-y border-y text-sm">
               {[
@@ -496,7 +496,7 @@ export default async function PaybackLanding() {
           <Reveal>
             <div className="border border-border bg-card p-6 md:p-8">
               <p className="text-sm font-bold text-secondary">구독 신청</p>
-              <p className="mt-1 text-xs text-muted-foreground">월 1~2회 발송 · 사업자등록번호·브랜드명·이메일로 등록</p>
+              <p className="mt-1 text-xs text-muted-foreground">주 3회(월·수·금) 발송 · 사업자등록번호·브랜드명·이메일로 등록</p>
               <div className="mt-5">
                 <NewsletterSubscribeForm source="landing" />
               </div>

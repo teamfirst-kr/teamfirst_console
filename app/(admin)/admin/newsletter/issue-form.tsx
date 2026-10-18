@@ -1,34 +1,76 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DEFAULT_CTA, NEWSLETTER_CATEGORIES } from "@/lib/newsletter/constants";
+import { DEFAULT_CTA, MAX_IMAGES_PER_ISSUE, NEWSLETTER_CATEGORIES } from "@/lib/newsletter/constants";
+import { DEFAULT_BUTTON_LABEL } from "@/lib/newsletter/highlight";
 import { renderMarkdown } from "@/lib/newsletter/markdown";
+import { countImages } from "@/lib/newsletter/sections";
 import { ISSUE_TEMPLATE_MD } from "@/lib/newsletter/template";
 import type { NewsletterIssueRow } from "@/types/database";
 
-import type { IssueActionState } from "./actions";
+import { previewIssueEmail, type IssueActionState } from "./actions";
+
+// 글자 수 안내 기준 (초과해도 저장은 되지만 메일에서 잘려 보일 수 있음)
+const LIMITS = { headline: 40, intro: 200, teaser: 45, button: 20 };
 
 export function IssueForm({
   action,
   initial,
   submitLabel,
+  allowReviewRequest = true,
 }: {
   action: (prev: IssueActionState, fd: FormData) => Promise<IssueActionState>;
   initial?: NewsletterIssueRow | null;
   submitLabel: string;
+  allowReviewRequest?: boolean;
 }) {
   const [state, formAction, pending] = useActionState<IssueActionState, FormData>(action, null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [body, setBody] = useState(initial?.body_md ?? "");
+  const [cover, setCover] = useState(initial?.cover_url ?? "");
   const [preview, setPreview] = useState(false);
+  const [templateArmed, setTemplateArmed] = useState(false);
+  const [headline, setHeadline] = useState(initial?.email_headline ?? "");
+  const [intro, setIntro] = useState(initial?.email_intro ?? "");
+  const [teasers, setTeasers] = useState((initial?.email_teasers ?? []).join("\n"));
+  const [buttonLabel, setButtonLabel] = useState(initial?.email_button_label ?? "");
+  const [mailPreview, setMailPreview] = useState<{ subject: string; html: string } | null>(null);
+  const [mailErr, setMailErr] = useState<string | null>(null);
+  const [previewing, startPreview] = useTransition();
+
+  const imageCount = countImages(body, cover);
+  const teaserLines = teasers.split("\n").filter((t) => t.trim());
+  const counter = (len: number, max: number) => <span className={"ml-2 text-[11px] " + (len > max ? "text-red-600" : "text-muted-foreground")}>{len}/{max}</span>;
+
+  function loadTemplate() {
+    if (!body.trim() || templateArmed) {
+      setBody(ISSUE_TEMPLATE_MD);
+      setTemplateArmed(false);
+      return;
+    }
+    setTemplateArmed(true); // 확인 창 대신 2단계 버튼 (브라우저 자동화가 멈추지 않도록)
+  }
+
+  function openMailPreview() {
+    if (!formRef.current) return;
+    const fd = new FormData(formRef.current);
+    if (preview) fd.set("body_md", body);
+    setMailErr(null);
+    startPreview(async () => {
+      const r = await previewIssueEmail(fd);
+      if (r.ok) setMailPreview({ subject: r.subject, html: r.html });
+      else setMailErr(r.error);
+    });
+  }
 
   return (
-    <form action={formAction}>
+    <form action={formAction} ref={formRef}>
       <Card>
         <CardContent className="grid gap-4 pt-6 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
@@ -55,29 +97,27 @@ export function IssueForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="cover_url">커버 이미지 URL</Label>
-            <Input id="cover_url" name="cover_url" defaultValue={initial?.cover_url ?? ""} placeholder="https://" />
+            <Input id="cover_url" name="cover_url" value={cover} onChange={(e) => setCover(e.target.value)} placeholder="https://" />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="summary">요약 (목록 카드·메일 프리헤더, 1~2문장)</Label>
+            <Label htmlFor="summary">요약 (목록 카드·메일 도입 대체값, 1~2문장)</Label>
             <Textarea id="summary" name="summary" rows={2} defaultValue={initial?.summary ?? ""} maxLength={400} />
           </div>
 
           <div className="space-y-2 md:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <Label htmlFor="body_md">본문 (마크다운)</Label>
+              <Label htmlFor="body_md">
+                본문 (마크다운)
+                <span className={"ml-2 text-[11px] font-normal " + (imageCount > MAX_IMAGES_PER_ISSUE ? "text-red-600" : "text-muted-foreground")}>
+                  이미지 {imageCount}/{MAX_IMAGES_PER_ISSUE}장 (커버 포함)
+                </span>
+              </Label>
               <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (!body.trim() || window.confirm("현재 본문을 템플릿으로 바꿀까요?")) setBody(ISSUE_TEMPLATE_MD);
-                  }}
-                >
-                  5개 섹션 템플릿 불러오기
+                <Button type="button" variant={templateArmed ? "destructive" : "outline"} size="sm" onClick={loadTemplate} onBlur={() => setTemplateArmed(false)}>
+                  {templateArmed ? "본문을 템플릿으로 덮어쓰기 (한 번 더 클릭)" : "5개 섹션 템플릿 불러오기"}
                 </Button>
                 <Button type="button" variant={preview ? "default" : "outline"} size="sm" onClick={() => setPreview((v) => !v)}>
-                  {preview ? "편집으로" : "미리보기"}
+                  {preview ? "편집으로" : "웹 미리보기"}
                 </Button>
               </div>
             </div>
@@ -93,10 +133,66 @@ export function IssueForm({
             </p>
           </div>
 
+          {/* 메일 하이라이트 — 메일에는 이 영역만 담기고 본문 전체는 들어가지 않는다 */}
+          <div className="space-y-3 md:col-span-2 rounded-lg border bg-muted/30 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-bold text-secondary">메일 하이라이트</p>
+                <p className="text-xs text-muted-foreground">
+                  구독자 메일에는 태그·헤드라인·커버·도입·티저·전문 버튼만 들어갑니다. 비우면 카테고리 라벨 / 제목 / 요약 / 본문 ## 소제목 3개 / “{DEFAULT_BUTTON_LABEL}”으로 대체됩니다.
+                </p>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={openMailPreview} disabled={previewing}>
+                {previewing ? "생성 중" : "메일 미리보기"}
+              </Button>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="email_tags">태그 (쉼표 구분, 최대 3개)</Label>
+                <Input id="email_tags" name="email_tags" defaultValue={initial?.email_tags ?? ""} placeholder="매체업데이트, 네이버, 쇼핑검색" maxLength={120} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="email_button_label">
+                  버튼 문구{counter(buttonLabel.length, LIMITS.button)}
+                </Label>
+                <Input id="email_button_label" name="email_button_label" value={buttonLabel} onChange={(e) => setButtonLabel(e.target.value)} placeholder={DEFAULT_BUTTON_LABEL} maxLength={40} />
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <Label htmlFor="email_headline">
+                  헤드라인{counter(headline.length, LIMITS.headline)}
+                </Label>
+                <Input id="email_headline" name="email_headline" value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="비우면 제목 사용" maxLength={120} />
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <Label htmlFor="email_intro">
+                  도입 (2~3문장, **굵게**만 허용){counter(intro.length, LIMITS.intro)}
+                </Label>
+                <Textarea id="email_intro" name="email_intro" rows={3} value={intro} onChange={(e) => setIntro(e.target.value)} placeholder="핵심 문장은 **굵게** 표시하세요. 결론과 답은 쓰지 않습니다." maxLength={600} />
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <Label htmlFor="email_teasers">
+                  티저 (한 줄에 하나, 최대 3줄, 각 {LIMITS.teaser}자)
+                  <span className="ml-2 text-[11px] font-normal text-muted-foreground">{teaserLines.length}/3줄</span>
+                </Label>
+                <Textarea id="email_teasers" name="email_teasers" rows={3} value={teasers} onChange={(e) => setTeasers(e.target.value)} placeholder={"네이버 브랜드검색, 10월부터 무엇이 바뀌나\n메타 BLS 최소 집행 금액이 올라간 이유\n우리 계정에서 지금 확인할 설정 1가지"} />
+                {teaserLines.some((t) => t.trim().length > LIMITS.teaser) ? <p className="text-[11px] text-red-600">{LIMITS.teaser}자를 넘는 줄이 있습니다.</p> : null}
+              </div>
+            </div>
+            {mailErr ? <p className="text-xs text-red-600">{mailErr}</p> : null}
+            {mailPreview ? (
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">
+                  제목: <span className="font-medium text-foreground">{mailPreview.subject}</span>
+                </p>
+                <iframe title="메일 미리보기" srcDoc={mailPreview.html} sandbox="" className="h-[720px] w-full rounded-md border bg-white" />
+              </div>
+            ) : null}
+          </div>
+
           <div className="space-y-2 md:col-span-2 rounded-lg border bg-muted/30 p-4">
-            <p className="text-sm font-bold text-secondary">마무리 CTA (주제와 이어지는 문구 → 상담 신청 양식)</p>
+            <p className="text-sm font-bold text-secondary">마무리 CTA (웹 전문 하단 — 주제와 이어지는 문구 → 상담 신청 양식)</p>
             <p className="text-xs text-muted-foreground">
-              호 끝에 이 문구와 함께 “팀퍼스트에 상담 신청하기” 양식(브랜드명·월 마케팅 예산·연락처)이 자동으로 붙습니다. 비우면 기본 문구: “{DEFAULT_CTA.title}”
+              웹 전문 끝에 이 문구와 함께 “팀퍼스트에 상담 신청하기” 양식(브랜드명·월 마케팅 예산·연락처)이 붙습니다. 메일에는 들어가지 않습니다. 비우면 기본 문구: “{DEFAULT_CTA.title}”
             </p>
             <div className="mt-2 grid gap-3">
               <div className="space-y-1">
@@ -110,16 +206,29 @@ export function IssueForm({
             </div>
           </div>
 
+          <div className="space-y-2 md:col-span-2 rounded-lg border border-amber-200 bg-amber-50/50 p-4">
+            <Label htmlFor="review_note">검수 메모 (운영자만 봄 — 선정 근거·출처·원문 요청 목록)</Label>
+            <Textarea id="review_note" name="review_note" rows={4} defaultValue={initial?.review_note ?? ""} maxLength={4000} placeholder={"- 선정 이유:\n- 출처: https://…\n- 원문 확인 요청:"} />
+            <p className="text-xs text-muted-foreground">검수 요청 메일 상단에만 포함되고 웹·구독자 메일에는 노출되지 않습니다.</p>
+          </div>
+
           <label className="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm md:col-span-2">
             <input type="checkbox" name="publish" defaultChecked={initial?.status === "published"} className="h-4 w-4" />
-            공개(published) — 체크하면 /newsletter 에 노출되고 구독자 발송이 가능해집니다
+            지금 바로 공개(published) — 예약 발송을 쓰면 체크하지 않아도 예약 시각에 자동 공개됩니다
           </label>
         </CardContent>
         <CardFooter className="flex flex-col items-stretch gap-3">
           {state?.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
-          <Button type="submit" size="lg" disabled={pending}>
-            {pending ? "저장 중…" : submitLabel}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" size="lg" disabled={pending} name="intent" value="save">
+              {pending ? "저장 중" : submitLabel}
+            </Button>
+            {allowReviewRequest ? (
+              <Button type="submit" size="lg" variant="outline" disabled={pending} name="intent" value="review">
+                저장하고 검수 요청
+              </Button>
+            ) : null}
+          </div>
         </CardFooter>
       </Card>
     </form>

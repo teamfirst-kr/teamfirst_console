@@ -10,6 +10,7 @@ import {
 import { periodLastDay, todayKst } from "@/lib/payback-domain";
 import { pbMarkOverdueAndNotify } from "@/app/(admin)/admin/payback/settlements/actions";
 import type { Json } from "@/types/database";
+import { runNewsletterScheduledSends } from "@/lib/newsletter/scheduler";
 
 // ── 00:10 KST 데일리: 1일(옵션 적용) · 11일(overdue 전환) ────────────
 export async function runPbMidnightTasks(): Promise<Record<string, unknown>> {
@@ -36,6 +37,14 @@ export async function runPbMorningTasks(): Promise<Record<string, unknown>> {
   const today = todayKst();
   const day = Number(today.slice(8, 10));
   const out: Record<string, unknown> = { today };
+
+  // 뉴스레터 예약 발송 (월·수·금 09:00 KST 슬롯) — 전용 크론을 추가할 수 없는 플랜에서도 매일 09:00 에 처리
+  try {
+    out.newsletter = await runNewsletterScheduledSends({ budgetMs: 35_000 });
+  } catch (e) {
+    out.newsletterError = e instanceof Error ? e.message : String(e);
+    console.error("[cron pb-morning] newsletter", e);
+  }
 
   if (day === 5 || day === 9) {
     out.remind = await sendInvoiceReminders(today);
