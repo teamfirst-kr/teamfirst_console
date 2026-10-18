@@ -13,7 +13,7 @@ import { buildSubscriberMail, DUMMY_TOKEN, loadIssueAdmin, reviewEmailAddress, s
 import type { NewsletterCategory, NewsletterIssueRow } from "@/types/database";
 
 export type IssueActionState = { error: string } | null;
-export type { SendBatchResult };
+// 주의: "use server" 모듈에서는 타입 재export(export type { … })도 Turbopack이 액션 export로 취급해 빌드가 깨진다 — SendBatchResult 는 lib/newsletter/send 에서 직접 import
 
 const CATEGORIES: NewsletterCategory[] = ["media_update", "conference", "brand_trend", "content_trend", "ai_workflow", "general"];
 
