@@ -4,7 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DateText } from "@/components/date-text";
 import { createClient } from "@/lib/supabase/server";
-import { SOLUTION_BRAND, describeSubscriptionSource, parseSubscriptionSource, type SolutionKey } from "@/lib/solution-pricing";
+import { appLabel, describeMarketSource, getPlan, parseMarketSource } from "@/lib/solution-market";
+import { getMarketApps, getMarketConfig } from "@/lib/solution-market-server";
+import { describeSubscriptionSource, parseSubscriptionSource } from "@/lib/solution-pricing";
 import type { SolutionSubscriptionRow } from "@/types/database";
 
 import { LEAD_STATUS_LABEL, SUB_STATUS_LABEL, monthlyEquivalent } from "./labels";
@@ -14,7 +16,6 @@ import { SubscriptionStatusActions } from "./subscription-row";
 export const dynamic = "force-dynamic";
 
 const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
-const brandOf = (k: string) => SOLUTION_BRAND[k as SolutionKey] ?? k;
 
 type LeadRow = {
   id: string;
@@ -29,7 +30,7 @@ type LeadRow = {
 
 export default async function AdminSolutionsPage() {
   const supabase = await createClient();
-  const [{ data: leadData, error: leadError }, { data: subData, error: subError }] = await Promise.all([
+  const [{ data: leadData, error: leadError }, { data: subData, error: subError }, config, { apps, fallback }] = await Promise.all([
     supabase
       .from("pb_leads")
       .select("id, brand_name, phone, expected_budget, source, status, memo, created_at")
@@ -37,7 +38,21 @@ export default async function AdminSolutionsPage() {
       .order("created_at", { ascending: false })
       .limit(100),
     supabase.from("solution_subscriptions").select("*").order("created_at", { ascending: false }),
+    getMarketConfig(),
+    getMarketApps(),
   ]);
+  const appMap = new Map(apps.map((a) => [a.key, a]));
+  const nameOf = (k: string) => {
+    const a = appMap.get(k);
+    return a ? appLabel(a) : k;
+  };
+  // 문의 내역: 마켓 플랜 문의 → 개편 전 개별 요금 문의 → 원문
+  const describeLead = (source: string | null) => {
+    const m = parseMarketSource(source);
+    if (m) return describeMarketSource(m, config, nameOf);
+    return describeSubscriptionSource(source) ?? source ?? "-";
+  };
+  const leadBilling = (source: string | null) => parseMarketSource(source)?.billing ?? parseSubscriptionSource(source)?.billing;
   const leads = (leadError ? [] : (leadData ?? [])) as LeadRow[];
   const subs = (subError ? [] : (subData ?? [])) as SolutionSubscriptionRow[];
 
@@ -54,15 +69,30 @@ export default async function AdminSolutionsPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-secondary">솔루션 구독 관리</h1>
+          <h1 className="text-2xl font-bold text-secondary">솔루션 마켓 — 구독 관리</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            유료 구독 문의 → 세팅 → 구독 중 관리. 페이백 고객의 무료 이용은 페이백 파이프라인에서 관리합니다.
+            플랜 구독 문의 → 세팅 → 구독 중 관리. 페이백 고객의 무료 이용은 페이백 파이프라인에서 관리합니다.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/admin/solutions/new">+ 구독 등록</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href="/admin/solutions/pricing">플랜·요금</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/solutions/apps">앱 카탈로그</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/admin/solutions/new">+ 구독 등록</Link>
+          </Button>
+        </div>
       </div>
+
+      {fallback ? (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          솔루션 마켓 테이블이 아직 없습니다. Supabase에서 마이그레이션 <strong>032_solution_market.sql</strong>을 실행해야
+          플랜 구독 등록·앱 카탈로그가 동작합니다.
+        </p>
+      ) : null}
 
       {leadError || subError ? (
         <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
@@ -79,7 +109,7 @@ export default async function AdminSolutionsPage() {
 
       {/* ── 구독 문의 리드 ── */}
       <section id="leads" className="scroll-mt-6">
-        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">🧩 구독 문의 (최근 {leads.length})</h2>
+        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">🧩 플랜 구독 문의 (최근 {leads.length})</h2>
         {leads.length === 0 ? (
           <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">아직 구독 문의가 없습니다.</div>
         ) : (
@@ -90,14 +120,13 @@ export default async function AdminSolutionsPage() {
                   <th className="px-4 py-2.5 font-medium">브랜드</th>
                   <th className="px-4 py-2.5 font-medium">연락처</th>
                   <th className="px-4 py-2.5 font-medium">문의 내역</th>
-                  <th className="px-4 py-2.5 font-medium">예상 구독료</th>
+                  <th className="px-4 py-2.5 font-medium">문의 금액</th>
                   <th className="px-4 py-2.5 font-medium">처리</th>
                   <th className="px-4 py-2.5 font-medium">접수</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {leads.map((l) => {
-                  const sub = parseSubscriptionSource(l.source);
                   const st = LEAD_STATUS_LABEL[l.status] ?? LEAD_STATUS_LABEL.new;
                   return (
                     <tr key={l.id} className={l.status === "new" ? "bg-amber-50/40" : undefined}>
@@ -113,13 +142,13 @@ export default async function AdminSolutionsPage() {
                         </a>
                       </td>
                       <td className="px-4 py-2.5 align-top text-xs text-muted-foreground">
-                        {describeSubscriptionSource(l.source)?.replace(/^구독 문의 · /, "") ?? l.source ?? "-"}
+                        {describeLead(l.source)}
                       </td>
                       <td className="px-4 py-2.5 align-top whitespace-nowrap">
                         {l.expected_budget ? (
                           <>
                             {won(Number(l.expected_budget))}
-                            <span className="ml-1 text-xs text-muted-foreground">/ {sub?.billing === "yearly" ? "연" : "월"}</span>
+                            <span className="ml-1 text-xs text-muted-foreground">/ {leadBilling(l.source) === "yearly" ? "연" : "월"}</span>
                           </>
                         ) : (
                           "—"
@@ -158,7 +187,7 @@ export default async function AdminSolutionsPage() {
               <thead className="bg-muted/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">브랜드</th>
-                  <th className="px-4 py-2.5 font-medium">솔루션</th>
+                  <th className="px-4 py-2.5 font-medium">플랜 · 앱</th>
                   <th className="px-4 py-2.5 font-medium">결제</th>
                   <th className="px-4 py-2.5 font-medium">청구액</th>
                   <th className="px-4 py-2.5 font-medium">상태</th>
@@ -182,17 +211,27 @@ export default async function AdminSolutionsPage() {
                         {s.solution_login_id ? <p className="text-[11px] text-muted-foreground">ID {s.solution_login_id}</p> : null}
                       </td>
                       <td className="px-4 py-2.5 align-top">
+                        {s.plan ? (
+                          <p className="mb-1 text-xs font-bold text-secondary">
+                            {getPlan(config, s.plan).name}
+                            <span className="ml-1 font-normal text-muted-foreground">
+                              · 앱 {s.solutions.length}/{getPlan(config, s.plan).apps ?? "∞"} · 직원 {(s.member_emails ?? []).length}/{getPlan(config, s.plan).seats}
+                            </span>
+                          </p>
+                        ) : (
+                          <p className="mb-1 text-xs font-semibold text-muted-foreground">개별 요금(이전)</p>
+                        )}
                         <div className="flex flex-wrap gap-1">
                           {s.solutions.map((k) => (
                             <span key={k} className="rounded-full bg-secondary/10 px-2 py-0.5 text-[11px] font-semibold text-secondary">
-                              {brandOf(k)}
+                              {nameOf(k)}
                             </span>
                           ))}
                         </div>
                       </td>
                       <td className="px-4 py-2.5 align-top text-xs">
                         {s.billing === "yearly" ? "연간" : "월간"}
-                        {s.pv ? <span className="block text-muted-foreground">CatchLog 월 {Math.round(s.pv / 10_000)}만 PV</span> : null}
+                        {!s.plan && s.pv ? <span className="block text-muted-foreground">CatchLog 월 {Math.round(s.pv / 10_000)}만 PV</span> : null}
                       </td>
                       <td className="px-4 py-2.5 align-top whitespace-nowrap font-semibold">
                         {won(Number(s.amount))}

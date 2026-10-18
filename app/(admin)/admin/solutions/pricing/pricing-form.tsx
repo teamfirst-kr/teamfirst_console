@@ -5,218 +5,242 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  SOLUTION_BRAND,
-  quote,
-  type SolutionPricingConfig,
-} from "@/lib/solution-pricing";
+  PLAN_KEYS,
+  freeMonths,
+  getPlan,
+  parseMarketConfig,
+  planUsers,
+  pricingWarnings,
+  unitPrices,
+  type MarketConfig,
+  type PlanKey,
+} from "@/lib/solution-market";
 
-import { saveSolutionPricing, type SavePricingResult } from "./actions";
+import { saveMarketConfig, type SaveMarketResult } from "./actions";
 
 const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
 const inputCls =
-  "h-9 w-full rounded-md border border-input bg-background px-2.5 text-right text-sm outline-none focus:border-primary";
+  "h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm outline-none focus:border-primary disabled:opacity-50";
 
-// 폼 상태는 문자열로 보관(빈 입력 허용), 저장 시 숫자로 변환해 서버 검증.
-type TierRow = { pv: string; monthly: string };
-type FormState = {
-  tiers: TierRow[];
-  extraPer100k: string;
-  maxPv: string;
-  yearlyMonths: string;
-  reportMonthly: string;
-  reportYearly: string;
-  bidMonthly: string;
-  bidYearly: string;
-  bundle2: string;
-  bundle3: string;
-};
-
-function toForm(cfg: SolutionPricingConfig): FormState {
-  return {
-    tiers: cfg.catchlogTiers.map((t) => ({ pv: String(t.pv / 10_000), monthly: String(t.monthly) })),
-    extraPer100k: String(cfg.catchlogExtraPer100k),
-    maxPv: String(cfg.catchlogMaxPv / 10_000),
-    yearlyMonths: String(cfg.catchlogYearlyMonths),
-    reportMonthly: String(cfg.fixed.report.monthly),
-    reportYearly: String(cfg.fixed.report.yearly),
-    bidMonthly: String(cfg.fixed.bid.monthly),
-    bidYearly: String(cfg.fixed.bid.yearly),
-    bundle2: String(cfg.bundleDiscount[2]),
-    bundle3: String(cfg.bundleDiscount[3]),
-  };
-}
+// 입력은 문자열로 보관(빈 칸 허용) — 저장 시 숫자로 바꿔 서버에서 검증한다.
+type PlanForm = { name: string; tagline: string; apps: string; unlimited: boolean; seats: string; monthly: string };
+type FormState = { plans: Record<PlanKey, PlanForm>; yearlyMonths: string; featured: PlanKey };
 
 const num = (s: string) => Number(s.replace(/[^\d]/g, "") || "0");
 
-function toConfig(f: FormState): SolutionPricingConfig {
+function toForm(cfg: MarketConfig): FormState {
+  const plans = Object.fromEntries(
+    cfg.plans.map((p) => [
+      p.key,
+      {
+        name: p.name,
+        tagline: p.tagline,
+        apps: p.apps === null ? "" : String(p.apps),
+        unlimited: p.apps === null,
+        seats: String(p.seats),
+        monthly: String(p.monthly),
+      },
+    ]),
+  ) as Record<PlanKey, PlanForm>;
+  return { plans, yearlyMonths: String(cfg.yearlyMonths), featured: cfg.featured };
+}
+
+function toConfig(f: FormState): MarketConfig {
   return {
-    catchlogTiers: f.tiers
-      .map((t) => ({ pv: num(t.pv) * 10_000, monthly: num(t.monthly) }))
-      .filter((t) => t.pv > 0 && t.monthly > 0),
-    catchlogExtraPer100k: num(f.extraPer100k),
-    catchlogMaxPv: num(f.maxPv) * 10_000,
-    catchlogYearlyMonths: num(f.yearlyMonths),
-    fixed: {
-      report: { monthly: num(f.reportMonthly), yearly: num(f.reportYearly) },
-      bid: { monthly: num(f.bidMonthly), yearly: num(f.bidYearly) },
-    },
-    bundleDiscount: { 2: num(f.bundle2), 3: num(f.bundle3) },
+    plans: PLAN_KEYS.map((key) => {
+      const p = f.plans[key];
+      return {
+        key,
+        name: p.name.trim(),
+        tagline: p.tagline.trim(),
+        apps: p.unlimited ? null : num(p.apps),
+        seats: num(p.seats),
+        monthly: num(p.monthly),
+      };
+    }),
+    yearlyMonths: num(f.yearlyMonths),
+    featured: f.featured,
   };
 }
 
-export function PricingSettingsForm({ initial }: { initial: SolutionPricingConfig }) {
+export function PlanSettingsForm({ initial, availableApps }: { initial: MarketConfig; availableApps: number }) {
   const router = useRouter();
   const [f, setF] = useState<FormState>(() => toForm(initial));
   const [pending, start] = useTransition();
-  const [result, setResult] = useState<SavePricingResult | null>(null);
-  const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setF((s) => ({ ...s, [k]: v }));
+  const [result, setResult] = useState<SaveMarketResult | null>(null);
 
-  const setTier = (i: number, k: keyof TierRow, v: string) =>
-    setF((s) => ({ ...s, tiers: s.tiers.map((t, j) => (j === i ? { ...t, [k]: v } : t)) }));
-  const addTier = () => setF((s) => ({ ...s, tiers: [...s.tiers, { pv: "", monthly: "" }] }));
-  const removeTier = (i: number) =>
-    setF((s) => ({ ...s, tiers: s.tiers.length > 1 ? s.tiers.filter((_, j) => j !== i) : s.tiers }));
+  const setPlan = (key: PlanKey, patch: Partial<PlanForm>) =>
+    setF((s) => ({ ...s, plans: { ...s.plans, [key]: { ...s.plans[key], ...patch } } }));
 
-  // 저장 전 미리보기 — 현재 입력값 기준 3종/월간(10만 PV) 견적
-  const preview = useMemo(() => {
-    try {
-      const cfg = toConfig(f);
-      if (cfg.catchlogTiers.length === 0) return null;
-      return quote(["log", "report", "bid"], "monthly", cfg.catchlogTiers[0].pv, cfg);
-    } catch {
-      return null;
-    }
-  }, [f]);
+  // 미리보기·점검은 유효하지 않은 칸을 기본값으로 대체한 설정으로 계산 (저장 시 서버가 오류로 알려줌)
+  const preview = useMemo(() => parseMarketConfig(toConfig(f)), [f]);
+  const warnings = useMemo(() => pricingWarnings(preview, availableApps), [preview, availableApps]);
 
   function submit() {
     setResult(null);
     start(async () => {
-      const r = await saveSolutionPricing(toConfig(f));
+      const r = await saveMarketConfig(toConfig(f));
       setResult(r);
       if (r.ok) router.refresh();
     });
   }
 
+  const rowLabel = "whitespace-nowrap px-3 py-2.5 text-left text-xs font-medium text-muted-foreground";
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{SOLUTION_BRAND.log} — 월 페이지뷰(PV) 구간제</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs font-medium text-muted-foreground">
-              <span>PV 상한 (만 PV)</span>
-              <span>월 요금 (원)</span>
-              <span className="w-16" />
-            </div>
-            {f.tiers.map((t, i) => (
-              <div key={i} className="grid grid-cols-[1fr_1fr_auto] items-center gap-2">
-                <input
-                  value={t.pv}
-                  onChange={(e) => setTier(i, "pv", e.target.value)}
-                  inputMode="numeric"
-                  placeholder="예: 10"
-                  className={inputCls}
-                />
-                <input
-                  value={t.monthly}
-                  onChange={(e) => setTier(i, "monthly", e.target.value)}
-                  inputMode="numeric"
-                  placeholder="예: 17500"
-                  className={inputCls}
-                />
-                <Button type="button" size="sm" variant="ghost" className="w-16" onClick={() => removeTier(i)} disabled={f.tiers.length <= 1}>
-                  삭제
-                </Button>
-              </div>
-            ))}
-            <Button type="button" size="sm" variant="outline" onClick={addTier}>
-              + 구간 추가
-            </Button>
-          </div>
+      <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+        <table className="w-full min-w-[760px] text-sm">
+          <thead className="bg-muted/60">
+            <tr>
+              <th className="w-32 px-3 py-2.5" />
+              {PLAN_KEYS.map((key) => (
+                <th key={key} className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {key}
+                  {f.featured === key ? <span className="ml-1.5 rounded bg-[#004AAD] px-1.5 py-0.5 text-[10px] font-bold normal-case text-white">추천</span> : null}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            <tr>
+              <th className={rowLabel}>플랜 이름</th>
+              {PLAN_KEYS.map((key) => (
+                <td key={key} className="px-3 py-2">
+                  <input className={inputCls} value={f.plans[key].name} onChange={(e) => setPlan(key, { name: e.target.value })} maxLength={20} />
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <th className={rowLabel}>한 줄 소개</th>
+              {PLAN_KEYS.map((key) => (
+                <td key={key} className="px-3 py-2">
+                  <input className={inputCls} value={f.plans[key].tagline} onChange={(e) => setPlan(key, { tagline: e.target.value })} maxLength={40} placeholder="예: 개인 사용" />
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <th className={rowLabel}>앱 수 (주기당)</th>
+              {PLAN_KEYS.map((key) => (
+                <td key={key} className="px-3 py-2">
+                  <input
+                    className={inputCls}
+                    value={f.plans[key].apps}
+                    onChange={(e) => setPlan(key, { apps: e.target.value })}
+                    inputMode="numeric"
+                    disabled={f.plans[key].unlimited}
+                    placeholder={f.plans[key].unlimited ? "무제한" : "예: 3"}
+                  />
+                  <label className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <input type="checkbox" checked={f.plans[key].unlimited} onChange={(e) => setPlan(key, { unlimited: e.target.checked })} />
+                    무제한
+                  </label>
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <th className={rowLabel}>직원 초대 (명)</th>
+              {PLAN_KEYS.map((key) => (
+                <td key={key} className="px-3 py-2">
+                  <input className={inputCls} value={f.plans[key].seats} onChange={(e) => setPlan(key, { seats: e.target.value })} inputMode="numeric" placeholder="0 = 개인 사용" />
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <th className={rowLabel}>월 구독료 (원)</th>
+              {PLAN_KEYS.map((key) => (
+                <td key={key} className="px-3 py-2">
+                  <input className={inputCls + " text-right font-semibold"} value={f.plans[key].monthly} onChange={(e) => setPlan(key, { monthly: e.target.value })} inputMode="numeric" />
+                </td>
+              ))}
+            </tr>
+            <tr className="bg-muted/30">
+              <th className={rowLabel}>연간 결제액</th>
+              {PLAN_KEYS.map((key) => {
+                const p = getPlan(preview, key);
+                return (
+                  <td key={key} className="px-3 py-2 text-right text-xs text-muted-foreground">
+                    {won(p.monthly * preview.yearlyMonths)}
+                  </td>
+                );
+              })}
+            </tr>
+            <tr className="bg-muted/30">
+              <th className={rowLabel}>사용 인원</th>
+              {PLAN_KEYS.map((key) => (
+                <td key={key} className="px-3 py-2 text-right text-xs text-muted-foreground">
+                  본인 + {getPlan(preview, key).seats}명 = {planUsers(getPlan(preview, key))}명
+                </td>
+              ))}
+            </tr>
+            <tr className="bg-muted/30">
+              <th className={rowLabel}>앱당 월 단가</th>
+              {PLAN_KEYS.map((key) => {
+                const u = unitPrices(getPlan(preview, key));
+                return (
+                  <td key={key} className="px-3 py-2 text-right text-xs font-semibold text-secondary">
+                    {u.perApp === null ? "무제한" : won(u.perApp)}
+                  </td>
+                );
+              })}
+            </tr>
+            <tr className="bg-muted/30">
+              <th className={rowLabel}>인당 월 단가</th>
+              {PLAN_KEYS.map((key) => (
+                <td key={key} className="px-3 py-2 text-right text-xs font-semibold text-secondary">
+                  {won(unitPrices(getPlan(preview, key)).perUser)}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <LabeledInput label="최고 구간 초과 시 10만 PV당 추가 (원)" value={f.extraPer100k} onChange={(v) => set("extraPer100k", v)} />
-            <LabeledInput label="PV 선택 상한 (만 PV)" value={f.maxPv} onChange={(v) => set("maxPv", v)} hint="초과는 별도 문의" />
-            <LabeledInput label="연간 결제 = 월 요금 × N개월" value={f.yearlyMonths} onChange={(v) => set("yearlyMonths", v)} hint="10이면 2개월 무료" />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>고정 요금 솔루션</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-3 rounded-lg border p-4">
-            <p className="text-sm font-bold text-secondary">{SOLUTION_BRAND.report}</p>
-            <LabeledInput label="월간 (원/월)" value={f.reportMonthly} onChange={(v) => set("reportMonthly", v)} />
-            <LabeledInput label="연간 (원/연)" value={f.reportYearly} onChange={(v) => set("reportYearly", v)} />
-          </div>
-          <div className="space-y-3 rounded-lg border p-4">
-            <p className="text-sm font-bold text-secondary">{SOLUTION_BRAND.bid}</p>
-            <LabeledInput label="월간 (원/월)" value={f.bidMonthly} onChange={(v) => set("bidMonthly", v)} />
-            <LabeledInput label="연간 (원/연)" value={f.bidYearly} onChange={(v) => set("bidYearly", v)} />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>번들 할인</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <LabeledInput label="2종 구독 시 할인 (%)" value={f.bundle2} onChange={(v) => set("bundle2", v)} />
-          <LabeledInput label="3종 구독 시 할인 (%)" value={f.bundle3} onChange={(v) => set("bundle3", v)} />
-        </CardContent>
-      </Card>
-
-      {preview ? (
-        <div className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
-          미리보기 — 3종 · 월간 · 최소 PV 기준: 소계 {won(preview.subtotal)} → 할인 {preview.discountRate}% 적용{" "}
-          <strong className="text-secondary">{won(preview.total)}</strong> /월 (VAT 별도)
+      <div className="grid gap-4 rounded-xl border bg-card p-5 shadow-sm sm:grid-cols-2">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">연간 결제 = 월 구독료 × N개월</label>
+          <input className={inputCls} value={f.yearlyMonths} onChange={(e) => setF((s) => ({ ...s, yearlyMonths: e.target.value }))} inputMode="numeric" />
+          <p className="mt-1 text-[11px] text-muted-foreground">현재 {freeMonths(preview)}개월 무료 (10이면 2개월 무료)</p>
         </div>
-      ) : null}
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">&quot;추천&quot; 배지 플랜</label>
+          <select className={inputCls} value={f.featured} onChange={(e) => setF((s) => ({ ...s, featured: e.target.value as PlanKey }))}>
+            {PLAN_KEYS.map((key) => (
+              <option key={key} value={key}>
+                {f.plans[key].name || key}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-[11px] text-muted-foreground">공개 페이지에서 처음 선택된 상태로 보여줍니다.</p>
+        </div>
+      </div>
+
+      {warnings.length > 0 ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-semibold">요금 구성 점검 ({warnings.length})</p>
+          <ul className="mt-1.5 list-disc space-y-1 pl-5 text-[13px]">
+            {warnings.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-amber-800">경고가 있어도 저장할 수 있습니다. 판단 근거로만 참고하세요.</p>
+        </div>
+      ) : (
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">요금 구성 점검: 가격 역전 없음.</p>
+      )}
 
       {result && !result.ok ? (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{result.error}</div>
       ) : null}
       {result?.ok ? (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-          ✅ 저장되었습니다. 공개 요금 페이지(/solutions)에 즉시 반영됩니다.
+          ✅ 저장되었습니다. 공개 마켓 페이지(/solutions)에 즉시 반영됩니다.
         </div>
       ) : null}
 
       <Button onClick={submit} disabled={pending}>
-        {pending ? "저장 중..." : "요금 설정 저장"}
+        {pending ? "저장 중..." : "플랜 설정 저장"}
       </Button>
-    </div>
-  );
-}
-
-function LabeledInput({
-  label,
-  value,
-  onChange,
-  hint,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  hint?: string;
-}) {
-  return (
-    <div>
-      <label className="mb-1 block text-xs font-medium text-muted-foreground">{label}</label>
-      <input value={value} onChange={(e) => onChange(e.target.value)} inputMode="numeric" className={inputCls} />
-      {hint ? <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }

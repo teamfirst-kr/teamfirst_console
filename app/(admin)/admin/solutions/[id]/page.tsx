@@ -2,8 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
-import type { SolutionKey } from "@/lib/solution-pricing";
-import { getSolutionPricing } from "@/lib/solution-pricing-server";
+import { getMarketApps, getMarketConfig } from "@/lib/solution-market-server";
 import type { SolutionSubscriptionRow } from "@/types/database";
 
 import { SubscriptionForm, defaultSubscriptionValues } from "../subscription-form";
@@ -16,16 +15,17 @@ export default async function EditSubscriptionPage({ params }: { params: Promise
   const { data } = await supabase.from("solution_subscriptions").select("*").eq("id", id).maybeSingle();
   if (!data) notFound();
   const s = data as SolutionSubscriptionRow;
-  const pricing = await getSolutionPricing();
+  const [config, { apps }] = await Promise.all([getMarketConfig(), getMarketApps()]);
 
   const initial = defaultSubscriptionValues({
     brand_name: s.brand_name,
     contact_name: s.contact_name ?? "",
     phone: s.phone,
     email: s.email ?? "",
-    solutions: s.solutions as SolutionKey[],
+    plan: s.plan ?? null,
+    solutions: s.solutions,
+    member_emails: (s.member_emails ?? []).join("\n"),
     billing: s.billing,
-    ...(s.pv ? { pv: s.pv } : {}),
     amount: Number(s.amount),
     status: s.status,
     starts_at: s.starts_at ?? "",
@@ -40,12 +40,15 @@ export default async function EditSubscriptionPage({ params }: { params: Promise
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <Link href="/admin/solutions" className="text-xs text-muted-foreground hover:underline">
-          ← 솔루션 구독 관리
+          ← 솔루션 마켓
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-secondary">{s.brand_name} 구독 수정</h1>
-        <p className="mt-1 text-sm text-muted-foreground">등록 {s.created_at.slice(0, 10)} · 최근 수정 {s.updated_at.slice(0, 10)}</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          등록 {s.created_at.slice(0, 10)} · 최근 수정 {s.updated_at.slice(0, 10)}
+          {s.plan ? null : " · 개편 전 개별 요금제 구독 — 플랜을 선택하면 마켓 플랜으로 전환됩니다"}
+        </p>
       </div>
-      <SubscriptionForm id={s.id} initial={initial} pricing={pricing} />
+      <SubscriptionForm id={s.id} initial={initial} config={config} apps={apps} />
     </div>
   );
 }

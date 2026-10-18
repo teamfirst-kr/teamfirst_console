@@ -1,6 +1,6 @@
 import { SOLUTION_BRAND, type SolutionKey } from "@/lib/solution-pricing";
 
-// 솔루션 구독 페이지 상세 카탈로그.
+// 솔루션 마켓 — 기존 퍼포먼스 마케팅 3종 앱의 상세 콘텐츠 (components/solutions/app-detail.tsx가 사용).
 // 상세 내용(headline/intro/chips/features/steps/stats)은 구 "자세히 알아보기" 팝업 문서
 // (components/payback/solution-details.ts, 사용자 제공 원문)를 페이지 네이티브 콘텐츠로 옮긴 것 (D-077).
 // 본문 안의 **텍스트** 는 강조(bold) 표기.
