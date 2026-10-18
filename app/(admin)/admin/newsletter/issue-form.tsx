@@ -15,6 +15,7 @@ import { ISSUE_TEMPLATE_MD } from "@/lib/newsletter/template";
 import type { NewsletterIssueRow } from "@/types/database";
 
 import { previewIssueEmail, type IssueActionState } from "./actions";
+import { ImageUploadInput } from "./image-upload";
 
 // 글자 수 안내 기준 (초과해도 저장은 되지만 메일에서 잘려 보일 수 있음)
 const LIMITS = { headline: 40, intro: 200, teaser: 45, button: 20 };
@@ -32,6 +33,7 @@ export function IssueForm({
 }) {
   const [state, formAction, pending] = useActionState<IssueActionState, FormData>(action, null);
   const formRef = useRef<HTMLFormElement>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
   const [body, setBody] = useState(initial?.body_md ?? "");
   const [cover, setCover] = useState(initial?.cover_url ?? "");
   const [preview, setPreview] = useState(false);
@@ -98,6 +100,7 @@ export function IssueForm({
           <div className="space-y-2">
             <Label htmlFor="cover_url">커버 이미지 URL</Label>
             <Input id="cover_url" name="cover_url" value={cover} onChange={(e) => setCover(e.target.value)} placeholder="https://" />
+            <ImageUploadInput label="커버 이미지 업로드 (png/jpg/webp, 5MB 이하)" onUploaded={(url) => setCover(url)} />
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="summary">요약 (목록 카드·메일 도입 대체값, 1~2문장)</Label>
@@ -124,8 +127,24 @@ export function IssueForm({
             {preview ? (
               <div className="nl-body min-h-[320px] rounded-md border bg-background p-5" dangerouslySetInnerHTML={{ __html: renderMarkdown(body, "web") }} />
             ) : (
-              <Textarea id="body_md" name="body_md" rows={22} value={body} onChange={(e) => setBody(e.target.value)} className="font-mono text-[13px] leading-relaxed" />
+              <Textarea id="body_md" name="body_md" rows={22} value={body} onChange={(e) => setBody(e.target.value)} ref={bodyRef} className="font-mono text-[13px] leading-relaxed" />
             )}
+            <ImageUploadInput
+              label="본문 이미지 업로드 (커서 위치에 삽입, 커버 포함 최대 4장)"
+              disabled={imageCount >= MAX_IMAGES_PER_ISSUE}
+              onUploaded={(url) => {
+                const snippet = `![](${url})`;
+                const el = bodyRef.current;
+                setBody((prev) => {
+                  const pos = el && !preview ? el.selectionStart : prev.length;
+                  const before = prev.slice(0, pos);
+                  const after = prev.slice(pos);
+                  const pad = before && !before.endsWith("\n") ? "\n\n" : "";
+                  const tail = after && !after.startsWith("\n") ? "\n\n" : "\n";
+                  return `${before}${pad}${snippet}${tail}${after}`;
+                });
+              }}
+            />
             {preview ? <input type="hidden" name="body_md" value={body} /> : null}
             <p className="text-xs text-muted-foreground">
               지원 문법: <code>## 제목</code> <code>### 소제목</code> <code>- 목록</code> <code>1. 번호</code> <code>**굵게**</code> <code>[링크](https://…)</code> <code>![이미지](https://…)</code>{" "}
