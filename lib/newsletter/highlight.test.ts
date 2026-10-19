@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { headingsOf, isDueForSend, isoToKstLocal, issueStage, kstLocalToIso, nextPublishSlot, resolveHighlight, splitTags, subjectFor } from "./highlight";
+import { commentsOf, headingsOf, isDueForSend, isoToKstLocal, issueStage, kstLocalToIso, nextPublishSlot, resolveHighlight, splitTags, subjectFor } from "./highlight";
 
 const base = {
   title: "메타 BLS 최소 집행 상향",
@@ -12,13 +12,17 @@ const base = {
   email_headline: null,
   email_intro: null,
   email_teasers: null,
+  email_insights: null,
   email_button_label: null,
 };
 
 describe("하이라이트 대체값", () => {
-  it("비어 있으면 카테고리·제목·summary·## 소제목 3개·기본 버튼", () => {
+  it("비어 있으면 카테고리·제목·summary·## 소제목 3개·기본 버튼, 인사이트는 본문 코멘트", () => {
     const h = resolveHighlight(base);
-    expect(h).toEqual({ tags: ["매체 업데이트"], headline: base.title, intro: "요약 문장입니다.", teasers: ["메타", "구글", "네이버"], buttonLabel: "전문 보러가기" });
+    expect(h).toEqual({ tags: ["매체 업데이트"], headline: base.title, intro: "요약 문장입니다.", teasers: ["메타", "구글", "네이버"], insights: [], buttonLabel: "전문 보러가기" });
+    const withComments = { ...base, body_md: "## 네이버\n본문\n> 팀퍼스트 코멘트: 상품 데이터 정리가 성과를 좌우합니다.\n## 메타\n> **팀퍼스트 코멘트:** 국내 적용 전엔 설정 유지\n> 세 번째\n> 네 번째" };
+    expect(commentsOf(withComments.body_md)).toEqual(["상품 데이터 정리가 성과를 좌우합니다.", "국내 적용 전엔 설정 유지", "세 번째"]);
+    expect(resolveHighlight({ ...withComments, email_insights: ["직접 입력 인사이트"] }).insights).toEqual(["직접 입력 인사이트"]);
   });
   it("입력값 우선, 태그 3개·티저 3개 제한", () => {
     const h = resolveHighlight({ ...base, email_tags: "#매체업데이트, 네이버 ,쇼핑검색,넷째", email_headline: " 헤드 ", email_intro: "도입 **강조**", email_teasers: ["t1", "", "t2", "t3", "t4"], email_button_label: "지금 읽기" });

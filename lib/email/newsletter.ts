@@ -1,6 +1,6 @@
 import "server-only";
 
-import { DEFAULT_BUTTON_LABEL, formatKstDateTime, resolveHighlight, subjectFor } from "@/lib/newsletter/highlight";
+import { DEFAULT_BUTTON_LABEL, formatKstDateTime, INSIGHT_LABEL, resolveHighlight, subjectFor } from "@/lib/newsletter/highlight";
 import { escapeHtml, markdownToText, renderInline } from "@/lib/newsletter/markdown";
 import type { NewsletterIssueRow } from "@/types/database";
 
@@ -16,7 +16,7 @@ export function appUrl(): string {
 export type NewsletterMailVariant = "subscriber" | "test" | "review";
 
 // 하이라이트형 뉴스레터 메일 — 메일에는 핵심만, 전문·상담 양식은 웹에서.
-// 구성: 헤더 → "오늘의 하이라이트" → 태그 → 헤드라인 → 커버 → 도입(**굵게**만) → 티저 3줄 → 전문 버튼
+// 구성: 헤더 → "오늘의 하이라이트" → 태그 → 헤드라인 → 커버 → 도입(**굵게**만) → 티저 3줄 → 팀퍼스트의 시각(인사이트 1~3줄) → 전문 버튼
 //       → 작은 상담 안내 한 줄(보조 링크) → 법정 표기·수신거부. body_md 전체는 넣지 않는다.
 // 서비스 홍보 블록은 두지 않는다 (운영자 지시) — 상담 유도는 웹 전문 하단에서.
 export function newsletterEmail(params: {
@@ -43,6 +43,21 @@ export function newsletterEmail(params: {
          ${params.reviewHeader.note ? `<p style="margin:0;white-space:pre-wrap;">${escapeHtml(params.reviewHeader.note)}</p>` : `<p style="margin:0;color:#9a3412;">검수 메모 없음</p>`}
        </td></tr>`
     : "";
+
+  const insightBlock =
+    h.insights.length > 0
+      ? `<tr><td style="padding:22px 36px 4px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#f8fafc;border-left:3px solid ${INK};">
+            <tr><td style="padding:18px 20px 6px;font-size:11px;letter-spacing:0.18em;font-weight:700;color:#6b7280;">TEAMFIRST VIEW · ${escapeHtml(INSIGHT_LABEL)}</td></tr>
+            ${h.insights
+              .map(
+                (t) => `<tr><td style="padding:4px 20px 10px;font-size:15px;line-height:1.75;color:#1f2937;">${renderInline(escapeHtml(t), "email")}</td></tr>`,
+              )
+              .join("")}
+            <tr><td style="height:8px;"></td></tr>
+          </table>
+        </td></tr>`
+      : "";
 
   const teaserRows = h.teasers
     .map(
@@ -78,6 +93,7 @@ export function newsletterEmail(params: {
       ${issue.cover_url ? `<tr><td style="padding:20px 36px 0;"><img src="${escapeHtml(issue.cover_url)}" alt="" width="568" style="display:block;width:100%;max-width:568px;height:auto;"/></td></tr>` : ""}
       ${intro ? `<tr><td style="padding:22px 36px 4px;font-size:16px;line-height:1.8;color:#1f2937;">${intro}</td></tr>` : ""}
       ${teaserRows ? `<tr><td style="padding:18px 36px 6px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border-bottom:1px solid #e5e7eb;">${teaserRows}</table></td></tr>` : ""}
+      ${insightBlock}
       <tr>
         <td style="padding:26px 36px 10px;">
           <a href="${escapeHtml(params.webUrl)}" style="display:inline-block;padding:14px 28px;background:${INK};color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:0.02em;">${escapeHtml(h.buttonLabel || DEFAULT_BUTTON_LABEL)}</a>

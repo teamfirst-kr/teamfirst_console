@@ -8,7 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentRole, getCurrentUser } from "@/lib/auth";
 import { sendEmail } from "@/lib/email/resend";
 import { appUrl } from "@/lib/email/newsletter";
-import { formatKstDateTime, kstLocalToIso, MAX_TAGS, MAX_TEASERS, splitTags } from "@/lib/newsletter/highlight";
+import { formatKstDateTime, kstLocalToIso, MAX_INSIGHTS, MAX_TAGS, MAX_TEASERS, splitTags } from "@/lib/newsletter/highlight";
 import { buildSubscriberMail, DUMMY_TOKEN, loadIssueAdmin, reviewEmailAddress, sendIssueBatchCore, type SendBatchResult } from "@/lib/newsletter/send";
 import type { NewsletterCategory, NewsletterIssueRow } from "@/types/database";
 
@@ -34,10 +34,11 @@ export async function isApprover(): Promise<boolean> {
   return (await assertApprover()) === null;
 }
 
-// 승인·예약된 호(발송 시작 전)는 내용 수정 금지 — 승인자가 본 내용과 다른 내용이 발송되는 것을 막는다
+// 승인·예약된 호(발송 시작 전)는 승인 권한자만 수정 가능 — 운영자는 예약된 호를 보고 고치고, 그 외 계정이 승인된 내용을 바꾸는 것은 막는다
 async function assertNotLocked(id: string): Promise<string | null> {
+  if (await isApprover()) return null;
   const { data } = await createAdminClient().from("newsletter_issues").select("approved_at, send_started_at").eq("id", id).maybeSingle();
-  if (data?.approved_at && !data.send_started_at) return "승인·발송 예약된 호는 수정할 수 없습니다. 먼저 '예약 취소·시각 변경'으로 승인을 해제한 뒤 수정하고 다시 검수 요청하세요.";
+  if (data?.approved_at && !data.send_started_at) return "승인·발송 예약된 호는 승인 권한자만 수정할 수 있습니다. 수정이 필요하면 운영자에게 요청하세요.";
   return null;
 }
 
@@ -60,11 +61,14 @@ function readForm(fd: FormData) {
   const slugInput = str("slug", 120);
   const categoryRaw = str("category", 30);
   const issueNoRaw = str("issue_no", 10);
-  const teasers = String(fd.get("email_teasers") ?? "")
-    .split("\n")
-    .map((t) => t.trim().slice(0, 120))
-    .filter(Boolean)
-    .slice(0, MAX_TEASERS);
+  const lines = (k: string, max: number, maxLen: number) =>
+    String(fd.get(k) ?? "")
+      .split("\n")
+      .map((t) => t.trim().slice(0, maxLen))
+      .filter(Boolean)
+      .slice(0, max);
+  const teasers = lines("email_teasers", MAX_TEASERS, 120);
+  const insights = lines("email_insights", MAX_INSIGHTS, 300);
   return {
     title,
     slug: slugInput ? slugify(slugInput) : slugify(title),
@@ -79,6 +83,7 @@ function readForm(fd: FormData) {
     email_headline: str("email_headline", 120) || null,
     email_intro: String(fd.get("email_intro") ?? "").replace(/\r\n?/g, "\n").trim().slice(0, 600) || null,
     email_teasers: teasers.length > 0 ? teasers : null,
+    email_insights: insights.length > 0 ? insights : null,
     email_button_label: str("email_button_label", 40) || null,
     review_note: String(fd.get("review_note") ?? "").replace(/\r\n?/g, "\n").trim().slice(0, 4000) || null,
     publish: fd.get("publish") === "on",
@@ -179,6 +184,7 @@ export async function previewIssueEmail(fd: FormData): Promise<{ ok: true; html:
     email_headline: f.email_headline,
     email_intro: f.email_intro,
     email_teasers: f.email_teasers,
+    email_insights: f.email_insights,
     email_button_label: f.email_button_label,
     review_note: f.review_note,
     review_requested_at: null,
