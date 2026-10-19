@@ -26,7 +26,7 @@ export default async function EditIssuePage({ params, searchParams }: { params: 
   const stage = issueStage(issue);
   const approver = process.env.NEWSLETTER_APPROVER_EMAIL?.trim();
   const canApprove = await isApprover();
-  const locked = stage === "scheduled";
+  const locked = stage === "scheduled" && !canApprove;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -56,8 +56,10 @@ export default async function EditIssuePage({ params, searchParams }: { params: 
       <SendPanel issue={issue} subscriberCount={subscriberCount ?? 0} approverHint={approver ? `승인은 ${approver} 계정만 가능합니다.` : null} isApprover={canApprove} />
 
       {locked ? (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-          승인·발송 예약된 호는 수정이 잠겨 있습니다. 수정하려면 위에서 예약을 취소한 뒤 저장하고 다시 검수 요청하세요.
+        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">승인·발송 예약된 호는 승인 권한자만 수정할 수 있습니다.</p>
+      ) : stage === "scheduled" ? (
+        <p className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs text-sky-800">
+          발송 예약된 호입니다. 여기서 수정·저장하면 예약 시각에 수정된 내용으로 발송됩니다. 시각을 바꾸려면 위에서 예약을 취소한 뒤 다시 예약하세요.
         </p>
       ) : null}
       <IssueForm action={bound} initial={issue} submitLabel="변경 사항 저장" allowReviewRequest={!locked} />

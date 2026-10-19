@@ -10,6 +10,13 @@ import { approveAndSchedule, cancelSchedule, deleteIssue, requestReview, sendIss
 
 type IssueLite = Pick<NewsletterIssueRow, "id" | "status" | "sent_count" | "review_requested_at" | "approved_at" | "send_scheduled_at" | "send_started_at" | "send_completed_at">;
 
+// 내일 09:00 KST (datetime-local 값)
+function tomorrowNineKst(): string {
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const d = new Date(Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate() + 1, 9, 0, 0));
+  return d.toISOString().slice(0, 16);
+}
+
 // 호 상세의 발행 패널: 검수 요청 → 승인·발송 예약(화면 안 확인) → 예약 시각 자동 발송. 비상용 수동 발송·삭제 포함.
 // 브라우저 자동화(Cowork)가 누르는 버튼이므로 window.confirm 등 브라우저 확인 창은 쓰지 않는다.
 export function SendPanel({ issue, subscriberCount, approverHint, isApprover = true }: { issue: IssueLite; subscriberCount: number; approverHint?: string | null; isApprover?: boolean }) {
@@ -127,18 +134,26 @@ export function SendPanel({ issue, subscriberCount, approverHint, isApprover = t
         <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-4">
           <p className="text-sm font-bold text-secondary">승인·발송 예약</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            예약 시각에 서버가 자동으로 공개하고 구독 중 {subscriberCount}명에게 발송합니다. 기본값은 다음 발행일(월·수·금) 오전 9시입니다. 예약 후에는 내용을 수정할 수 없으며, 수정하려면 예약을 취소한 뒤 다시 검수 요청해야 합니다.
+            예약 시각에 서버가 자동으로 공개하고 구독 중 {subscriberCount}명에게 발송합니다. 기본값은 다음 발행일(월·수·금) 오전 9시입니다. 예약 후에도 승인 권한자는 내용을 수정·저장할 수 있고, 예약 시각에는 수정된 내용으로 발송됩니다.
             {approverHint ? ` ${approverHint}` : ""}
           </p>
           <p className="mt-1 text-xs text-amber-700">현재 자동 발송은 매일 09:00 KST에 실행됩니다. 09:00 이후 시각으로 예약하면 다음 날 09:00에 발송됩니다.</p>
           <div className="mt-3 flex flex-wrap items-end gap-3">
             <label className="text-xs">
               <span className="block font-semibold text-secondary">발송 시각 (KST)</span>
-              <input type="datetime-local" value={slot} onChange={(e) => setSlot(e.target.value)} className="mt-1 h-9 rounded-md border bg-background px-2 text-sm" />
+              <input id="send_slot" type="datetime-local" value={slot} onChange={(e) => setSlot(e.target.value)} className="mt-1 h-9 rounded-md border bg-background px-2 text-sm" />
             </label>
+            <div className="flex gap-1.5 text-xs">
+              <Button type="button" size="sm" variant="outline" className="h-9" onClick={() => setSlot(tomorrowNineKst())}>
+                내일 09:00
+              </Button>
+              <Button type="button" size="sm" variant="outline" className="h-9" onClick={() => setSlot(isoToKstLocal(nextPublishSlot().toISOString()))}>
+                다음 발행일(월·수·금) 09:00
+              </Button>
+            </div>
             <label className="flex items-center gap-2 text-xs">
-              <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} className="h-4 w-4" />
-              검수 메일을 확인했고 이 내용으로 발송합니다
+              <input id="send_confirm" type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} className="h-4 w-4" />
+              내용을 확인했고 이 시각에 발송합니다
             </label>
             <Button
               type="button"

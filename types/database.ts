@@ -72,6 +72,7 @@ export type NewsletterIssueRow = {
   email_headline: string | null;
   email_intro: string | null;
   email_teasers: string[] | null;
+  email_insights: string[] | null; // 036: 버튼 위 "팀퍼스트의 시각" 1~3줄 (비우면 본문 > 팀퍼스트 코멘트 로 대체)
   email_button_label: string | null;
   review_note: string | null; // 운영자 전용 — 웹·구독자 메일 노출 금지
   review_requested_at: string | null;

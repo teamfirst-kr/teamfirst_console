@@ -61,6 +61,7 @@ const issueSchema = z.object({
       headline: z.string().trim().max(120).optional(),
       intro: z.string().trim().max(600).optional(),
       teasers: z.array(z.string().trim().max(120)).max(3).optional(),
+      insights: z.array(z.string().trim().max(300)).max(3).optional(),
       button_label: z.string().trim().max(40).optional(),
     })
     .optional(),
@@ -120,6 +121,7 @@ export async function POST(request: Request) {
     email_headline: d.email?.headline || null,
     email_intro: d.email?.intro || null,
     email_teasers: d.email?.teasers?.filter(Boolean).length ? d.email.teasers.filter(Boolean) : null,
+    email_insights: d.email?.insights?.filter(Boolean).length ? d.email.insights.filter(Boolean) : null,
     email_button_label: d.email?.button_label || null,
     review_note: d.review_note || null,
     updated_at: now,

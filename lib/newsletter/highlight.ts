@@ -5,11 +5,16 @@ import type { NewsletterIssueRow } from "@/types/database";
 export const DEFAULT_BUTTON_LABEL = "전문 보러가기";
 export const MAX_TAGS = 3;
 export const MAX_TEASERS = 3;
+export const MAX_INSIGHTS = 3;
+export const INSIGHT_LABEL = "팀퍼스트는 이렇게 봤습니다";
 export const AD_PREFIX = "(광고) "; // 정보통신망법 제50조 — 정확히 소괄호 (광고)
 
-export type Highlight = { tags: string[]; headline: string; intro: string; teasers: string[]; buttonLabel: string };
+export type Highlight = { tags: string[]; headline: string; intro: string; teasers: string[]; insights: string[]; buttonLabel: string };
 
-type HighlightSource = Pick<NewsletterIssueRow, "title" | "summary" | "category" | "body_md" | "email_tags" | "email_headline" | "email_intro" | "email_teasers" | "email_button_label">;
+type HighlightSource = Pick<
+  NewsletterIssueRow,
+  "title" | "summary" | "category" | "body_md" | "email_tags" | "email_headline" | "email_intro" | "email_teasers" | "email_insights" | "email_button_label"
+>;
 
 export function splitTags(raw: string | null | undefined): string[] {
   return (raw ?? "")
@@ -30,15 +35,30 @@ export function headingsOf(bodyMd: string, n = MAX_TEASERS): string[] {
   return out;
 }
 
-// 칸이 비었을 때 대체값: 태그=카테고리 라벨, 도입=summary, 티저=## 소제목 3개, 버튼="전문 보러가기"
+// 본문의 "> 팀퍼스트 코멘트: …" 인용 줄 앞 n개 (인사이트 대체값). 접두 "팀퍼스트 코멘트:"는 떼어낸다
+export function commentsOf(bodyMd: string, n = MAX_INSIGHTS): string[] {
+  const out: string[] = [];
+  for (const line of bodyMd.split("\n")) {
+    const m = /^>\s*(.+)$/.exec(line.trim());
+    if (!m) continue;
+    const text = m[1].replace(/^\**\s*팀퍼스트\s*코멘트\s*[:：]\s*\**/i, "").trim();
+    if (text) out.push(text);
+    if (out.length >= n) break;
+  }
+  return out;
+}
+
+// 칸이 비었을 때 대체값: 태그=카테고리 라벨, 도입=summary, 티저=## 소제목 3개, 인사이트=본문 인용(팀퍼스트 코멘트) 3개, 버튼="전문 보러가기"
 export function resolveHighlight(issue: HighlightSource): Highlight {
   const tags = splitTags(issue.email_tags);
   const teasers = (issue.email_teasers ?? []).map((t) => t.trim()).filter(Boolean).slice(0, MAX_TEASERS);
+  const insights = (issue.email_insights ?? []).map((t) => t.trim()).filter(Boolean).slice(0, MAX_INSIGHTS);
   return {
     tags: tags.length > 0 ? tags : [CATEGORY_MAP[issue.category]?.label ?? "뉴스레터"],
     headline: (issue.email_headline ?? "").trim() || issue.title,
     intro: (issue.email_intro ?? "").trim() || (issue.summary ?? "").trim(),
     teasers: teasers.length > 0 ? teasers : headingsOf(issue.body_md ?? ""),
+    insights: insights.length > 0 ? insights : commentsOf(issue.body_md ?? ""),
     buttonLabel: (issue.email_button_label ?? "").trim() || DEFAULT_BUTTON_LABEL,
   };
 }

@@ -18,7 +18,7 @@ import { previewIssueEmail, type IssueActionState } from "./actions";
 import { ImageUploadInput, uploadNewsletterImage } from "./image-upload";
 
 // 글자 수 안내 기준 (초과해도 저장은 되지만 메일에서 잘려 보일 수 있음)
-const LIMITS = { headline: 40, intro: 200, teaser: 45, button: 20 };
+const LIMITS = { headline: 40, intro: 200, teaser: 45, insight: 90, button: 20 };
 
 export function IssueForm({
   action,
@@ -41,6 +41,7 @@ export function IssueForm({
   const [headline, setHeadline] = useState(initial?.email_headline ?? "");
   const [intro, setIntro] = useState(initial?.email_intro ?? "");
   const [teasers, setTeasers] = useState((initial?.email_teasers ?? []).join("\n"));
+  const [insights, setInsights] = useState((initial?.email_insights ?? []).join("\n"));
   const [buttonLabel, setButtonLabel] = useState(initial?.email_button_label ?? "");
   const [mailPreview, setMailPreview] = useState<{ subject: string; html: string } | null>(null);
   const [mailErr, setMailErr] = useState<string | null>(null);
@@ -53,6 +54,7 @@ export function IssueForm({
   const remainingSlots = Math.max(0, MAX_IMAGES_PER_ISSUE - imageCount);
   const bodyImages = Array.from(body.matchAll(/!\[([^\]]*)\]\(([^)\s]+)\)/g)).map((m) => ({ alt: m[1], url: m[2], raw: m[0] }));
   const teaserLines = teasers.split("\n").filter((t) => t.trim());
+  const insightLines = insights.split("\n").filter((t) => t.trim());
 
   // 커서 위치(미리보기 중이거나 포커스가 없으면 맨 끝)에 ![alt](url) 한 줄로 삽입
   function insertImageAtCursor(url: string, alt = "") {
@@ -269,7 +271,7 @@ export function IssueForm({
               <div>
                 <p className="text-sm font-bold text-secondary">메일 하이라이트</p>
                 <p className="text-xs text-muted-foreground">
-                  구독자 메일에는 태그·헤드라인·커버·도입·티저·전문 버튼만 들어갑니다. 비우면 카테고리 라벨 / 제목 / 요약 / 본문 ## 소제목 3개 / “{DEFAULT_BUTTON_LABEL}”으로 대체됩니다.
+                  구독자 메일에는 태그·헤드라인·커버·도입·티저·팀퍼스트의 시각·전문 버튼만 들어갑니다(본문 전체는 들어가지 않음). 비우면 카테고리 라벨 / 제목 / 요약 / 본문 ## 소제목 3개 / 본문 팀퍼스트 코멘트 3개 / “{DEFAULT_BUTTON_LABEL}”으로 대체됩니다.
                 </p>
               </div>
               <Button type="button" variant="outline" size="sm" onClick={openMailPreview} disabled={previewing}>
@@ -306,6 +308,22 @@ export function IssueForm({
                 </Label>
                 <Textarea id="email_teasers" name="email_teasers" rows={3} value={teasers} onChange={(e) => setTeasers(e.target.value)} placeholder={"네이버 브랜드검색, 10월부터 무엇이 바뀌나\n메타 BLS 최소 집행 금액이 올라간 이유\n우리 계정에서 지금 확인할 설정 1가지"} />
                 {teaserLines.some((t) => t.trim().length > LIMITS.teaser) ? <p className="text-[11px] text-red-600">{LIMITS.teaser}자를 넘는 줄이 있습니다.</p> : null}
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <Label htmlFor="email_insights">
+                  팀퍼스트의 시각 — 핵심 인사이트 (한 줄에 하나, 최대 3줄, 각 {LIMITS.insight}자, **굵게** 허용)
+                  <span className="ml-2 text-[11px] font-normal text-muted-foreground">{insightLines.length}/3줄</span>
+                </Label>
+                <Textarea
+                  id="email_insights"
+                  name="email_insights"
+                  rows={3}
+                  value={insights}
+                  onChange={(e) => setInsights(e.target.value)}
+                  placeholder={"앞으로 네이버 쇼핑 광고 성과는 키워드 입찰보다 **상품명·이미지·가격·리뷰 데이터**에 더 크게 좌우됩니다.\n광고 소재와 제품 정보가 상세페이지 첫 화면 역할을 대신합니다.\n자동화 캠페인에 통제권이 돌아오고 있습니다."}
+                />
+                <p className="text-[11px] text-muted-foreground">버튼 바로 위 “TEAMFIRST VIEW” 박스에 들어갑니다. 비우면 본문의 “&gt; 팀퍼스트 코멘트:” 인용 줄 앞 3개로 대체됩니다.</p>
+                {insightLines.some((t) => t.trim().length > LIMITS.insight) ? <p className="text-[11px] text-red-600">{LIMITS.insight}자를 넘는 줄이 있습니다.</p> : null}
               </div>
             </div>
             {mailErr ? <p className="text-xs text-red-600">{mailErr}</p> : null}
