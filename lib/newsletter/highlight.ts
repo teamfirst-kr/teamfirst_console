@@ -6,7 +6,7 @@ export const DEFAULT_BUTTON_LABEL = "전문 보러가기";
 export const MAX_TAGS = 3;
 export const MAX_TEASERS = 3;
 export const MAX_INSIGHTS = 3;
-export const INSIGHT_LABEL = "팀퍼스트는 이렇게 봤습니다";
+export const INSIGHT_LABEL = "팀퍼스트 인사이트";
 export const AD_PREFIX = "(광고) "; // 정보통신망법 제50조 — 정확히 소괄호 (광고)
 
 export type Highlight = { tags: string[]; headline: string; intro: string; teasers: string[]; insights: string[]; buttonLabel: string };
