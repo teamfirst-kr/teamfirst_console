@@ -322,7 +322,7 @@ export function IssueForm({
                   onChange={(e) => setInsights(e.target.value)}
                   placeholder={"앞으로 네이버 쇼핑 광고 성과는 키워드 입찰보다 **상품명·이미지·가격·리뷰 데이터**에 더 크게 좌우됩니다.\n광고 소재와 제품 정보가 상세페이지 첫 화면 역할을 대신합니다.\n자동화 캠페인에 통제권이 돌아오고 있습니다."}
                 />
-                <p className="text-[11px] text-muted-foreground">버튼 바로 위 “TEAMFIRST VIEW” 박스에 들어갑니다. 비우면 본문의 “&gt; 팀퍼스트 코멘트:” 인용 줄 앞 3개로 대체됩니다.</p>
+                <p className="text-[11px] text-muted-foreground">메일 ‘주요 소식’의 같은 번호 티저 바로 아래 “팀퍼스트 인사이트”로 들어갑니다 (1번 인사이트 → 1번 티저). 티저와 순서를 맞춰 쓰세요. 비우면 본문의 “&gt; 팀퍼스트 코멘트:” 인용 줄 앞 3개로 대체됩니다.</p>
                 {insightLines.some((t) => t.trim().length > LIMITS.insight) ? <p className="text-[11px] text-red-600">{LIMITS.insight}자를 넘는 줄이 있습니다.</p> : null}
               </div>
             </div>

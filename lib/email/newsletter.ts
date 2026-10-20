@@ -16,7 +16,7 @@ export function appUrl(): string {
 export type NewsletterMailVariant = "subscriber" | "test" | "review";
 
 // 하이라이트형 뉴스레터 메일 — 메일에는 핵심만, 전문·상담 양식은 웹에서.
-// 구성: 헤더 → "오늘의 하이라이트" → 태그 → 헤드라인 → 커버 → 도입(**굵게**만) → 티저 3줄 → 팀퍼스트의 시각(인사이트 1~3줄) → 전문 버튼
+// 구성: 헤더 → "오늘의 하이라이트" → 태그 → 헤드라인 → 커버 → 도입(**굵게**만) → 주요 소식(티저 n + 바로 아래 팀퍼스트 인사이트 n) → 전문 버튼
 //       → 작은 상담 안내 한 줄(보조 링크) → 법정 표기·수신거부. body_md 전체는 넣지 않는다.
 // 서비스 홍보 블록은 두지 않는다 (운영자 지시) — 상담 유도는 웹 전문 하단에서.
 export function newsletterEmail(params: {
@@ -44,29 +44,30 @@ export function newsletterEmail(params: {
        </td></tr>`
     : "";
 
-  const insightBlock =
-    h.insights.length > 0
-      ? `<tr><td style="padding:22px 36px 4px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#f8fafc;border-left:3px solid ${INK};">
-            <tr><td style="padding:18px 20px 6px;font-size:11px;letter-spacing:0.18em;font-weight:700;color:#6b7280;">TEAMFIRST VIEW · ${escapeHtml(INSIGHT_LABEL)}</td></tr>
-            ${h.insights
-              .map(
-                (t) => `<tr><td style="padding:4px 20px 10px;font-size:15px;line-height:1.75;color:#1f2937;">${renderInline(escapeHtml(t), "email")}</td></tr>`,
-              )
-              .join("")}
-            <tr><td style="height:8px;"></td></tr>
-          </table>
-        </td></tr>`
-      : "";
+  // 주요 소식: 티저 n번 바로 아래에 인사이트 n번을 붙여 "이 소식에 대한 팀퍼스트 인사이트"로 읽히게 한다 (운영자 피드백 2026-10-20).
+  const insightCell = (t: string) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:10px;background:#eef1f7;border-left:3px solid ${INK};">
+          <tr><td style="padding:10px 14px 2px;font-size:11px;letter-spacing:0.08em;font-weight:700;color:#6b7280;">${escapeHtml(INSIGHT_LABEL)}</td></tr>
+          <tr><td style="padding:2px 14px 11px;font-size:14px;line-height:1.7;color:#1f2937;">${renderInline(escapeHtml(t), "email")}</td></tr>
+        </table>`;
 
   const teaserRows = h.teasers
     .map(
       (t, i) => `<tr>
-        <td style="width:28px;padding:11px 0;border-top:1px solid #e5e7eb;font-size:11px;font-weight:700;letter-spacing:0.08em;color:#9ca3af;vertical-align:top;">0${i + 1}</td>
-        <td style="padding:11px 0;border-top:1px solid #e5e7eb;font-size:15px;line-height:1.6;color:#1f2937;">${renderInline(escapeHtml(t), "email")}</td>
+        <td style="width:28px;padding:16px 0;border-top:1px solid #e5e7eb;font-size:12px;font-weight:800;letter-spacing:0.08em;color:${BLUE};vertical-align:top;line-height:1.6;">0${i + 1}</td>
+        <td style="padding:16px 0;border-top:1px solid #e5e7eb;vertical-align:top;">
+          <p style="margin:0;font-size:16px;line-height:1.6;font-weight:700;color:${INK};">${renderInline(escapeHtml(t), "email")}</p>
+          ${h.insights[i] ? insightCell(h.insights[i]) : ""}
+        </td>
       </tr>`,
     )
     .join("");
+
+  // 소식보다 인사이트가 많을 때 남는 인사이트는 목록 아래 한 박스로
+  const extraInsights = h.insights.slice(h.teasers.length);
+  const insightBlock =
+    extraInsights.length > 0
+      ? `<tr><td style="padding:18px 36px 4px;">${extraInsights.map(insightCell).join("")}</td></tr>`
+      : "";
 
   const html = `
   <div style="margin:0;padding:32px 12px;background:#f4f5f7;font-family:${FONT};">
@@ -92,7 +93,14 @@ export function newsletterEmail(params: {
       </tr>
       ${issue.cover_url ? `<tr><td style="padding:20px 36px 0;"><img src="${escapeHtml(issue.cover_url)}" alt="" width="568" style="display:block;width:100%;max-width:568px;height:auto;"/></td></tr>` : ""}
       ${intro ? `<tr><td style="padding:22px 36px 4px;font-size:16px;line-height:1.8;color:#1f2937;">${intro}</td></tr>` : ""}
-      ${teaserRows ? `<tr><td style="padding:18px 36px 6px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border-bottom:1px solid #e5e7eb;">${teaserRows}</table></td></tr>` : ""}
+      ${
+        teaserRows
+          ? `<tr><td style="padding:26px 36px 6px;">
+          <p style="margin:0 0 10px;font-size:13px;letter-spacing:0.06em;font-weight:800;color:${INK};">주요 소식</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border-bottom:1px solid #e5e7eb;">${teaserRows}</table>
+        </td></tr>`
+          : ""
+      }
       ${insightBlock}
       <tr>
         <td style="padding:26px 36px 10px;">
