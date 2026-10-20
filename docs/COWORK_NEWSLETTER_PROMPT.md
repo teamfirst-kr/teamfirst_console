@@ -302,8 +302,8 @@
 #### 3-1. 이미지 종류 정하기
 | 섹션 내용 | 이미지 |
 | --- | --- |
-| 커버 | **항상 AI 생성** (시리즈 톤 통일) |
-| 매체 업데이트, AI 노하우, 개념 설명 | AI 생성 일러스트 |
+| 커버 | **매체 업데이트 호: 공지 원문의 노출 예시·화면 스크린샷을 우선** (2026-10-20 운영자 확정 — 주제와 바로 매치되는 실제 화면). 스크린샷이 없거나 다른 카테고리 호면 **주제에 맞는 실사(사진풍) AI 이미지** |
+| 매체 업데이트, AI 노하우, 개념 설명 | 공지·도구의 실제 화면 스크린샷 우선, 없으면 실사(사진풍) AI 이미지. **일러스트·플랫 디자인은 쓰지 않습니다** |
 | 특정 브랜드 사례 | **실제 이미지** (보도자료·공식 계정 게시물·광고 라이브러리 소재) + 출처 |
 | 밈·챌린지·콘텐츠 예시 | **실제 게시물 캡처 또는 영상 대표 장면** + 원본 링크 + 출처 |
 
@@ -316,13 +316,17 @@
 - 원저작자가 삭제·사용 중단을 요청하면 즉시 교체합니다 (운영자에게 보고).
 
 #### 3-3. AI 생성 이미지 (ChatGPT)
-- 비율 16:9 (1536×864 권장), 깔끔한 플랫 일러스트 또는 미니멀 3D, 네이비(#111E38)·블루(#004AAD)·화이트 톤
+- **실사(사진풍)로 생성합니다. 일러스트·플랫 디자인·3D 렌더 금지** (2026-10-20 운영자 확정 — AI 생성 티가 나지 않게, 주제와 확실히 매치되는 장면).
+- 비율 16:9 (1536×864 권장). 자연광의 사무실·매장·업무 장면, 실제 노트북·스마트폰·모니터 화면 같은 구체적 소품으로 주제를 드러냅니다. 색감은 차분한 톤에 네이비·블루 포인트 정도로.
+- **인물(모델)은 얼굴 정면이 나오지 않게** 합니다: 뒷모습, 어깨 너머 시점(over-the-shoulder), 손·화면 클로즈업, 얼굴이 프레임 밖이거나 초점 밖. 프롬프트에 `face not visible, shot from behind / over-the-shoulder` 를 반드시 넣습니다.
+- 화면 속 UI 글자는 흐리게(blurred, illegible)
 - 이미지 안에 글자는 넣지 않거나 영문 2~3단어까지만 (한글 텍스트 금지 — 깨짐 방지)
 - 실제 브랜드 로고·캐릭터를 넣지 않습니다.
-- 프롬프트는 전부 영문으로 씁니다. 요일별 커버 프롬프트:
-  - 월(매체 업데이트): `Minimal flat illustration, navy (#111E38) and blue (#004AAD) palette on a white background, an ad platform settings dashboard with toggles and a calendar, clean shapes, no text, 16:9`
-  - 수(트렌드·컨퍼런스): `Minimal flat illustration, navy (#111E38) and blue (#004AAD) palette on a white background, a smartphone showing a vertical short-form video feed with hearts and comment bubbles, no text, 16:9`
-  - 금(AI 노하우): `Minimal flat illustration, navy (#111E38) and blue (#004AAD) palette on a white background, a laptop with an automated workflow of connected nodes and a checklist, no text, 16:9`
+- 프롬프트는 전부 영문으로 씁니다. 요일별 기본 프롬프트 (주제에 맞게 장면을 구체화):
+  - 월(매체 업데이트, 스크린샷이 없을 때): `Photorealistic photo, a marketer at an office desk seen from behind, looking at a large monitor showing an ad platform dashboard with campaign settings, natural window light, shallow depth of field, face not visible, screen text blurred and illegible, no logos, 16:9`
+  - 수(트렌드·컨퍼런스): `Photorealistic photo, over-the-shoulder view of a person holding a smartphone scrolling a vertical short-form video feed in a cafe, face not visible, natural light, screen text blurred, no logos, 16:9`
+  - 금(AI 노하우): `Photorealistic photo, close-up of hands typing on a laptop with an AI chat assistant and a spreadsheet open side by side, modern office, face not visible, screen text blurred and illegible, no logos, 16:9`
+- 생성 결과에 얼굴 정면, 읽히는 가짜 글자, 실제 브랜드 로고가 보이면 다시 생성합니다.
 
 #### 3-4. 파일 조건
 - png/jpg/webp, 5MB 이하. 커버 포함 **총 4장을 넘기지 않습니다** (시스템 제한).
