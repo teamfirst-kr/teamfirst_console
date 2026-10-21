@@ -19,7 +19,24 @@ function tomorrowNineKst(): string {
 
 // 호 상세의 발행 패널: 검수 요청 → 승인·발송 예약(화면 안 확인) → 예약 시각 자동 발송. 비상용 수동 발송·삭제 포함.
 // 브라우저 자동화(Cowork)가 누르는 버튼이므로 window.confirm 등 브라우저 확인 창은 쓰지 않는다.
-export function SendPanel({ issue, subscriberCount, approverHint, isApprover = true }: { issue: IssueLite; subscriberCount: number; approverHint?: string | null; isApprover?: boolean }) {
+// 지금(KST) 기준 datetime-local 최소값
+function nowKstLocal(): string {
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 16);
+}
+
+export function SendPanel({
+  issue,
+  subscriberCount,
+  approverHint,
+  isApprover = true,
+  cadence = "daily",
+}: {
+  issue: IssueLite;
+  subscriberCount: number;
+  approverHint?: string | null;
+  isApprover?: boolean;
+  cadence?: "5min" | "daily"; // 자동 발송 실행 주기 — 5min: pg_cron(037) 적용, daily: 매일 09:00 크론만
+}) {
   const [pending, start] = useTransition();
   const [log, setLog] = useState<string[]>([]);
   const [progress, setProgress] = useState<{ sent: number; total: number } | null>(null);
@@ -29,6 +46,13 @@ export function SendPanel({ issue, subscriberCount, approverHint, isApprover = t
   const push = (m: string) => setLog((l) => [m, ...l].slice(0, 20));
   const stage = issueStage(issue);
   const published = issue.status === "published";
+
+  // 예약 창 열기 — 이미 예약된 호는 현재 예약 시각, 아니면 다음 발행일 09:00 으로 채운다
+  function openSchedule() {
+    setSlot(issue.send_scheduled_at ? isoToKstLocal(issue.send_scheduled_at) : isoToKstLocal(nextPublishSlot().toISOString()));
+    setChecked(false);
+    setModal("schedule");
+  }
 
   function sendAll() {
     setModal(null);
@@ -100,24 +124,29 @@ export function SendPanel({ issue, subscriberCount, approverHint, isApprover = t
             </Button>
           ) : null}
           {(stage === "draft" || stage === "published" || stage === "review") && isApprover ? (
-            <Button type="button" disabled={pending} onClick={() => setModal("schedule")}>
+            <Button type="button" disabled={pending} onClick={openSchedule}>
               승인·발송 예약
             </Button>
           ) : null}
           {stage === "scheduled" && isApprover ? (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={pending}
-              onClick={() =>
-                start(async () => {
-                  const r = await cancelSchedule(issue.id);
-                  push(r.ok ? "[예약 취소] 승인과 예약을 해제했습니다. 다시 승인·예약할 수 있습니다." : `[오류] ${r.error}`);
-                })
-              }
-            >
-              예약 취소·시각 변경
-            </Button>
+            <>
+              <Button type="button" disabled={pending} onClick={openSchedule}>
+                예약 시각 변경
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pending}
+                onClick={() =>
+                  start(async () => {
+                    const r = await cancelSchedule(issue.id);
+                    push(r.ok ? "[예약 취소] 승인과 예약을 해제했습니다. 다시 승인·예약할 수 있습니다." : `[오류] ${r.error}`);
+                  })
+                }
+              >
+                예약 취소
+              </Button>
+            </>
           ) : null}
           {isApprover ? (
             <Button type="button" variant="ghost" disabled={pending || !published || subscriberCount === 0} onClick={() => setModal("send")}>
@@ -132,16 +161,22 @@ export function SendPanel({ issue, subscriberCount, approverHint, isApprover = t
 
       {modal === "schedule" ? (
         <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-4">
-          <p className="text-sm font-bold text-secondary">승인·발송 예약</p>
+          <p className="text-sm font-bold text-secondary">{stage === "scheduled" ? "예약 시각 변경" : "승인·발송 예약"}</p>
           <p className="mt-1 text-xs text-muted-foreground">
             예약 시각에 서버가 자동으로 공개하고 구독 중 {subscriberCount}명에게 발송합니다. 기본값은 다음 발행일(월·수·금) 오전 9시입니다. 예약 후에도 승인 권한자는 내용을 수정·저장할 수 있고, 예약 시각에는 수정된 내용으로 발송됩니다.
             {approverHint ? ` ${approverHint}` : ""}
           </p>
-          <p className="mt-1 text-xs text-amber-700">현재 자동 발송은 매일 09:00 KST에 실행됩니다. 09:00 이후 시각으로 예약하면 다음 날 09:00에 발송됩니다.</p>
+          {cadence === "5min" ? (
+            <p className="mt-1 text-xs text-emerald-700">자동 발송은 5분 간격으로 실행됩니다. 예약 시각 이후 5분 이내에 발송됩니다.</p>
+          ) : (
+            <p className="mt-1 text-xs text-amber-700">
+              자동 발송이 아직 매일 09:00 KST에만 실행됩니다(마이그레이션 037 미적용). 09:00 이후 시각으로 예약하면 다음 날 09:00에 발송됩니다.
+            </p>
+          )}
           <div className="mt-3 flex flex-wrap items-end gap-3">
             <label className="text-xs">
               <span className="block font-semibold text-secondary">발송 시각 (KST)</span>
-              <input id="send_slot" type="datetime-local" value={slot} onChange={(e) => setSlot(e.target.value)} className="mt-1 h-9 rounded-md border bg-background px-2 text-sm" />
+              <input id="send_slot" type="datetime-local" value={slot} min={nowKstLocal()} onChange={(e) => setSlot(e.target.value)} className="mt-1 h-9 rounded-md border bg-background px-2 text-sm" />
             </label>
             <div className="flex gap-1.5 text-xs">
               <Button type="button" size="sm" variant="outline" className="h-9" onClick={() => setSlot(tomorrowNineKst())}>
@@ -161,16 +196,17 @@ export function SendPanel({ issue, subscriberCount, approverHint, isApprover = t
               disabled={pending || !checked || !slot}
               onClick={() =>
                 start(async () => {
+                  const wasScheduled = stage === "scheduled";
                   const r = await approveAndSchedule(issue.id, slot);
                   if (r.ok && r.scheduledAt) {
-                    push(`[예약 완료] ${formatKstDateTime(r.scheduledAt)} KST 에 공개·발송됩니다.`);
+                    push(`${wasScheduled ? "[예약 변경]" : "[예약 완료]"} ${formatKstDateTime(r.scheduledAt)} KST 에 공개·발송됩니다.`);
                     setModal(null);
                     setChecked(false);
                   } else push(`[오류] ${r.error}`);
                 })
               }
             >
-              승인하고 예약
+              {stage === "scheduled" ? "변경한 시각으로 예약" : "승인하고 예약"}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setModal(null)}>
               닫기

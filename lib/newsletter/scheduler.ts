@@ -15,6 +15,7 @@ export type ScheduledSendSummary = {
 };
 
 // 예약 발송 실행 — 승인됨·예약 시각 도달·미완료 호를 순서대로 공개하고 구독자에게 배치 발송.
+// 호출: Supabase pg_cron 5분 간격(037, /api/cron/newsletter-send) + 백업으로 pb-morning 09:00 KST.
 // 시간 예산 안에서만 돌고, 못 보낸 분량은 다음 실행에서 이어간다(newsletter_deliveries 유니크로 중복 방지).
 // 전원 발송이 끝나면 send_completed_at 을 기록하고 운영자에게 결과 메일을 보낸다.
 export async function runNewsletterScheduledSends(opts: { now?: Date; budgetMs?: number } = {}): Promise<ScheduledSendSummary> {
@@ -89,7 +90,19 @@ export async function runNewsletterScheduledSends(opts: { now?: Date; budgetMs?:
 
     if (completed) {
       const doneIso = new Date().toISOString();
-      await admin.from("newsletter_issues").update({ send_completed_at: doneIso, updated_at: doneIso }).eq("id", issue.id);
+      await admin.from("newsletter_issues").update({ send_completed_at: doneIso, updated_at: doneIso }).eq("id", issue.id).is("send_completed_at", null);
+      // 결과 메일은 1회만 — 동시에 끝낸 워커가 여럿이어도 조건부 갱신에 성공한 한 곳만 보낸다 (037)
+      const { data: notifyClaim } = await admin
+        .from("newsletter_issues")
+        .update({ send_result_notified_at: doneIso })
+        .eq("id", issue.id)
+        .is("send_result_notified_at", null)
+        .select("id");
+      if (!notifyClaim || notifyClaim.length === 0) {
+        summary.processed.push({ id: issue.id, title: issue.title, sent, failed, remaining, completed });
+        if (summary.budgetExhausted) break;
+        continue;
+      }
       const [{ count: sentTotal }, { count: failedTotal }, { count: subscribed }] = await Promise.all([
         admin.from("newsletter_deliveries").select("id", { count: "exact", head: true }).eq("issue_id", issue.id).eq("status", "sent"),
         admin.from("newsletter_deliveries").select("id", { count: "exact", head: true }).eq("issue_id", issue.id).eq("status", "failed"),
