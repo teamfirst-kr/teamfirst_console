@@ -67,7 +67,7 @@ function readForm(fd: FormData) {
       .map((t) => t.trim().slice(0, maxLen))
       .filter(Boolean)
       .slice(0, max);
-  const teasers = lines("email_teasers", MAX_TEASERS, 120);
+  const teasers = lines("email_teasers", MAX_TEASERS, 400); // "제목 || 요약" 한 줄
   const insights = lines("email_insights", MAX_INSIGHTS, 300);
   return {
     title,

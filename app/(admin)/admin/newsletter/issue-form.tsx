@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DEFAULT_CTA, MAX_IMAGES_PER_ISSUE, NEWSLETTER_CATEGORIES } from "@/lib/newsletter/constants";
-import { DEFAULT_BUTTON_LABEL } from "@/lib/newsletter/highlight";
+import { DEFAULT_BUTTON_LABEL, splitTeaser } from "@/lib/newsletter/highlight";
 import { renderMarkdown } from "@/lib/newsletter/markdown";
 import { countImages } from "@/lib/newsletter/sections";
 import { ISSUE_TEMPLATE_MD } from "@/lib/newsletter/template";
@@ -18,7 +18,7 @@ import { previewIssueEmail, type IssueActionState } from "./actions";
 import { ImageUploadInput, uploadNewsletterImage } from "./image-upload";
 
 // 글자 수 안내 기준 (초과해도 저장은 되지만 메일에서 잘려 보일 수 있음)
-const LIMITS = { headline: 40, intro: 200, teaser: 45, insight: 90, button: 20 };
+const LIMITS = { headline: 40, intro: 200, teaser: 45, teaserSummary: 150, insight: 90, button: 20 };
 
 export function IssueForm({
   action,
@@ -54,6 +54,7 @@ export function IssueForm({
   const remainingSlots = Math.max(0, MAX_IMAGES_PER_ISSUE - imageCount);
   const bodyImages = Array.from(body.matchAll(/!\[([^\]]*)\]\(([^)\s]+)\)/g)).map((m) => ({ alt: m[1], url: m[2], raw: m[0] }));
   const teaserLines = teasers.split("\n").filter((t) => t.trim());
+  const teaserParts = teaserLines.map((t) => splitTeaser(t));
   const insightLines = insights.split("\n").filter((t) => t.trim());
 
   // 커서 위치(미리보기 중이거나 포커스가 없으면 맨 끝)에 ![alt](url) 한 줄로 삽입
@@ -303,11 +304,14 @@ export function IssueForm({
               </div>
               <div className="space-y-1 md:col-span-2">
                 <Label htmlFor="email_teasers">
-                  티저 (한 줄에 하나, 최대 3줄, 각 {LIMITS.teaser}자)
+                  주요 소식 (한 줄에 하나, 최대 3줄 — <code>제목 || 무슨 사례·내용인지 1~2문장</code>, 제목 {LIMITS.teaser}자·요약 {LIMITS.teaserSummary}자)
                   <span className="ml-2 text-[11px] font-normal text-muted-foreground">{teaserLines.length}/3줄</span>
                 </Label>
-                <Textarea id="email_teasers" name="email_teasers" rows={3} value={teasers} onChange={(e) => setTeasers(e.target.value)} placeholder={"네이버 브랜드검색, 10월부터 무엇이 바뀌나\n메타 BLS 최소 집행 금액이 올라간 이유\n우리 계정에서 지금 확인할 설정 1가지"} />
-                {teaserLines.some((t) => t.trim().length > LIMITS.teaser) ? <p className="text-[11px] text-red-600">{LIMITS.teaser}자를 넘는 줄이 있습니다.</p> : null}
+                <Textarea id="email_teasers" name="email_teasers" rows={3} value={teasers} onChange={(e) => setTeasers(e.target.value)} placeholder={"네이버 쇼핑검색광고, 새로 붙는 자리는? || 10월 28일부터 쇼핑검색광고가 스마트스토어 상세페이지 '함께 찾는 다양한 스토어 상품' 영역에 노출됩니다.\n메타 BLS 최소 집행 금액이 올라간 이유 || …\n우리 계정에서 지금 확인할 설정 1가지 || …"} />
+                <p className="text-[11px] text-muted-foreground">메일 ‘주요 소식’에 제목 → 요약 → 같은 번호 팀퍼스트 인사이트 순서로 들어갑니다. 요약은 답을 감추지 말고 무슨 사례·변화인지 알 수 있게 씁니다.</p>
+                {teaserParts.some((t) => t.title.length > LIMITS.teaser) ? <p className="text-[11px] text-red-600">제목이 {LIMITS.teaser}자를 넘는 줄이 있습니다.</p> : null}
+                {teaserParts.some((t) => t.summary.length > LIMITS.teaserSummary) ? <p className="text-[11px] text-red-600">요약이 {LIMITS.teaserSummary}자를 넘는 줄이 있습니다.</p> : null}
+                {teaserParts.length > 0 && teaserParts.some((t) => !t.summary) ? <p className="text-[11px] text-amber-700">요약(|| 뒤)이 없는 줄이 있습니다. 메일만 읽어도 내용을 알 수 있게 요약을 넣어 주세요.</p> : null}
               </div>
               <div className="space-y-1 md:col-span-2">
                 <Label htmlFor="email_insights">

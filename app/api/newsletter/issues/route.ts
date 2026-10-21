@@ -60,7 +60,7 @@ const issueSchema = z.object({
       tags: z.array(z.string().trim().max(30)).max(3).optional(),
       headline: z.string().trim().max(120).optional(),
       intro: z.string().trim().max(600).optional(),
-      teasers: z.array(z.string().trim().max(120)).max(3).optional(),
+      teasers: z.array(z.string().trim().max(400)).max(3).optional(), // "제목 || 요약"
       insights: z.array(z.string().trim().max(300)).max(3).optional(),
       button_label: z.string().trim().max(40).optional(),
     })
