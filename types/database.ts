@@ -80,6 +80,7 @@ export type NewsletterIssueRow = {
   send_scheduled_at: string | null;
   send_started_at: string | null;
   send_completed_at: string | null;
+  send_result_notified_at: string | null; // 037: 결과 메일 1회 보장
   created_at: string;
   updated_at: string;
 };
@@ -477,6 +478,7 @@ export type Database = {
       newsletter_subscribers: PbTable<NewsletterSubscriberRow>; // 032
       newsletter_issues: PbTable<NewsletterIssueRow>; // 032
       newsletter_deliveries: PbTable<NewsletterDeliveryRow>; // 032
+      app_cron_tokens: PbTable<{ name: string; token: string; created_at: string }>; // 037 (service_role 전용)
       pb_apply_surveys: PbTable<{
         id: string;
         reason: string;

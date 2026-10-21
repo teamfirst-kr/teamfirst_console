@@ -8,9 +8,14 @@ import type { NewsletterIssueRow, NewsletterSubscriberRow } from "@/types/databa
 export const BATCH_SIZE = 50; // Resend batch 한도 100 이하, 서버리스 타임아웃 여유
 export const DUMMY_TOKEN = "0".repeat(48); // 테스트·검수·사본 메일용 (실제 구독자 토큰을 담지 않음)
 
+// busy: 다른 워커가 발송 중인(선점만 하고 아직 결과 미기록) 구독자가 있어 이번 호출에서는 할 일이 없음 — 호출부는 반복을 멈춘다
 export type SendBatchResult =
-  | { ok: true; sent: number; failed: number; remaining: number; total: number }
+  | { ok: true; sent: number; failed: number; remaining: number; total: number; busy?: boolean }
   | { ok: false; error: string };
+
+// 다른 워커가 선점 후 결과를 아직 기록하지 않은 행을 '진행 중'으로 보는 시간. 이보다 오래된 queued 행은
+// (발송 후 기록 실패 등으로) 멈춘 것으로 보고 완료 판정을 막지 않는다 — 재발송은 하지 않는다.
+export const IN_FLIGHT_MS = 3 * 60 * 1000;
 
 export function reviewEmailAddress(): string {
   return process.env.NEWSLETTER_REVIEW_EMAIL?.trim() || "rldbs06@naver.com";
@@ -58,7 +63,7 @@ export async function sendIssueBatchCore(id: string): Promise<SendBatchResult> {
 
   const [{ data: subs, error: subsError }, { data: delivered, error: delError }] = await Promise.all([
     admin.from("newsletter_subscribers").select("id, email, name, token").eq("status", "subscribed").order("created_at", { ascending: true }),
-    admin.from("newsletter_deliveries").select("subscriber_id").eq("issue_id", id),
+    admin.from("newsletter_deliveries").select("subscriber_id, status, sent_at").eq("issue_id", id),
   ]);
   if (subsError) return { ok: false, error: `구독자 조회 실패: ${subsError.message}` };
   if (delError) return { ok: false, error: `발송 이력 조회 실패: ${delError.message}` };
@@ -66,7 +71,10 @@ export async function sendIssueBatchCore(id: string): Promise<SendBatchResult> {
   const pending = ((subs ?? []) as Pick<NewsletterSubscriberRow, "id" | "email" | "name" | "token">[]).filter((s) => !done.has(s.id));
   const total = (subs ?? []).length;
   const now = new Date().toISOString();
+  // 다른 워커가 발송 중인 행 (선점됐지만 결과 미기록, 최근 IN_FLIGHT_MS 이내) — 이 행이 남아 있으면 완료로 판정하지 않는다
+  const inFlight = (delivered ?? []).filter((d) => d.status === "queued" && Date.now() - new Date(d.sent_at).getTime() < IN_FLIGHT_MS).length;
   if (pending.length === 0) {
+    if (inFlight > 0) return { ok: true, sent: 0, failed: 0, remaining: inFlight, total, busy: true };
     await markLifecycle(id, issue, { completed: true, now });
     return { ok: true, sent: 0, failed: 0, remaining: 0, total };
   }
@@ -84,8 +92,8 @@ export async function sendIssueBatchCore(id: string): Promise<SendBatchResult> {
   const claimed = new Set((claimedRows ?? []).map((r) => r.subscriber_id));
   const batch = candidates.filter((s) => claimed.has(s.id));
   if (batch.length === 0) {
-    // 다른 워커가 이 배치를 가져감 — 남은 수만 알려주고 다음 반복에서 다시 조회
-    return { ok: true, sent: 0, failed: 0, remaining: Math.max(0, pending.length - candidates.length), total };
+    // 다른 워커가 이 배치를 방금 가져감 — 완료로 오판하지 않도록 남은 수에 포함하고, 호출부는 반복을 멈춘다
+    return { ok: true, sent: 0, failed: 0, remaining: pending.length + inFlight, total, busy: true };
   }
 
   // 2) 발송
@@ -128,7 +136,8 @@ export async function sendIssueBatchCore(id: string): Promise<SendBatchResult> {
     const copy = buildSubscriberMail(issue, { email: bcc, name: null, token: DUMMY_TOKEN });
     await sendEmail({ to: bcc, subject: `[발송 사본] ${copy.subject}`, html: copy.html });
   }
-  const remaining = pending.length - batch.length;
+  // 다른 워커의 진행 중 행이 있었다면 그 워커(또는 다음 실행)가 완료를 판정한다
+  const remaining = pending.length - batch.length + inFlight;
   await markLifecycle(id, issue, { completed: remaining === 0, now: doneAt });
   return { ok: true, sent: sentIds.length, failed: failedItems.length, remaining, total };
 }

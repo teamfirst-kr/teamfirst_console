@@ -16,9 +16,11 @@ export default async function EditIssuePage({ params, searchParams }: { params: 
   const [{ id }, { reviewed }] = await Promise.all([params, searchParams]);
   const supabase = await createClient();
   // 본문·하이라이트 컬럼은 033/034 이후 세션 클라이언트로 읽을 수 없어 service_role 사용 ((admin) 레이아웃의 requireRole("admin") 뒤에서만 렌더)
-  const [{ data }, { count: subscriberCount }] = await Promise.all([
+  const [{ data }, { count: subscriberCount }, { data: cronToken }] = await Promise.all([
     createAdminClient().from("newsletter_issues").select("*").eq("id", id).maybeSingle(),
     supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }).eq("status", "subscribed"),
+    // 037(pg_cron 5분 간격) 적용 여부 — 토큰 행이 있으면 적용된 것으로 본다
+    createAdminClient().from("app_cron_tokens").select("name").eq("name", "newsletter_send").maybeSingle(),
   ]);
   if (!data) notFound();
   const issue = data as NewsletterIssueRow;
@@ -53,13 +55,19 @@ export default async function EditIssuePage({ params, searchParams }: { params: 
 
       {reviewed ? <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">저장과 검수 요청이 완료되었습니다. 운영자 검수 후 승인·발송 예약이 진행됩니다.</p> : null}
 
-      <SendPanel issue={issue} subscriberCount={subscriberCount ?? 0} approverHint={approver ? `승인은 ${approver} 계정만 가능합니다.` : null} isApprover={canApprove} />
+      <SendPanel
+        issue={issue}
+        subscriberCount={subscriberCount ?? 0}
+        approverHint={approver ? `승인은 ${approver} 계정만 가능합니다.` : null}
+        isApprover={canApprove}
+        cadence={cronToken ? "5min" : "daily"}
+      />
 
       {locked ? (
         <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">승인·발송 예약된 호는 승인 권한자만 수정할 수 있습니다.</p>
       ) : stage === "scheduled" ? (
         <p className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs text-sky-800">
-          발송 예약된 호입니다. 여기서 수정·저장하면 예약 시각에 수정된 내용으로 발송됩니다. 시각을 바꾸려면 위에서 예약을 취소한 뒤 다시 예약하세요.
+          발송 예약된 호입니다. 여기서 수정·저장하면 예약 시각에 수정된 내용으로 발송됩니다. 시각은 위의 [예약 시각 변경]에서 바꿀 수 있습니다.
         </p>
       ) : null}
       <IssueForm action={bound} initial={issue} submitLabel="변경 사항 저장" allowReviewRequest={!locked} />

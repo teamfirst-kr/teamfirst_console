@@ -192,6 +192,7 @@ export async function previewIssueEmail(fd: FormData): Promise<{ ok: true; html:
     send_scheduled_at: null,
     send_started_at: null,
     send_completed_at: null,
+    send_result_notified_at: null,
     created_at: now,
     updated_at: now,
   };
@@ -236,8 +237,15 @@ export async function approveAndSchedule(id: string, kstLocal: string): Promise<
   if (issue.send_started_at) return { ok: false, error: "이미 발송이 시작된 호입니다." };
   if (!issue.title.trim() || !issue.body_md.trim()) return { ok: false, error: "제목과 본문이 있어야 예약할 수 있습니다." };
   const now = new Date().toISOString();
-  const { error } = await createAdminClient().from("newsletter_issues").update({ approved_at: now, send_scheduled_at: iso, updated_at: now }).eq("id", id);
+  // 발송 시작 전에만 (조건부 갱신) — 예약 시각 변경도 같은 경로
+  const { data: updated, error } = await createAdminClient()
+    .from("newsletter_issues")
+    .update({ approved_at: now, send_scheduled_at: iso, updated_at: now })
+    .eq("id", id)
+    .is("send_started_at", null)
+    .select("id");
   if (error) return { ok: false, error: error.message };
+  if (!updated || updated.length === 0) return { ok: false, error: "이미 발송이 시작된 호입니다." };
   revalidatePath("/admin/newsletter");
   revalidatePath(`/admin/newsletter/${id}`);
   return { ok: true, scheduledAt: iso };

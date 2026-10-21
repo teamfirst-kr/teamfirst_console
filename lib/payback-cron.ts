@@ -38,9 +38,11 @@ export async function runPbMorningTasks(): Promise<Record<string, unknown>> {
   const day = Number(today.slice(8, 10));
   const out: Record<string, unknown> = { today };
 
-  // 뉴스레터 예약 발송 (월·수·금 09:00 KST 슬롯) — 전용 크론을 추가할 수 없는 플랜에서도 매일 09:00 에 처리
+  // 뉴스레터 예약 발송 — 037(pg_cron 5분 간격)이 적용되면 그쪽이 전담하므로 건너뛴다(09:00 동시 실행 경합 방지).
+  // 미적용 환경에서만 매일 09:00 백업으로 처리.
   try {
-    out.newsletter = await runNewsletterScheduledSends({ budgetMs: 35_000 });
+    const { data: cronToken } = await createAdminClient().from("app_cron_tokens").select("name").eq("name", "newsletter_send").maybeSingle();
+    out.newsletter = cronToken ? "skipped: pg_cron(037) 5분 간격 실행 중" : await runNewsletterScheduledSends({ budgetMs: 35_000 });
   } catch (e) {
     out.newsletterError = e instanceof Error ? e.message : String(e);
     console.error("[cron pb-morning] newsletter", e);
