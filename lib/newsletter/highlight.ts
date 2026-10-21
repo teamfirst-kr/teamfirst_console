@@ -9,7 +9,15 @@ export const MAX_INSIGHTS = 3;
 export const INSIGHT_LABEL = "팀퍼스트 인사이트";
 export const AD_PREFIX = "(광고) "; // 정보통신망법 제50조 — 정확히 소괄호 (광고)
 
-export type Highlight = { tags: string[]; headline: string; intro: string; teasers: string[]; insights: string[]; buttonLabel: string };
+export type Highlight = { tags: string[]; headline: string; intro: string; teasers: string[]; teaserSummaries: string[]; insights: string[]; buttonLabel: string };
+
+// 티저 한 줄 = "소식 제목 || 무슨 사례·내용인지 1~2문장 요약". 요약 없이 제목만 써도 된다 (운영자 피드백 2026-10-21: 메일만 읽어도 내용 파악)
+export const TEASER_SEPARATOR = "||";
+export function splitTeaser(line: string): { title: string; summary: string } {
+  const i = line.indexOf(TEASER_SEPARATOR);
+  if (i < 0) return { title: line.trim(), summary: "" };
+  return { title: line.slice(0, i).trim(), summary: line.slice(i + TEASER_SEPARATOR.length).trim() };
+}
 
 type HighlightSource = Pick<
   NewsletterIssueRow,
@@ -51,13 +59,17 @@ export function commentsOf(bodyMd: string, n = MAX_INSIGHTS): string[] {
 // 칸이 비었을 때 대체값: 태그=카테고리 라벨, 도입=summary, 티저=## 소제목 3개, 인사이트=본문 인용(팀퍼스트 코멘트) 3개, 버튼="전문 보러가기"
 export function resolveHighlight(issue: HighlightSource): Highlight {
   const tags = splitTags(issue.email_tags);
-  const teasers = (issue.email_teasers ?? []).map((t) => t.trim()).filter(Boolean).slice(0, MAX_TEASERS);
+  const teaserParts = (issue.email_teasers ?? [])
+    .map((t) => splitTeaser(t))
+    .filter((t) => t.title)
+    .slice(0, MAX_TEASERS);
   const insights = (issue.email_insights ?? []).map((t) => t.trim()).filter(Boolean).slice(0, MAX_INSIGHTS);
   return {
     tags: tags.length > 0 ? tags : [CATEGORY_MAP[issue.category]?.label ?? "뉴스레터"],
     headline: (issue.email_headline ?? "").trim() || issue.title,
     intro: (issue.email_intro ?? "").trim() || (issue.summary ?? "").trim(),
-    teasers: teasers.length > 0 ? teasers : headingsOf(issue.body_md ?? ""),
+    teasers: teaserParts.length > 0 ? teaserParts.map((t) => t.title) : headingsOf(issue.body_md ?? ""),
+    teaserSummaries: teaserParts.length > 0 ? teaserParts.map((t) => t.summary) : [],
     insights: insights.length > 0 ? insights : commentsOf(issue.body_md ?? ""),
     buttonLabel: (issue.email_button_label ?? "").trim() || DEFAULT_BUTTON_LABEL,
   };

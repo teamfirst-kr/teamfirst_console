@@ -16,7 +16,7 @@ export function appUrl(): string {
 export type NewsletterMailVariant = "subscriber" | "test" | "review";
 
 // 하이라이트형 뉴스레터 메일 — 메일에는 핵심만, 전문·상담 양식은 웹에서.
-// 구성: 헤더 → "오늘의 하이라이트" → 태그 → 헤드라인 → 커버 → 도입(**굵게**만) → 주요 소식(티저 n + 바로 아래 팀퍼스트 인사이트 n) → 전문 버튼
+// 구성: 헤더 → "오늘의 하이라이트" → 태그 → 헤드라인 → 커버 → 도입(**굵게**만) → 주요 소식(티저 n 제목 → 요약 → 팀퍼스트 인사이트 n) → 전문 버튼
 //       → 작은 상담 안내 한 줄(보조 링크) → 법정 표기·수신거부. body_md 전체는 넣지 않는다.
 // 서비스 홍보 블록은 두지 않는다 (운영자 지시) — 상담 유도는 웹 전문 하단에서.
 export function newsletterEmail(params: {
@@ -56,6 +56,7 @@ export function newsletterEmail(params: {
         <td style="width:28px;padding:16px 0;border-top:1px solid #e5e7eb;font-size:12px;font-weight:800;letter-spacing:0.08em;color:${BLUE};vertical-align:top;line-height:1.6;">0${i + 1}</td>
         <td style="padding:16px 0;border-top:1px solid #e5e7eb;vertical-align:top;">
           <p style="margin:0;font-size:16px;line-height:1.6;font-weight:700;color:${INK};">${renderInline(escapeHtml(t), "email")}</p>
+          ${h.teaserSummaries[i] ? `<p style="margin:6px 0 0;font-size:14.5px;line-height:1.75;color:#374151;">${renderInline(escapeHtml(h.teaserSummaries[i]), "email")}</p>` : ""}
           ${h.insights[i] ? insightCell(h.insights[i]) : ""}
         </td>
       </tr>`,
