@@ -53,9 +53,10 @@ export async function runNewsletterScheduledSends(opts: { now?: Date; budgetMs?:
       .eq("id", issue.id)
       .not("approved_at", "is", null)
       .is("send_completed_at", null)
+      .lte("send_scheduled_at", nowIso) // 그 사이 예약 시각이 뒤로 바뀌었으면 0행 → 건너뜀
       .select("id");
     if (pErr || !claimed || claimed.length === 0) {
-      const msg = pErr ? pErr.message : "예약이 취소되었거나 이미 완료되어 건너뜀";
+      const msg = pErr ? pErr.message : "예약이 취소·변경되었거나 이미 완료되어 건너뜀";
       summary.processed.push({ id: issue.id, title: issue.title, sent: 0, failed: 0, remaining: -1, completed: false, error: msg });
       if (pErr) {
         const mail = sendResultEmail({ kind: "aborted", title: issue.title, issueNo: issue.issue_no, sent: 0, failed: 0, total: null, publicUrl: `${appUrl()}/newsletter/${issue.slug}`, adminUrl: `${appUrl()}/admin/newsletter/${issue.id}`, errors: [msg] });
@@ -86,26 +87,29 @@ export async function runNewsletterScheduledSends(opts: { now?: Date; budgetMs?:
         completed = true;
         break;
       }
+      if (r.busy) break; // 다른 워커가 발송 중 — 그 워커(또는 다음 실행)가 마무리한다
     }
 
     if (completed) {
       const doneIso = new Date().toISOString();
       await admin.from("newsletter_issues").update({ send_completed_at: doneIso, updated_at: doneIso }).eq("id", issue.id).is("send_completed_at", null);
       // 결과 메일은 1회만 — 동시에 끝낸 워커가 여럿이어도 조건부 갱신에 성공한 한 곳만 보낸다 (037)
-      const { data: notifyClaim } = await admin
+      const { data: notifyClaim, error: notifyErr } = await admin
         .from("newsletter_issues")
         .update({ send_result_notified_at: doneIso })
         .eq("id", issue.id)
         .is("send_result_notified_at", null)
         .select("id");
-      if (!notifyClaim || notifyClaim.length === 0) {
+      if (notifyErr) console.error("[newsletter] 결과 메일 선점 실패 — 그대로 발송:", notifyErr.message); // 037 미적용 등: 중복 가능성보다 누락 방지 우선
+      if (!notifyErr && (!notifyClaim || notifyClaim.length === 0)) {
         summary.processed.push({ id: issue.id, title: issue.title, sent, failed, remaining, completed });
         if (summary.budgetExhausted) break;
         continue;
       }
-      const [{ count: sentTotal }, { count: failedTotal }, { count: subscribed }] = await Promise.all([
+      const [{ count: sentTotal }, { count: failedTotal }, { count: queuedTotal }, { count: subscribed }] = await Promise.all([
         admin.from("newsletter_deliveries").select("id", { count: "exact", head: true }).eq("issue_id", issue.id).eq("status", "sent"),
         admin.from("newsletter_deliveries").select("id", { count: "exact", head: true }).eq("issue_id", issue.id).eq("status", "failed"),
+        admin.from("newsletter_deliveries").select("id", { count: "exact", head: true }).eq("issue_id", issue.id).eq("status", "queued"),
         admin.from("newsletter_subscribers").select("id", { count: "exact", head: true }).eq("status", "subscribed"),
       ]);
       const base = appUrl();
@@ -116,6 +120,7 @@ export async function runNewsletterScheduledSends(opts: { now?: Date; budgetMs?:
         sent: sentTotal ?? sent,
         failed: failedTotal ?? failed,
         total: subscribed ?? 0,
+        unconfirmed: queuedTotal ?? 0,
         publicUrl: `${base}/newsletter/${issue.slug}`,
         adminUrl: `${base}/admin/newsletter/${issue.id}`,
       });

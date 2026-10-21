@@ -45,6 +45,13 @@ SELECT cron.schedule(
   $job$
 );
 
+-- pg_cron 실행 기록(cron.job_run_details)은 자동으로 지워지지 않아 매일 7일 지난 기록을 정리한다 (같은 이름이면 갱신)
+SELECT cron.schedule(
+  'cron-run-details-purge',
+  '23 18 * * *',
+  $purge$ DELETE FROM cron.job_run_details WHERE end_time < now() - interval '7 days' $purge$
+);
+
 -- 확인용:  SELECT jobname, schedule, active FROM cron.job WHERE jobname = 'newsletter-send';
 -- 최근 호출: SELECT status_code, created FROM net._http_response ORDER BY created DESC LIMIT 5;
 -- 중지:     SELECT cron.unschedule('newsletter-send');

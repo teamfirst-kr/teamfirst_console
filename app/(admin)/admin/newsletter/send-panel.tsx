@@ -71,6 +71,10 @@ export function SendPanel({
           push(acc === 0 ? "[완료] 보낼 구독자가 없습니다 (전원 발송 완료)." : `[완료] ${acc}명에게 발송을 완료했습니다.`);
           return;
         }
+        if (r.busy) {
+          push("[대기] 자동 발송이 진행 중입니다. 잠시 후 상태를 확인하고, 남은 구독자가 있으면 다시 눌러주세요.");
+          return;
+        }
         push(`[진행] ${r.sent}명 발송, 남은 ${r.remaining}명`);
       }
     });

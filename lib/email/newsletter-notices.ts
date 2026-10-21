@@ -81,6 +81,7 @@ export function sendResultEmail(params: {
   sent: number;
   failed: number;
   total: number | null; // null = 알 수 없음(행 생략)
+  unconfirmed?: number; // 발송은 시도됐지만 결과 기록이 안 된(queued로 남은) 건 — 재발송하지 않으며 확인 필요
   publicUrl: string;
   adminUrl: string;
   errors?: string[];
@@ -91,6 +92,7 @@ export function sendResultEmail(params: {
     ["발송", `${params.sent}명`],
     ["실패", `${params.failed}건`],
     ...(params.total === null ? [] : ([["구독 중", `${params.total}명`]] as [string, string][])),
+    ...(params.unconfirmed ? ([["확인 필요", `${params.unconfirmed}건 (발송 결과 기록 누락 — 재발송하지 않음)`]] as [string, string][]) : []),
     ["공개 주소", `<a href="${escapeHtml(params.publicUrl)}" style="color:${NAVY};">${escapeHtml(params.publicUrl)}</a>`],
   ];
   const extra = params.errors?.length ? `<p style="margin:14px 0 0;font-size:12px;color:#b91c1c;white-space:pre-wrap;">${escapeHtml(params.errors.slice(0, 10).join("\n"))}</p>` : "";
