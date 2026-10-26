@@ -108,7 +108,7 @@ function ShotGallery({ shots }: { shots: SolutionShot[] }) {
 }
 
 // 영상 옆 "내 구성에 담기" 카드 — 앱 가격은 플랜에 포함되므로 개별 가격 대신 담기 상태를 보여준다
-function PickCard({ app, chips, pick }: { app: MarketApp; chips: string[]; pick: AppPickState }) {
+function PickCard({ app, chips, highlights = [], pick }: { app: MarketApp; chips: string[]; highlights?: { title: string; body: string }[]; pick: AppPickState }) {
   return (
     <div className="flex flex-col rounded-2xl border bg-card p-5 shadow-sm">
       <p className="text-base font-extrabold text-secondary">{appLabel(app)} 한눈에</p>
@@ -126,6 +126,19 @@ function PickCard({ app, chips, pick }: { app: MarketApp; chips: string[]; pick:
         </div>
       ) : null}
       <p className="mt-4 break-keep text-sm leading-relaxed text-muted-foreground">{app.summary}</p>
+      {highlights.length > 0 ? (
+        <ul className="mt-4 space-y-3">
+          {highlights.map((h, idx) => (
+            <li key={h.title} className="flex gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-extrabold text-white">{idx + 1}</span>
+              <div>
+                <p className="break-keep text-sm font-bold text-secondary">{h.title}</p>
+                <p className="mt-0.5 break-keep text-xs leading-relaxed text-muted-foreground">{h.body}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       <div className="mt-4 rounded-xl bg-muted/50 px-4 py-3 text-sm">
         <p className="font-semibold text-secondary">{pick.available ? "모든 플랜에서 선택 가능" : "출시 예정 앱"}</p>
         <p className="mt-0.5 text-xs text-muted-foreground">
@@ -179,7 +192,7 @@ function RichBody({ app, rich: c, pick }: { app: MarketApp; rich: SolutionInfo; 
         ) : c.shots && c.shots.length > 0 ? (
           <ShotGallery shots={c.shots} />
         ) : null}
-        <PickCard app={app} chips={c.chips} pick={pick} />
+        <PickCard app={app} chips={c.chips} highlights={c.highlights} pick={pick} />
       </div>
 
       <div className="mt-14 md:mt-16">
