@@ -158,12 +158,13 @@ export function MarketBuilder({ config, apps }: { config: MarketConfig; apps: Ma
 
   const countOf = (key: AppCategory) => listed.filter((a) => a.category === key).length;
   const shown = cat === "all" ? listed : listed.filter((a) => a.category === cat);
-  const emptyCats = APP_CATEGORIES.filter((c) => countOf(c.key) === 0);
   const details = listed.filter(hasAppDetail);
   const tabs: { key: AppCategory | "all"; label: string; n: number }[] = [
     { key: "all", label: "전체", n: listed.length },
-    ...APP_CATEGORIES.map((c) => ({ key: c.key, label: c.label, n: countOf(c.key) })),
+    // 앱이 있는 카테고리만 탭으로 — 2개 이상일 때만 탭 노출 (출시 순서 미정 카테고리를 미리 드러내지 않음)
+    ...APP_CATEGORIES.map((c) => ({ key: c.key, label: c.label, n: countOf(c.key) })).filter((t) => t.n > 0),
   ];
+  const showTabs = tabs.length > 2;
 
   return (
     <>
@@ -220,7 +221,8 @@ export function MarketBuilder({ config, apps }: { config: MarketConfig; apps: Ma
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
             <div>
-              <div className="flex flex-wrap gap-2" role="tablist" aria-label="카테고리">
+              {showTabs ? (
+              <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="카테고리">
                 {tabs.map((t) => (
                   <button
                     key={t.key}
@@ -234,31 +236,26 @@ export function MarketBuilder({ config, apps }: { config: MarketConfig; apps: Ma
                     }
                   >
                     {t.label}
-                    <span className="ml-1.5 text-xs font-medium opacity-70">{t.n > 0 ? t.n : "준비 중"}</span>
+                    <span className="ml-1.5 text-xs font-medium opacity-70">{t.n}</span>
                   </button>
                 ))}
               </div>
+              ) : null}
 
               {notice ? (
-                <p className="mt-4 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-800" role="status">
+                <p className="mb-4 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-800" role="status">
                   {notice}
                 </p>
               ) : null}
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 {shown.map((a) => (
                   <AppCard key={a.key} app={a} pick={pickOf(a)} hasDetail={hasAppDetail(a)} />
                 ))}
-                {cat === "all" && emptyCats.length > 0 ? (
+                {cat === "all" ? (
                   <ComingCard
-                    title={`${emptyCats.map((c) => c.label).join(" · ")} 솔루션도 순차 오픈합니다`}
+                    title="새로운 솔루션도 순차 오픈합니다"
                     body="팀퍼스트가 사내에서 쓰던 도구를 마켓용으로 다듬고 있어요. 출시되면 구독 중인 플랜에서 바로 선택할 수 있습니다."
-                  />
-                ) : null}
-                {cat !== "all" && shown.length === 0 ? (
-                  <ComingCard
-                    title={`${categoryLabel(cat)} 솔루션은 출시 준비 중입니다`}
-                    body={`${APP_CATEGORIES.find((c) => c.key === cat)?.desc ?? ""} — 출시되면 구독 중인 플랜에서 바로 선택할 수 있습니다.`}
                   />
                 ) : null}
               </div>
