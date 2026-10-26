@@ -191,7 +191,7 @@ export function MarketBuilder({ config, apps }: { config: MarketConfig; apps: Ma
           </div>
         </div>
 
-        <div className="mx-auto mt-8 grid max-w-5xl gap-4 md:grid-cols-3">
+        <div className="mt-8 grid gap-5 md:grid-cols-3">
           {config.plans.map((p) => (
             <PlanCard
               key={p.key}
@@ -420,12 +420,12 @@ function PlanCard({
   return (
     <div
       className={
-        "relative flex flex-col rounded-2xl border bg-card p-5 shadow-sm transition-shadow " +
+        "relative flex flex-col rounded-2xl border bg-card p-6 shadow-sm transition-shadow " +
         (active ? "border-secondary ring-2 ring-secondary/20" : "hover:shadow-md")
       }
     >
       {featured ? (
-        <span className="absolute -top-2.5 left-5 rounded-full bg-[#004AAD] px-2.5 py-0.5 text-[11px] font-bold text-white">추천</span>
+        <span className="absolute -top-2.5 left-6 rounded-full bg-[#004AAD] px-2.5 py-0.5 text-[11px] font-bold text-white">추천</span>
       ) : null}
       <p className="text-lg font-extrabold text-secondary">{p.name}</p>
       <p className="text-xs text-muted-foreground">{p.tagline || " "}</p>
@@ -437,7 +437,7 @@ function PlanCard({
             <span className="rounded bg-red-50 px-1.5 py-0.5 text-xs font-extrabold text-red-600">{compare.discountPct}% 할인</span>
           </>
         ) : (
-          <span className="text-xs text-muted-foreground">기준 요금</span>
+          <span className="text-xs font-semibold text-muted-foreground">1인 · 앱 1개 기준 요금</span>
         )}
       </p>
       <p>
@@ -451,12 +451,13 @@ function PlanCard({
             ? `연간 결제 시 ${free}개월 무료`
             : " "}
       </p>
-      {compare ? (
-        <p className="mt-1 text-[11px] text-muted-foreground">
-          초이스로 앱 {compare.apps}개 × {compare.users}명{p.apps === null ? "(현재 오픈 앱 기준)" : ""} 이용 시 대비
-        </p>
-      ) : null}
-      <ul className="mt-4 space-y-1.5 text-sm">
+      {/* 산정 기준 줄 — 초이스에도 같은 높이를 두어 카드끼리 기능 목록 시작선을 맞춘다 */}
+      <p className="mt-1 min-h-[2rem] text-[11px] leading-4 text-muted-foreground">
+        {compare
+          ? `초이스로 앱 ${compare.apps}개 × ${compare.users}명${p.apps === null ? "(현재 오픈 앱 기준)" : ""} 이용 시 대비`
+          : "다른 플랜 할인률의 기준이 되는 요금입니다"}
+      </p>
+      <ul className="mt-4 space-y-2 border-t border-border/40 pt-4 text-sm">
         <li className="flex gap-2">
           <span className="font-bold text-primary">✓</span>
           <span className="font-semibold text-secondary">{appsLabel(p)}</span>
