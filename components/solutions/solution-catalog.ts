@@ -8,13 +8,15 @@ import { SOLUTION_BRAND, type SolutionKey } from "@/lib/solution-pricing";
 export type SolutionFeature = { icon: string; title: string; body: string };
 export type SolutionStep = { title: string; body: string };
 export type SolutionStat = { value: string; label: string; sub?: string }; // sub: 원문에 있을 때만
+export type SolutionShot = { src: string; caption: string };
 export type SolutionInfo = {
-  key: SolutionKey;
+  key: SolutionKey | string; // 마켓 앱 키 (solution_apps.key)
   no: string;
   brand: string;
   name: string;
-  videoId: string;
-  videoTitle: string;
+  videoId?: string; // 소개 영상이 없으면 shots(화면 캡처)로 대신 보여준다
+  videoTitle?: string;
+  shots?: SolutionShot[];
   tagline: string;
   headline: [string, string]; // 2줄 (둘째 줄의 **강조** 포함)
   intro: string;
@@ -124,5 +126,44 @@ export const SOLUTION_CATALOG: SolutionInfo[] = [
       { value: "소재 단위", label: "개별 소재까지 정밀 최적화", sub: "캠페인 평균에 묻히지 않게" },
     ],
     closing: "목표만 정해두세요. 분석부터 조정·기록까지, 입찰 관리가 한 번에 돌아갑니다.",
+  },
+  {
+    // 사용자 제공 요약 문서(메타 광고 운영 솔루션) 기준. 캡처는 데모 모드 화면 (숫자는 데모용 난수).
+    key: "meta-ads",
+    no: "솔루션 4",
+    brand: "Meta Ads Dashboard",
+    name: "메타 광고 운영 솔루션",
+    tagline: "메타 광고 계정 여러 개를 한 화면에서 보고, 소재 중지·예산 증액·알람·리포트까지 정해진 규칙대로 자동으로 돌립니다.",
+    shots: [
+      { src: "/solutions/meta-ads/dashboard.webp", caption: "대시보드 — 계정 KPI와 일별 광고비·ROAS 추이" },
+      { src: "/solutions/meta-ads/campaigns.webp", caption: "캠페인 → 광고세트 → 광고 단계별 성과표" },
+      { src: "/solutions/meta-ads/breakdown.webp", caption: "상세 데이터 분석 — 성·연령, 노출 위치, 기기, 요일, 시간대" },
+      { src: "/solutions/meta-ads/targeting.webp", caption: "타겟팅 분석 — 타겟팅 조합별 누적 성과와 날짜별 추이" },
+      { src: "/solutions/meta-ads/reports.webp", caption: "자동 리포트 — 광고계정 × 일간·주간·월간 메일 구독" },
+    ],
+    headline: ["메타 광고 운영,", "규칙대로 **자동으로** 돌아갑니다"],
+    intro:
+      "페이스북·인스타그램 광고 계정 여러 개를 한 화면에서 조회하고, 정해진 규칙으로 소재 중지·일예산 증액·입찰 조정·알람·리포트 발송을 자동화하는 운영 솔루션입니다. 광고주에게는 자기 계정만 보이는 열람 계정을 따로 발급할 수 있습니다.",
+    chips: ["다계정 대시보드", "자동 최적화 4규칙", "입찰 가중치 조정", "자동 리포트"],
+    features: [
+      { icon: "📊", title: "다계정 성과 대시보드", body: "계정·기간·전환 기준(구매·잠재고객·등록완료 등)을 고르면 광고비·ROAS·CPA 등 핵심 지표가 한 화면에 나옵니다. **캠페인 → 광고세트 → 광고** 순으로 내려가 보고, 직전 기간 비교와 CSV 내보내기를 지원합니다." },
+      { icon: "🔍", title: "상세·타겟팅·소재 분석", body: "성·연령, 노출 위치, 기기, 요일, 시간대별 성과를 나눠 보고, **타겟팅 조합별 누적 성과**와 이미지·영상·캐러셀 유형별 소재 성과, 영상 시청 지속률까지 확인합니다." },
+      { icon: "⚙️", title: "자동 최적화 4규칙", body: "목적별 목표값(판매 ROAS·리드 CPA·트래픽 CPC·인지도 CPM)을 최근 성과로 산출해 **낭비 소재 중지, 일예산 증액, 피로 소재 중지, 급락 감지**를 매일 실행합니다. 규칙을 꺼두면 실제 변경 없이 알림만 남깁니다." },
+      { icon: "🎚", title: "입찰 가중치 조정안", body: "광고세트 안에서 성·연령, 노출 위치, 기기별 성과를 평균과 비교해 **입찰 배수 조정안**(×0.5~2.0)을 만듭니다. 조정안은 승인 대기로 올라오고, 사람이 승인해야 메타에 반영됩니다." },
+      { icon: "🔔", title: "사람이 판단할 알람만", body: "자동으로 처리한 건은 빼고 **진단 필요·승인 필요·판단 필요·룰 감시** 4가지로 알람을 모읍니다. 'ROAS 1.5 미만 3일 연속' 같은 조건을 직접 만들어 감시할 수도 있습니다." },
+      { icon: "📮", title: "자동 리포트 · 경쟁 소재 아카이브", body: "광고계정 × 일간·주간·월간 조합으로 **성과 리포트 메일**을 켜고 끄며, 계정별 받는 이메일을 따로 지정합니다. 등록한 경쟁 브랜드의 집행 중 광고는 매일 수집해 게재 기간이 긴 순으로 보여줍니다." },
+    ],
+    steps: [
+      { title: "광고 계정 연결", body: "**메타 마케팅 API**로 광고 계정을 연결하고, 담당자·광고주 계정을 만들어 광고주별로 볼 수 있는 계정을 매핑합니다." },
+      { title: "매일 데이터 준비 (00:00·03:00·09:00)", body: "자정과 새벽 3시에 최근 데이터를 미리 받아 화면을 빠르게 열고, 오전 9시에 전날 **광고세트별 타겟팅 설정과 성과**를 저장합니다." },
+      { title: "리포트 발송 (09:00)", body: "켜둔 조합대로 일간은 매일, 주간은 월요일, 월간은 1일에 **성과 리포트 메일**을 보냅니다." },
+      { title: "규칙 실행 (10:00)", body: "사용자 정의 룰, 초기 저조 알람, 입찰 가중치 분석, **자동 최적화 4규칙**을 실행하고 알람 메일을 보냅니다. 정오에는 경쟁 브랜드 광고를 수집합니다." },
+    ],
+    stats: [
+      { value: "4개 규칙", label: "매일 도는 자동 최적화", sub: "소재 중지 · 예산 증액 · 급락 감지" },
+      { value: "5가지 기준", label: "성과를 나눠 보는 상세 분석", sub: "성·연령 · 노출 위치 · 기기 · 요일 · 시간대" },
+      { value: "3단계 권한", label: "관리자 · 담당자 · 광고주", sub: "광고주는 매핑된 계정만 열람" },
+    ],
+    closing: "계정을 오가며 확인하던 메타 광고 운영, 이제 한 화면과 정해진 규칙으로 돌아갑니다.",
   },
 ];

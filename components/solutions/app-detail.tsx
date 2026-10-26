@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { YouTubeEmbed } from "@/components/payback/youtube-embed";
 import { appLabel, categoryLabel, type MarketApp } from "@/lib/solution-market";
 
-import { SOLUTION_CATALOG, type SolutionInfo } from "./solution-catalog";
+import { SOLUTION_CATALOG, type SolutionInfo, type SolutionShot } from "./solution-catalog";
 
 // 마켓 앱 상세 섹션 (#<앱 키> 앵커 — 페이백 랜딩의 "솔루션 자세히 알아보기" 링크가 사용).
 //  · 기존 3종: solution-catalog.ts의 상세 콘텐츠(영상·기능·실행 로직·도입 효과)
@@ -64,6 +66,43 @@ function VideoFrame({ videoId, title, trackingKey, label }: { videoId: string; t
         <span className="ml-2 truncate text-[11px] font-medium text-white/50">{title}</span>
       </div>
       <YouTubeEmbed videoId={videoId} videoTitle={title} trackingKey={trackingKey} label={label} />
+    </div>
+  );
+}
+
+// 소개 영상이 없는 앱 — 화면 캡처를 브라우저 프레임에 넣고 썸네일로 넘겨 본다
+function ShotGallery({ shots }: { shots: SolutionShot[] }) {
+  const [i, setI] = useState(0);
+  const cur = shots[Math.min(i, shots.length - 1)];
+  return (
+    <div className="self-start">
+      <div className="overflow-hidden rounded-2xl border border-white/15 bg-[#0B1530] shadow-xl">
+        <div className="flex items-center gap-1.5 border-b border-white/10 bg-white/5 px-4 py-2.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
+          <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
+          <span className="ml-2 truncate text-[11px] font-medium text-white/60">{cur.caption}</span>
+        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={cur.src} alt={cur.caption} width={1440} height={900} className="block aspect-[16/10] w-full bg-white object-cover object-top" />
+      </div>
+      <div className="mt-3 grid grid-cols-5 gap-2" role="tablist" aria-label="화면 캡처">
+        {shots.map((s, idx) => (
+          <button
+            key={s.src}
+            type="button"
+            role="tab"
+            aria-selected={idx === i}
+            aria-label={s.caption}
+            onClick={() => setI(idx)}
+            className={"overflow-hidden rounded-md border-2 transition " + (idx === i ? "border-secondary" : "border-transparent opacity-60 hover:opacity-100")}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={s.src} alt="" width={1440} height={900} loading="lazy" className="block aspect-[16/10] w-full bg-white object-cover object-top" />
+          </button>
+        ))}
+      </div>
+      <p className="mt-2 text-[11px] text-muted-foreground">데모 화면입니다 (숫자는 예시 데이터).</p>
     </div>
   );
 }
@@ -135,7 +174,11 @@ function RichBody({ app, rich: c, pick }: { app: MarketApp; rich: SolutionInfo; 
   return (
     <>
       <div className="mt-8 grid gap-6 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:items-stretch">
-        <VideoFrame videoId={c.videoId} title={c.videoTitle} trackingKey={`sub_${c.key}`} label={`${appLabel(app)} 소개 영상 보기`} />
+        {c.videoId ? (
+          <VideoFrame videoId={c.videoId} title={c.videoTitle ?? `${appLabel(app)} 소개 영상`} trackingKey={`sub_${c.key}`} label={`${appLabel(app)} 소개 영상 보기`} />
+        ) : c.shots && c.shots.length > 0 ? (
+          <ShotGallery shots={c.shots} />
+        ) : null}
         <PickCard app={app} chips={c.chips} pick={pick} />
       </div>
 

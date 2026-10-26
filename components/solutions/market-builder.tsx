@@ -11,6 +11,7 @@ import {
   appLabel,
   appsLabel,
   categoryLabel,
+  choiceComparison,
   encodeMarketSource,
   fitsPlan,
   freeMonths,
@@ -189,7 +190,7 @@ export function MarketBuilder({ config, apps }: { config: MarketConfig; apps: Ma
           </div>
         </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mx-auto mt-8 grid max-w-5xl gap-4 md:grid-cols-3">
           {config.plans.map((p) => (
             <PlanCard
               key={p.key}
@@ -198,6 +199,8 @@ export function MarketBuilder({ config, apps }: { config: MarketConfig; apps: Ma
               billing={billing}
               free={free}
               featured={p.key === config.featured}
+              compare={choiceComparison(p, config, available.length)}
+              yearlyMonths={config.yearlyMonths}
               active={p.key === planKey}
               availableCount={available.length}
               onChoose={() => choosePlan(p.key)}
@@ -401,6 +404,8 @@ function PlanCard({
   active,
   availableCount,
   onChoose,
+  compare,
+  yearlyMonths,
 }: {
   plan: MarketPlan;
   price: number;
@@ -410,7 +415,10 @@ function PlanCard({
   active: boolean;
   availableCount: number;
   onChoose: () => void;
+  compare: ReturnType<typeof choiceComparison>;
+  yearlyMonths: number;
 }) {
+  const listPrice = compare ? (billing === "yearly" ? compare.listMonthly * yearlyMonths : compare.listMonthly) : null;
   const coversAll = p.apps !== null && availableCount > 0 && p.apps >= availableCount;
   return (
     <div
@@ -424,7 +432,18 @@ function PlanCard({
       ) : null}
       <p className="text-lg font-extrabold text-secondary">{p.name}</p>
       <p className="text-xs text-muted-foreground">{p.tagline || " "}</p>
-      <p className="mt-4">
+      {/* 초이스 대비 할인 — 정가(초이스로 같은 구성을 쓸 때) 취소선 */}
+      <p className="mt-4 flex min-h-[22px] flex-wrap items-center gap-1.5 text-sm">
+        {compare && listPrice !== null ? (
+          <>
+            <span className="text-muted-foreground line-through decoration-muted-foreground/70">{won(listPrice)}</span>
+            <span className="rounded bg-red-50 px-1.5 py-0.5 text-xs font-extrabold text-red-600">{compare.discountPct}% 할인</span>
+          </>
+        ) : (
+          <span className="text-xs text-muted-foreground">기준 요금</span>
+        )}
+      </p>
+      <p>
         <span className="text-[28px] font-extrabold tracking-tight text-secondary">{won(price)}</span>
         <span className="ml-1 text-sm text-muted-foreground">/ {billing === "yearly" ? "연" : "월"}</span>
       </p>
@@ -435,6 +454,11 @@ function PlanCard({
             ? `연간 결제 시 ${free}개월 무료`
             : " "}
       </p>
+      {compare ? (
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          초이스로 앱 {compare.apps}개 × {compare.users}명{p.apps === null ? "(현재 오픈 앱 기준)" : ""} 이용 시 대비
+        </p>
+      ) : null}
       <ul className="mt-4 space-y-1.5 text-sm">
         <li className="flex gap-2">
           <span className="font-bold text-primary">✓</span>

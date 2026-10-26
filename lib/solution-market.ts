@@ -7,7 +7,7 @@ import type { SolutionAppRow, SolutionAppStatus } from "@/types/database";
 
 export type Billing = "monthly" | "yearly";
 
-export const PLAN_KEYS = ["choice", "plus", "pro", "max"] as const;
+export const PLAN_KEYS = ["choice", "plus", "max"] as const; // 프로 폐지 (D-090)
 export type PlanKey = (typeof PLAN_KEYS)[number];
 
 export type MarketPlan = {
@@ -20,7 +20,7 @@ export type MarketPlan = {
 };
 
 export type MarketConfig = {
-  plans: MarketPlan[]; // 항상 PLAN_KEYS 순서의 4개
+  plans: MarketPlan[]; // 항상 PLAN_KEYS 순서
   yearlyMonths: number; // 연간 결제 = 월 구독료 × N개월
   featured: PlanKey; // "추천" 배지 플랜
 };
@@ -29,12 +29,14 @@ export const DEFAULT_MARKET: MarketConfig = {
   plans: [
     { key: "choice", name: "초이스", tagline: "개인 사용", apps: 1, seats: 0, monthly: 29_000 },
     { key: "plus", name: "플러스", tagline: "소규모 팀", apps: 3, seats: 2, monthly: 49_000 },
-    { key: "pro", name: "프로", tagline: "성장하는 팀", apps: 6, seats: 5, monthly: 149_000 },
-    { key: "max", name: "맥스", tagline: "모든 앱 무제한", apps: null, seats: 10, monthly: 299_000 },
+    { key: "max", name: "맥스", tagline: "모든 앱 무제한", apps: null, seats: 10, monthly: 149_000 },
   ],
   yearlyMonths: 10,
   featured: "plus",
 };
+
+// 저장된 설정의 구조 버전. 버전이 다르면(프로 플랜이 있던 4단계 시절 저장분) 무시하고 기본값을 쓴다.
+export const MARKET_CONFIG_VERSION = 2;
 
 export const PLAN_LIMITS = { nameMax: 20, taglineMax: 40, appsMax: 99, seatsMax: 999, priceMax: 100_000_000 } as const;
 
@@ -50,6 +52,7 @@ export function parseMarketConfig(value: unknown): MarketConfig {
   const d = DEFAULT_MARKET;
   if (!value || typeof value !== "object") return d;
   const v = value as Record<string, unknown>;
+  if (v.version !== MARKET_CONFIG_VERSION) return d;
   const inPlans = Array.isArray(v.plans) ? (v.plans as unknown[]) : [];
 
   const plans = d.plans.map((def): MarketPlan => {
@@ -96,6 +99,24 @@ export function planUsers(plan: MarketPlan): number {
 
 export function fitsPlan(plan: MarketPlan, appCount: number): boolean {
   return plan.apps === null || appCount <= plan.apps;
+}
+
+// 초이스 대비 할인 — 초이스(1명·앱 1개)로 같은 구성(앱 N개 × 사용 인원)을 쓸 때의 금액을 정가로 본다.
+// 무제한 플랜은 현재 이용 가능한 앱 수로 계산. 초이스 자신이거나 할인이 없으면 null.
+export function choiceComparison(
+  plan: MarketPlan,
+  cfg: MarketConfig,
+  availableApps: number,
+): { listMonthly: number; discountPct: number; apps: number; users: number } | null {
+  const choice = cfg.plans.find((p) => p.key === "choice");
+  if (!choice || plan.key === "choice") return null;
+  const apps = plan.apps ?? availableApps;
+  if (apps <= 0) return null;
+  const users = planUsers(plan);
+  const unit = choice.monthly / ((choice.apps ?? 1) * planUsers(choice));
+  const listMonthly = Math.round(unit * apps * users);
+  const discountPct = Math.round((1 - plan.monthly / listMonthly) * 100);
+  return discountPct > 0 ? { listMonthly, discountPct, apps, users } : null;
 }
 
 // 앱 N개를 담을 수 있는 가장 저렴한 플랜
@@ -178,7 +199,7 @@ export type MarketApp = Omit<SolutionAppRow, "created_at" | "updated_at">;
 
 export const appLabel = (a: Pick<MarketApp, "brand" | "name">): string => a.brand?.trim() || a.name;
 
-// 카탈로그 테이블이 없을 때(마이그레이션 033 미적용)의 기본값 — 033 시드와 동일
+// 카탈로그 테이블이 없을 때(마이그레이션 033 미적용)의 기본값 — 033·038 시드와 동일
 export const DEFAULT_APPS: MarketApp[] = [
   {
     key: "log",
@@ -215,6 +236,18 @@ export const DEFAULT_APPS: MarketApp[] = [
     video_id: null,
     status: "available",
     sort: 30,
+  },
+  {
+    key: "meta-ads",
+    name: "메타 광고 운영 솔루션",
+    brand: "Meta Ads Dashboard",
+    category: "performance",
+    summary: "메타 광고 계정 여러 개를 한 화면에서 보고, 소재 중지·예산 증액·알람·리포트를 규칙대로 자동화합니다.",
+    description: null,
+    features: [],
+    video_id: null,
+    status: "available",
+    sort: 40,
   },
 ];
 
