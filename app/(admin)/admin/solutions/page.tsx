@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DateText } from "@/components/date-text";
 import { createClient } from "@/lib/supabase/server";
-import { appLabel, describeMarketSource, getPlan, parseMarketSource } from "@/lib/solution-market";
+import { appLabel, describeMarketSource, getPlan, isPlanKey, parseMarketSource } from "@/lib/solution-market";
 import { getMarketApps, getMarketConfig } from "@/lib/solution-market-server";
 import { describeSubscriptionSource, parseSubscriptionSource } from "@/lib/solution-pricing";
 import type { SolutionSubscriptionRow } from "@/types/database";
@@ -211,7 +211,7 @@ export default async function AdminSolutionsPage() {
                         {s.solution_login_id ? <p className="text-[11px] text-muted-foreground">ID {s.solution_login_id}</p> : null}
                       </td>
                       <td className="px-4 py-2.5 align-top">
-                        {s.plan ? (
+                        {isPlanKey(s.plan) ? (
                           <p className="mb-1 text-xs font-bold text-secondary">
                             {getPlan(config, s.plan).name}
                             <span className="ml-1 font-normal text-muted-foreground">
@@ -219,7 +219,7 @@ export default async function AdminSolutionsPage() {
                             </span>
                           </p>
                         ) : (
-                          <p className="mb-1 text-xs font-semibold text-muted-foreground">개별 요금(이전)</p>
+                          <p className="mb-1 text-xs font-semibold text-muted-foreground">{s.plan ? "프로(폐지된 플랜)" : "개별 요금(이전)"}</p>
                         )}
                         <div className="flex flex-wrap gap-1">
                           {s.solutions.map((k) => (
