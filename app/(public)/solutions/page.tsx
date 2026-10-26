@@ -3,20 +3,19 @@ import type { Metadata } from "next";
 import { ApplyCtaLink } from "@/components/analytics/apply-cta";
 import { SectionHeader } from "@/components/section-header";
 import { MarketBuilder } from "@/components/solutions/market-builder";
-import { APP_CATEGORIES } from "@/lib/solution-market";
 import { getMarketApps, getMarketConfig } from "@/lib/solution-market-server";
 
 export const metadata: Metadata = {
   title: "솔루션 마켓 — TeamFirst",
   description:
-    "퍼포먼스 마케팅·사내 업무·콘텐츠 제작 솔루션을 플랜 하나로. 필요한 앱만 골라 쓰고 구독 주기마다 바꾸는 팀퍼스트 솔루션 마켓. 광고비 페이백 고객은 퍼포먼스 마케팅 3종 무료.",
+    "팀퍼스트가 직접 만든 솔루션을 플랜 하나로. 필요한 앱만 골라 쓰고 구독 주기마다 바꾸는 팀퍼스트 솔루션 마켓. 광고비 페이백 고객은 퍼포먼스 마케팅 3종 무료.",
 };
 
 export const dynamic = "force-dynamic";
 
 export default async function SolutionMarketPage() {
   const [config, { apps }] = await Promise.all([getMarketConfig(), getMarketApps()]);
-  const listed = apps.filter((a) => a.status !== "hidden");
+  const openCount = apps.filter((a) => a.status === "available").length;
 
   return (
     <div>
@@ -29,16 +28,12 @@ export default async function SolutionMarketPage() {
             <br />
             플랜 하나로 필요한 앱만 골라 쓰고, 구독 주기마다 바꿀 수 있어요.
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            {APP_CATEGORIES.map((c) => {
-              const n = listed.filter((a) => a.category === c.key).length;
-              return (
-                <span key={c.key} className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
-                  {c.label}
-                  <span className="ml-1.5 font-medium text-white/60">{n > 0 ? `${n}개` : "준비 중"}</span>
-                </span>
-              );
-            })}
+          {/* 카테고리 구분 없이 오픈된 솔루션 수만 표기 */}
+          <div className="mt-6 flex justify-center">
+            <span className="rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-semibold text-white">
+              현재 오픈된 솔루션 <span className="text-white/90">{openCount}개</span>
+              <span className="ml-1.5 font-medium text-white/60">· 순차 추가 예정</span>
+            </span>
           </div>
           <p className="mt-5 text-xs text-white/50">모든 금액은 VAT 별도입니다.</p>
         </div>
