@@ -9,6 +9,7 @@ import { SURVEY_REASONS } from "@/lib/apply-survey";
 import { ApplicationActions, ClientActions } from "./board-cards";
 import { LEAD_STATUS_LABEL } from "../solutions/labels";
 import { LeadStatusEditor } from "../solutions/lead-row";
+import { consultLabelOfSource } from "@/lib/consult";
 
 export const dynamic = "force-dynamic";
 
@@ -94,7 +95,7 @@ export default async function PaybackPipelinePage() {
         .limit(30),
       supabase
         .from("pb_leads")
-        .select("id, brand_name, phone, expected_budget, source, status, memo, created_at")
+        .select("*") // 039(email·message) 적용 전에도 조회 유지
         .or("source.is.null,source.not.like.sub:%") // 솔루션 구독 문의는 /admin/solutions 에서 처리 (NULL source는 페이백 리드)
         .order("created_at", { ascending: false })
         .limit(30),
@@ -422,7 +423,9 @@ export default async function PaybackPipelinePage() {
                         : "—"}
                     </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">
-                      {l.source ?? "-"}
+                      {consultLabelOfSource(l.source) ? `상담 신청 · ${consultLabelOfSource(l.source)}` : (l.source ?? "-")}
+                      {l.email ? <span className="mt-0.5 block text-foreground">✉ {l.email}</span> : null}
+                      {l.message ? <span className="mt-0.5 block whitespace-pre-line text-foreground">“{l.message}”</span> : null}
                     </td>
                     <td className="px-4 py-2.5">
                       <LeadStatusEditor leadId={l.id} status={l.status} memo={l.memo} />

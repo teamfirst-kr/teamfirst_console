@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { appLabel, describeMarketSource, getPlan, isPlanKey, parseMarketSource } from "@/lib/solution-market";
 import { getMarketApps, getMarketConfig } from "@/lib/solution-market-server";
 import { describeSubscriptionSource, parseSubscriptionSource } from "@/lib/solution-pricing";
+import { consultLabelOfSource } from "@/lib/consult";
 import type { SolutionSubscriptionRow } from "@/types/database";
 
 import { LEAD_STATUS_LABEL, SUB_STATUS_LABEL, monthlyEquivalent } from "./labels";
@@ -25,6 +26,8 @@ type LeadRow = {
   source: string | null;
   status: "new" | "contacted" | "converted" | "closed";
   memo: string | null;
+  email?: string | null; // 039 (적용 전에는 없음)
+  message?: string | null; // 039
   created_at: string;
 };
 
@@ -33,7 +36,7 @@ export default async function AdminSolutionsPage() {
   const [{ data: leadData, error: leadError }, { data: subData, error: subError }, config, { apps, fallback }] = await Promise.all([
     supabase
       .from("pb_leads")
-      .select("id, brand_name, phone, expected_budget, source, status, memo, created_at")
+      .select("*") // 039(email·message) 적용 전에도 조회 유지
       .like("source", "sub:%")
       .order("created_at", { ascending: false })
       .limit(100),
@@ -48,6 +51,8 @@ export default async function AdminSolutionsPage() {
   };
   // 문의 내역: 마켓 플랜 문의 → 개편 전 개별 요금 문의 → 원문
   const describeLead = (source: string | null) => {
+    const consult = consultLabelOfSource(source);
+    if (consult) return `상담 신청 · ${consult}`;
     const m = parseMarketSource(source);
     if (m) return describeMarketSource(m, config, nameOf);
     return describeSubscriptionSource(source) ?? source ?? "-";
@@ -143,6 +148,8 @@ export default async function AdminSolutionsPage() {
                       </td>
                       <td className="px-4 py-2.5 align-top text-xs text-muted-foreground">
                         {describeLead(l.source)}
+                        {l.email ? <span className="mt-0.5 block text-foreground">✉ {l.email}</span> : null}
+                        {l.message ? <span className="mt-0.5 block whitespace-pre-line text-foreground">“{l.message}”</span> : null}
                       </td>
                       <td className="px-4 py-2.5 align-top whitespace-nowrap">
                         {l.expected_budget ? (
@@ -219,7 +226,7 @@ export default async function AdminSolutionsPage() {
                             </span>
                           </p>
                         ) : (
-                          <p className="mb-1 text-xs font-semibold text-muted-foreground">{s.plan ? "프로(폐지된 플랜)" : "개별 요금(이전)"}</p>
+                          <p className="mb-1 text-xs font-semibold text-muted-foreground">{s.plan ? "이전 6앱 플랜(폐지)" : "개별 요금(이전)"}</p>
                         )}
                         <div className="flex flex-wrap gap-1">
                           {s.solutions.map((k) => (

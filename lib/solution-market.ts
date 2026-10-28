@@ -28,7 +28,7 @@ export type MarketConfig = {
 export const DEFAULT_MARKET: MarketConfig = {
   plans: [
     { key: "choice", name: "초이스", tagline: "개인 사용", apps: 1, seats: 0, monthly: 29_000 },
-    { key: "plus", name: "플러스", tagline: "소규모 팀", apps: 3, seats: 2, monthly: 49_000 },
+    { key: "plus", name: "프로", tagline: "소규모 팀", apps: 3, seats: 2, monthly: 49_000 },
     { key: "max", name: "맥스", tagline: "모든 앱 무제한", apps: null, seats: 10, monthly: 149_000 },
   ],
   yearlyMonths: 10,
@@ -63,7 +63,8 @@ export function parseMarketConfig(value: unknown): MarketConfig {
     const name = typeof raw.name === "string" ? raw.name.trim() : "";
     return {
       key: def.key,
-      name: name && name.length <= PLAN_LIMITS.nameMax ? name : def.name,
+      // 플랜 표시명 변경(플러스 → 프로, D-091): 예전 이름으로 저장된 설정은 새 이름으로 바꿔 읽는다
+      name: name && name.length <= PLAN_LIMITS.nameMax && !(def.key === "plus" && name === "플러스") ? name : def.name,
       tagline: typeof raw.tagline === "string" ? raw.tagline.trim().slice(0, PLAN_LIMITS.taglineMax) : def.tagline,
       apps: raw.apps === null ? null : (intIn(raw.apps, 1, PLAN_LIMITS.appsMax) ?? def.apps),
       seats: intIn(raw.seats, 0, PLAN_LIMITS.seatsMax) ?? def.seats,
@@ -287,7 +288,7 @@ export function parseMarketSource(source: string | null | undefined): MarketSour
   return { plan: m[1], billing, apps, omitted };
 }
 
-// 관리자 표시용: "플러스 · 월간 · CatchLog, AUTO BID 외 2개"
+// 관리자 표시용: "프로 · 월간 · CatchLog, AUTO BID 외 2개"
 export function describeMarketSource(src: MarketSource, cfg: MarketConfig, nameOf: (key: string) => string): string {
   const appsText =
     src.apps === "all"
