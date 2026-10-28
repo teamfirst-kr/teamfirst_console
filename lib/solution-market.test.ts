@@ -17,7 +17,7 @@ import {
 } from "./solution-market";
 
 describe("플랜 기본값", () => {
-  it("초이스 29,000 / 플러스 49,000 / 맥스 149,000 (프로 폐지)", () => {
+  it("초이스 29,000 / 프로(plus) 49,000 / 맥스 149,000", () => {
     expect(DEFAULT_MARKET.plans.map((p) => [p.key, p.apps, p.seats, p.monthly])).toEqual([
       ["choice", 1, 0, 29_000],
       ["plus", 3, 2, 49_000],
@@ -59,9 +59,13 @@ describe("설정 병합 (DB 오버라이드)", () => {
     });
     expect(getPlan(cfg, "max").monthly).toBe(199_000);
     expect(getPlan(cfg, "plus").apps).toBe(3); // 0 → 기본값
-    expect(getPlan(cfg, "plus").name).toBe("플러스"); // 빈 이름 → 기본값
+    expect(getPlan(cfg, "plus").name).toBe("프로"); // 빈 이름 → 기본값
     expect(cfg.yearlyMonths).toBe(11);
     expect(cfg.featured).toBe("max");
+  });
+  it("예전 표시명 '플러스'로 저장된 설정은 '프로'로 읽는다", () => {
+    const cfg = parseMarketConfig({ version: MARKET_CONFIG_VERSION, plans: [{ key: "plus", name: "플러스", monthly: 49_000 }] });
+    expect(getPlan(cfg, "plus").name).toBe("프로");
   });
   it("프로가 있던 이전 버전 저장분·손상된 값은 기본값", () => {
     expect(parseMarketConfig({ plans: [{ key: "max", apps: null, monthly: 299_000 }] })).toEqual(DEFAULT_MARKET);
@@ -102,7 +106,7 @@ describe("구독 문의 source", () => {
   it("관리자 설명 문자열", () => {
     const src = parseMarketSource("sub:p=plus/Y/log+report+~2");
     expect(src && describeMarketSource(src, DEFAULT_MARKET, (k) => ({ log: "CatchLog", report: "AUTO REPORT" })[k] ?? k)).toBe(
-      "플러스 · 연간 · CatchLog, AUTO REPORT 외 2개",
+      "프로 · 연간 · CatchLog, AUTO REPORT 외 2개",
     );
   });
 });

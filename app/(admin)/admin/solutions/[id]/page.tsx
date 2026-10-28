@@ -46,7 +46,7 @@ export default async function EditSubscriptionPage({ params }: { params: Promise
         <h1 className="mt-2 text-2xl font-bold text-secondary">{s.brand_name} 구독 수정</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           등록 {s.created_at.slice(0, 10)} · 최근 수정 {s.updated_at.slice(0, 10)}
-          {isPlanKey(s.plan) ? null : s.plan ? " · 폐지된 프로 플랜 구독 — 초이스·플러스·맥스 중에서 다시 선택하세요" : " · 개편 전 개별 요금제 구독 — 플랜을 선택하면 마켓 플랜으로 전환됩니다"}
+          {isPlanKey(s.plan) ? null : s.plan ? " · 폐지된 이전 6앱 플랜 구독 — 초이스·프로·맥스 중에서 다시 선택하세요" : " · 개편 전 개별 요금제 구독 — 플랜을 선택하면 마켓 플랜으로 전환됩니다"}
         </p>
       </div>
       <SubscriptionForm id={s.id} initial={initial} config={config} apps={apps} />
