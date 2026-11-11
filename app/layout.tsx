@@ -7,9 +7,9 @@ import "./globals.css";
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://console.teamfirst.kr";
 const SITE_TITLE = "팀퍼스트";
 const SITE_DESCRIPTION =
-  "광고비 최대 12% 페이백 + 자동화 솔루션 3종 + 전문가 컨설팅. 대행권만 지정하면 운영은 그대로, 매월 현금으로 돌려드립니다.";
+  "광고비 최대 12% 페이백 · 마케팅 솔루션 마켓 · 검증된 마케팅 파트너 매칭. 광고 운영에 필요한 세 가지를 팀퍼스트 한 곳에서.";
 
-// 사이트 기본 메타데이터 — 페이백 서비스 기준 (링크 공유 미리보기 = OG/트위터 카드).
+// 사이트 기본 메타데이터 — 페이백·솔루션 마켓·파트너 매칭 3개 서비스 기준 (링크 공유 미리보기 = OG/트위터 카드, D-092).
 // OG 이미지는 app/opengraph-image.png 파일 규약으로 자동 연결(원본: docs/assets/og-image.html).
 // openGraph에 title/description을 두지 않아 각 페이지의 title/description이 그대로 og:title/og:description이 된다.
 export const metadata: Metadata = {
