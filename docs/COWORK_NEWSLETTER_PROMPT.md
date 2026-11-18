@@ -318,15 +318,35 @@
 #### 3-3. AI 생성 이미지 (ChatGPT)
 - **실사(사진풍)로 생성합니다. 일러스트·플랫 디자인·3D 렌더 금지** (2026-10-20 운영자 확정 — AI 생성 티가 나지 않게, 주제와 확실히 매치되는 장면).
 - 비율 16:9 (1536×864 권장). 자연광의 사무실·매장·업무 장면, 실제 노트북·스마트폰·모니터 화면 같은 구체적 소품으로 주제를 드러냅니다. 색감은 차분한 톤에 네이비·블루 포인트 정도로.
-- **인물(모델)은 얼굴 정면이 나오지 않게** 합니다: 뒷모습, 어깨 너머 시점(over-the-shoulder), 손·화면 클로즈업, 얼굴이 프레임 밖이거나 초점 밖. 프롬프트에 `face not visible, shot from behind / over-the-shoulder` 를 반드시 넣습니다.
+- **인물(모델)은 얼굴 정면이 나오지 않게** 합니다: 뒷모습, 옆모습(얼굴은 머리카락·그림자·초점 밖으로 가림), 어깨 너머 시점, 손·화면 클로즈업, 얼굴이 프레임 밖. 인물이 있으면 프롬프트에 `face not visible` 을 반드시 넣습니다.
 - 화면 속 UI 글자는 흐리게(blurred, illegible)
 - 이미지 안에 글자는 넣지 않거나 영문 2~3단어까지만 (한글 텍스트 금지 — 깨짐 방지)
 - 실제 브랜드 로고·캐릭터를 넣지 않습니다.
-- 프롬프트는 전부 영문으로 씁니다. 요일별 기본 프롬프트 (주제에 맞게 장면을 구체화):
-  - 월(매체 업데이트, 스크린샷이 없을 때): `Photorealistic photo, a marketer at an office desk seen from behind, looking at a large monitor showing an ad platform dashboard with campaign settings, natural window light, shallow depth of field, face not visible, screen text blurred and illegible, no logos, 16:9`
-  - 수(트렌드·컨퍼런스): `Photorealistic photo, over-the-shoulder view of a person holding a smartphone scrolling a vertical short-form video feed in a cafe, face not visible, natural light, screen text blurred, no logos, 16:9`
-  - 금(AI 노하우): `Photorealistic photo, close-up of hands typing on a laptop with an AI chat assistant and a spreadsheet open side by side, modern office, face not visible, screen text blurred and illegible, no logos, 16:9`
-- 생성 결과에 얼굴 정면, 읽히는 가짜 글자, 실제 브랜드 로고가 보이면 다시 생성합니다.
+
+##### 3-3-1. 커버 다양화 규칙 (2026-11-18 운영자 확정)
+목록 화면에서 커버가 매번 '여성 뒷모습 + 같은 구도'로 반복돼 중복돼 보였습니다. AI 커버는 아래 3가지 축을 **매 호 바꿔서** 만듭니다.
+
+| 축 | 선택지 | 프롬프트 조각 (영문) |
+| --- | --- | --- |
+| **모델** | 남성 / 여성 / 모델 없음 | `a man in his 30s` / `a woman in her 30s` / `no people, still life of objects only` |
+| **구도** | 좌 / 우 / 상 / 하 | 좌: `main subject on the left third of the frame, open space on the right` · 우: `main subject on the right third of the frame, open space on the left` · 상: `top-down overhead shot from directly above (flat lay)` · 하: `low-angle shot from below looking up` |
+| **장소·소품** | 사무실, 회의실, 매장·팝업, 카페, 집 책상, 거리·이동 중, 창고·물류, 촬영 스튜디오 등 | 주제에 맞게 구체 소품(노트북·스마트폰·인쇄 리포트·제품 패키지·POP 등)으로 |
+
+- **시작 전 확인**: 콘솔 목록에서 최근 AI 커버 3장(스크린샷 커버는 제외)을 보고, 각 커버의 모델·구도·장소를 확인합니다. 검수 메모에 `커버 조합:` 줄이 있으면 그 값을 쓰고, 없으면 썸네일을 보고 판단합니다.
+- **조합 규칙**
+  1. 모델: 직전 AI 커버와 **같은 값 금지**. 최근 3장 안에 '모델 없음'이 없으면 이번에는 '모델 없음'을 씁니다.
+  2. 구도: 직전 AI 커버와 **같은 값 금지**. 최근 3장에 쓴 구도를 피해 좌 → 우 → 상 → 하 순서로 남은 것을 고릅니다.
+  3. 장소: 최근 3장과 **같은 장소 금지** (예: 카페가 나왔으면 카페 제외).
+  4. 인물이 있을 때 '하(로우앵글)'는 얼굴이 보이기 쉬우므로 `face out of frame, cropped at the shoulders` 또는 `seen from behind` 를 함께 넣습니다. '상(탑뷰)'에서는 손·팔만 나오게 합니다.
+- **기본 프롬프트 틀** (슬롯을 채워서 씁니다):
+  `Photorealistic photo, 16:9 (1536x864). {장면: 장소와 주제 소품}. {모델 조각}. {구도 조각}. Natural light, shallow depth of field, calm tones with subtle navy and blue accents. {인물이 있으면: face not visible}. Screen text blurred and illegible. No logos, no brand names, no text in the image.`
+- **카테고리별 장면 예시** (구도·모델은 위 규칙대로 바꿔 끼웁니다)
+  - 매체 업데이트(스크린샷이 없을 때): 모니터에 광고 관리자 대시보드가 열린 책상, 예산표를 짚는 손, 회의실 화면에 띄운 캠페인 설정
+  - 트렌드·컨퍼런스: 숏폼 피드가 켜진 스마트폰, 팝업스토어 진열대, 제품 패키지와 촬영 조명, 컨퍼런스 객석과 무대 스크린
+  - AI 노하우: AI 채팅창과 스프레드시트가 나란히 열린 노트북, 출력된 리포트와 형광펜, 듀얼 모니터 작업 공간
+- 생성 후 확인: 얼굴 정면, 읽히는 가짜 글자, 실제 브랜드 로고가 보이거나 **고른 모델·구도와 다르게 나오면** 다시 생성합니다.
+- 검수 메모에 `커버 조합: 모델={남성/여성/없음} / 구도={좌/우/상/하} / 장소={…}` 한 줄을 남깁니다 (다음 호가 이 줄을 보고 겹치지 않게 고릅니다).
+- 섹션 이미지를 AI로 만들 때도 같은 호 안에서 커버와 모델·구도가 겹치지 않게 합니다.
 
 #### 3-4. 파일 조건
 - png/jpg/webp, 5MB 이하. 커버 포함 **총 4장을 넘기지 않습니다** (시스템 제한).
