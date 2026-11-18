@@ -471,6 +471,8 @@ export type Database = {
         status: LeadStatus; // 029
         memo: string | null; // 029
         handled_at: string | null; // 029
+        email: string | null; // 039 상담 신청
+        message: string | null; // 039 상담 신청 (기타 문의 내용)
         created_at: string;
       }>;
       solution_subscriptions: PbTable<SolutionSubscriptionRow>; // 029

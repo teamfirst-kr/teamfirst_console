@@ -11,6 +11,7 @@ import {
   appLabel,
   appsLabel,
   categoryLabel,
+  choiceComparison,
   encodeMarketSource,
   fitsPlan,
   freeMonths,
@@ -157,12 +158,13 @@ export function MarketBuilder({ config, apps }: { config: MarketConfig; apps: Ma
 
   const countOf = (key: AppCategory) => listed.filter((a) => a.category === key).length;
   const shown = cat === "all" ? listed : listed.filter((a) => a.category === cat);
-  const emptyCats = APP_CATEGORIES.filter((c) => countOf(c.key) === 0);
   const details = listed.filter(hasAppDetail);
   const tabs: { key: AppCategory | "all"; label: string; n: number }[] = [
     { key: "all", label: "전체", n: listed.length },
-    ...APP_CATEGORIES.map((c) => ({ key: c.key, label: c.label, n: countOf(c.key) })),
+    // 앱이 있는 카테고리만 탭으로 — 2개 이상일 때만 탭 노출 (출시 순서 미정 카테고리를 미리 드러내지 않음)
+    ...APP_CATEGORIES.map((c) => ({ key: c.key, label: c.label, n: countOf(c.key) })).filter((t) => t.n > 0),
   ];
+  const showTabs = tabs.length > 2;
 
   return (
     <>
@@ -189,7 +191,7 @@ export function MarketBuilder({ config, apps }: { config: MarketConfig; apps: Ma
           </div>
         </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 grid gap-5 md:grid-cols-3">
           {config.plans.map((p) => (
             <PlanCard
               key={p.key}
@@ -198,6 +200,8 @@ export function MarketBuilder({ config, apps }: { config: MarketConfig; apps: Ma
               billing={billing}
               free={free}
               featured={p.key === config.featured}
+              compare={choiceComparison(p, config, available.length)}
+              yearlyMonths={config.yearlyMonths}
               active={p.key === planKey}
               availableCount={available.length}
               onChoose={() => choosePlan(p.key)}
@@ -217,7 +221,8 @@ export function MarketBuilder({ config, apps }: { config: MarketConfig; apps: Ma
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
             <div>
-              <div className="flex flex-wrap gap-2" role="tablist" aria-label="카테고리">
+              {showTabs ? (
+              <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="카테고리">
                 {tabs.map((t) => (
                   <button
                     key={t.key}
@@ -231,31 +236,26 @@ export function MarketBuilder({ config, apps }: { config: MarketConfig; apps: Ma
                     }
                   >
                     {t.label}
-                    <span className="ml-1.5 text-xs font-medium opacity-70">{t.n > 0 ? t.n : "준비 중"}</span>
+                    <span className="ml-1.5 text-xs font-medium opacity-70">{t.n}</span>
                   </button>
                 ))}
               </div>
+              ) : null}
 
               {notice ? (
-                <p className="mt-4 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-800" role="status">
+                <p className="mb-4 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-800" role="status">
                   {notice}
                 </p>
               ) : null}
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 {shown.map((a) => (
                   <AppCard key={a.key} app={a} pick={pickOf(a)} hasDetail={hasAppDetail(a)} />
                 ))}
-                {cat === "all" && emptyCats.length > 0 ? (
+                {cat === "all" ? (
                   <ComingCard
-                    title={`${emptyCats.map((c) => c.label).join(" · ")} 솔루션도 순차 오픈합니다`}
+                    title="새로운 솔루션도 순차 오픈합니다"
                     body="팀퍼스트가 사내에서 쓰던 도구를 마켓용으로 다듬고 있어요. 출시되면 구독 중인 플랜에서 바로 선택할 수 있습니다."
-                  />
-                ) : null}
-                {cat !== "all" && shown.length === 0 ? (
-                  <ComingCard
-                    title={`${categoryLabel(cat)} 솔루션은 출시 준비 중입니다`}
-                    body={`${APP_CATEGORIES.find((c) => c.key === cat)?.desc ?? ""} — 출시되면 구독 중인 플랜에서 바로 선택할 수 있습니다.`}
                   />
                 ) : null}
               </div>
@@ -401,6 +401,8 @@ function PlanCard({
   active,
   availableCount,
   onChoose,
+  compare,
+  yearlyMonths,
 }: {
   plan: MarketPlan;
   price: number;
@@ -410,21 +412,35 @@ function PlanCard({
   active: boolean;
   availableCount: number;
   onChoose: () => void;
+  compare: ReturnType<typeof choiceComparison>;
+  yearlyMonths: number;
 }) {
+  const listPrice = compare ? (billing === "yearly" ? compare.listMonthly * yearlyMonths : compare.listMonthly) : null;
   const coversAll = p.apps !== null && availableCount > 0 && p.apps >= availableCount;
   return (
     <div
       className={
-        "relative flex flex-col rounded-2xl border bg-card p-5 shadow-sm transition-shadow " +
+        "relative flex flex-col rounded-2xl border bg-card p-6 shadow-sm transition-shadow " +
         (active ? "border-secondary ring-2 ring-secondary/20" : "hover:shadow-md")
       }
     >
       {featured ? (
-        <span className="absolute -top-2.5 left-5 rounded-full bg-[#004AAD] px-2.5 py-0.5 text-[11px] font-bold text-white">추천</span>
+        <span className="absolute -top-2.5 left-6 rounded-full bg-[#004AAD] px-2.5 py-0.5 text-[11px] font-bold text-white">추천</span>
       ) : null}
       <p className="text-lg font-extrabold text-secondary">{p.name}</p>
       <p className="text-xs text-muted-foreground">{p.tagline || " "}</p>
-      <p className="mt-4">
+      {/* 초이스 대비 할인 — 정가(초이스로 같은 구성을 쓸 때) 취소선 */}
+      <p className="mt-4 flex min-h-[22px] flex-wrap items-center gap-1.5 text-sm">
+        {compare && listPrice !== null ? (
+          <>
+            <span className="text-muted-foreground line-through decoration-muted-foreground/70">{won(listPrice)}</span>
+            <span className="rounded bg-red-50 px-1.5 py-0.5 text-xs font-extrabold text-red-600">{compare.discountPct}% 할인</span>
+          </>
+        ) : (
+          <span className="text-xs font-semibold text-muted-foreground">1인 · 앱 1개 기준 요금</span>
+        )}
+      </p>
+      <p>
         <span className="text-[28px] font-extrabold tracking-tight text-secondary">{won(price)}</span>
         <span className="ml-1 text-sm text-muted-foreground">/ {billing === "yearly" ? "연" : "월"}</span>
       </p>
@@ -435,7 +451,13 @@ function PlanCard({
             ? `연간 결제 시 ${free}개월 무료`
             : " "}
       </p>
-      <ul className="mt-4 space-y-1.5 text-sm">
+      {/* 산정 기준 줄 — 초이스에도 같은 높이를 두어 카드끼리 기능 목록 시작선을 맞춘다 */}
+      <p className="mt-1 min-h-[2rem] text-[11px] leading-4 text-muted-foreground">
+        {compare
+          ? `초이스로 앱 ${compare.apps}개 × ${compare.users}명${p.apps === null ? "(현재 오픈 앱 기준)" : ""} 이용 시 대비`
+          : "다른 플랜 할인률의 기준이 되는 요금입니다"}
+      </p>
+      <ul className="mt-4 space-y-2 border-t border-border/40 pt-4 text-sm">
         <li className="flex gap-2">
           <span className="font-bold text-primary">✓</span>
           <span className="font-semibold text-secondary">{appsLabel(p)}</span>

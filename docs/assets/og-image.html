@@ -2,36 +2,39 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<title>TeamFirst Payback OG</title>
+<title>TeamFirst OG</title>
 <!--
   링크 공유 미리보기(OG) 이미지 원본 템플릿 — app/opengraph-image.png 재생성용.
   재생성: 이 파일을 1200×630 뷰포트(Playwright/Chromium 등)로 열어 PNG 스크린샷 → app/opengraph-image.png 교체.
-  요율(최대 12%)·문구 변경 시 함께 갱신할 것 (docs/DECISIONS.md D-072).
+  세 가지 서비스(페이백 · 솔루션 마켓 · 파트너 매칭)를 같은 비중으로 보여준다 (docs/DECISIONS.md D-092).
+  요율(최대 12%)·문구 변경 시 app/layout.tsx 설명문·app/opengraph-image.alt.txt와 함께 갱신할 것.
 -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;800&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <style>
-  /* 로컬 렌더 시 Google Fonts(Noto Sans KR 500/800)를 링크하거나 Pretendard가 설치된 환경에서 연다. */
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 1200px; height: 630px; }
   body {
     position: relative; overflow: hidden; background: #111E38; color: #fff;
-    font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    font-family: "Pretendard Variable", "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
     -webkit-font-smoothing: antialiased; word-break: keep-all;
   }
   .glow { position: absolute; inset: 0;
     background:
-      radial-gradient(70% 70% at 15% 20%, rgba(37, 99, 235, 0.30), transparent 70%),
-      radial-gradient(50% 55% at 90% 90%, rgba(2, 132, 199, 0.18), transparent 70%); }
-  .wrap { position: relative; height: 100%; padding: 0 96px; display: flex; flex-direction: column; justify-content: center; }
-  .brand { display: flex; align-items: center; gap: 16px; }
-  .badge { width: 54px; height: 54px; border-radius: 14px; background: #fff; color: #111E38;
-    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 24px; letter-spacing: -1.5px;
-    font-family: "Helvetica Neue", Arial, "Noto Sans KR", sans-serif; }
-  .brand-name { font-size: 34px; font-weight: 800; letter-spacing: -0.5px; }
-  .h1 { margin-top: 44px; font-size: 96px; font-weight: 800; line-height: 1.12; letter-spacing: -3.5px; }
+      radial-gradient(60% 70% at 10% 10%, rgba(37, 99, 235, 0.32), transparent 70%),
+      radial-gradient(50% 55% at 95% 95%, rgba(2, 132, 199, 0.20), transparent 70%); }
+  .wrap { position: relative; height: 100%; padding: 64px 80px 68px; display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .badge { width: 48px; height: 48px; border-radius: 12px; background: #fff; color: #111E38;
+    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 21px; letter-spacing: -1.2px;
+    font-family: "Helvetica Neue", Arial, sans-serif; }
+  .brand-name { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
+  .h1 { margin-top: 36px; font-size: 62px; font-weight: 800; line-height: 1.18; letter-spacing: -2.4px; }
   .h1 .grad { background: linear-gradient(90deg, #ffffff 0%, #bae6fd 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .sub { margin-top: 22px; font-size: 40px; font-weight: 500; line-height: 1.4; color: rgba(255,255,255,0.82); letter-spacing: -1px; }
+  .pillars { margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .pillar { border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.06); border-radius: 20px; padding: 26px 26px 28px; }
+  .no { font-size: 15px; font-weight: 700; letter-spacing: 2px; color: #7FB2FF; }
+  .title { margin-top: 10px; font-size: 32px; font-weight: 800; letter-spacing: -1px; }
+  .desc { margin-top: 8px; font-size: 21px; font-weight: 500; line-height: 1.4; color: rgba(255,255,255,0.75); letter-spacing: -0.4px; }
 </style>
 </head>
 <body>
@@ -41,8 +44,24 @@
       <div class="badge">TF</div>
       <div class="brand-name">팀퍼스트</div>
     </div>
-    <div class="h1">광고비 <span class="grad">최대 12%</span> 페이백</div>
-    <div class="sub">+ 자동화 솔루션 3종 &nbsp;+ 전문가 컨설팅</div>
+    <div class="h1">광고 운영에 필요한 세 가지,<br><span class="grad">팀퍼스트 한 곳에서</span></div>
+    <div class="pillars">
+      <div class="pillar">
+        <div class="no">01 PAYBACK</div>
+        <div class="title">광고비 페이백</div>
+        <div class="desc">광고비 최대 12%를<br>매월 현금으로</div>
+      </div>
+      <div class="pillar">
+        <div class="no">02 SOLUTION MARKET</div>
+        <div class="title">마케팅 솔루션 마켓</div>
+        <div class="desc">필요한 자동화 솔루션만<br>골라 쓰는 구독</div>
+      </div>
+      <div class="pillar">
+        <div class="no">03 PARTNER MATCHING</div>
+        <div class="title">마케팅 파트너 매칭</div>
+        <div class="desc">검증된 대행사·마케터를<br>내 브랜드에 맞게</div>
+      </div>
+    </div>
   </div>
 </body>
 </html>

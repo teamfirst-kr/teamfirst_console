@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentRole } from "@/lib/auth";
-import { PLAN_KEYS, PLAN_LIMITS, type MarketConfig, type MarketPlan } from "@/lib/solution-market";
+import { MARKET_CONFIG_VERSION, PLAN_KEYS, PLAN_LIMITS, type MarketConfig, type MarketPlan } from "@/lib/solution-market";
 import type { Json } from "@/types/database";
 
 export type SaveMarketResult = { ok: true } | { ok: false; error: string };
@@ -45,7 +45,7 @@ export async function saveMarketConfig(input: MarketConfig): Promise<SaveMarketR
     const supabase = await createClient(); // pb_app_settings_admin RLS (is_admin) 경유
     const { error } = await supabase
       .from("pb_app_settings")
-      .upsert({ key: "solution_market", value: value as unknown as Json }, { onConflict: "key" });
+      .upsert({ key: "solution_market", value: { ...value, version: MARKET_CONFIG_VERSION } as unknown as Json }, { onConflict: "key" });
     if (error) return { ok: false, error: error.message };
   } catch {
     return { ok: false, error: "저장 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." };
