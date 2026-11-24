@@ -10,6 +10,8 @@ import { ApplicationActions, ClientActions } from "./board-cards";
 import { LEAD_STATUS_LABEL } from "../solutions/labels";
 import { LeadStatusEditor } from "../solutions/lead-row";
 import { consultLabelOfSource } from "@/lib/consult";
+import { maskEmail, maskPhone } from "@/lib/pii";
+import { PiiReveal } from "../_pii/pii-reveal";
 
 export const dynamic = "force-dynamic";
 
@@ -410,12 +412,7 @@ export default async function PaybackPipelinePage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-2.5">
-                      <a
-                        href={`tel:${l.phone.replace(/[^\d+]/g, "")}`}
-                        className="font-semibold text-primary hover:underline"
-                      >
-                        📞 {l.phone}
-                      </a>
+                      <PiiReveal entity="pb_leads" id={l.id} field="phone" masked={maskPhone(l.phone)} icon="📞" />
                     </td>
                     <td className="px-4 py-2.5">
                       {l.expected_budget
@@ -424,8 +421,8 @@ export default async function PaybackPipelinePage() {
                     </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">
                       {consultLabelOfSource(l.source) ? `상담 신청 · ${consultLabelOfSource(l.source)}` : (l.source ?? "-")}
-                      {l.email ? <span className="mt-0.5 block text-foreground">✉ {l.email}</span> : null}
-                      {l.message ? <span className="mt-0.5 block whitespace-pre-line text-foreground">“{l.message}”</span> : null}
+                      {l.email ? <PiiReveal entity="pb_leads" id={l.id} field="email" masked={maskEmail(l.email)} icon="✉" className="mt-0.5 flex" /> : null}
+                      {l.message ? <PiiReveal entity="pb_leads" id={l.id} field="message" masked={`💬 문의 내용 ${l.message.length}자`} className="mt-0.5 flex" /> : null}
                     </td>
                     <td className="px-4 py-2.5">
                       <LeadStatusEditor leadId={l.id} status={l.status} memo={l.memo} />
@@ -510,9 +507,7 @@ export default async function PaybackPipelinePage() {
                     </td>
                     <td className="px-4 py-2.5">
                       {s.phone ? (
-                        <span className="font-semibold text-primary">
-                          📞 {s.phone}
-                        </span>
+                        <PiiReveal entity="pb_apply_surveys" id={s.id} field="phone" masked={maskPhone(s.phone)} icon="📞" />
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}

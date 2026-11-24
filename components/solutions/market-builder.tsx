@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { submitQuickLead } from "@/app/(public)/apply/lead-actions";
+import { Honeypot } from "@/components/forms/honeypot";
 import { trackConversion } from "@/components/analytics/track";
 import {
   APP_CATEGORIES,
@@ -54,6 +55,7 @@ export function MarketBuilder({ config, apps }: { config: MarketConfig; apps: Ma
   const [notice, setNotice] = useState<string | null>(null);
   const [brand, setBrand] = useState("");
   const [phone, setPhone] = useState("");
+  const [hp, setHp] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -135,13 +137,7 @@ export function MarketBuilder({ config, apps }: { config: MarketConfig; apps: Ma
         phone,
         budget: price,
         source: encodeMarketSource(plan.key, billing, unlimited ? "all" : order(selected)),
-        label: "🧩 솔루션 마켓 구독 문의",
-        budgetLabel: `플랜 구독료 / ${unit} (VAT 별도)`,
-        extraRows: [
-          ["플랜", `${plan.name} · ${billing === "yearly" ? "연간" : "월간"} · ${seatsLabel(plan)}`],
-          ["선택 앱", unlimited ? "전체 앱 (무제한)" : pickedApps.map(appLabel).join(", ")],
-        ],
-        adminLink: "/admin/solutions#leads",
+        hp,
       });
       if (!res.ok) {
         setErr("접수에 실패했습니다. 잠시 후 다시 시도해주세요.");
@@ -346,6 +342,7 @@ export function MarketBuilder({ config, apps }: { config: MarketConfig; apps: Ma
                     <div className="mt-3 space-y-2">
                       <Input placeholder="브랜드명 *" value={brand} onChange={(e) => setBrand(e.target.value)} maxLength={100} />
                       <Input placeholder="연락처 * (010-0000-0000)" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" maxLength={20} />
+                      <Honeypot value={hp} onChange={setHp} />
                     </div>
                     {err ? <p className="mt-2 text-xs text-red-600">{err}</p> : null}
                     <Button className="mt-3 w-full" disabled={!valid || busy} onClick={submit}>

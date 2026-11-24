@@ -3,6 +3,9 @@ import Link from "next/link";
 import { DateText } from "@/components/date-text";
 import { createClient } from "@/lib/supabase/server";
 import { SURVEY_REASONS } from "@/lib/apply-survey";
+import { maskPhone } from "@/lib/pii";
+
+import { PiiReveal } from "../../_pii/pii-reveal";
 
 export const dynamic = "force-dynamic";
 
@@ -126,12 +129,7 @@ export default async function PaybackSurveysPage() {
                 {consultRequests.map((s) => (
                   <tr key={s.id} className="bg-primary/[0.03]">
                     <td className="px-4 py-2.5">
-                      <a
-                        href={`tel:${(s.phone ?? "").replace(/[^\d+]/g, "")}`}
-                        className="font-semibold text-primary hover:underline"
-                      >
-                        {s.phone}
-                      </a>
+                      <PiiReveal entity="pb_apply_surveys" id={s.id} field="phone" masked={maskPhone(s.phone)} />
                     </td>
                     <td className="px-4 py-2.5">
                       {s.brand_name ? (
@@ -207,9 +205,7 @@ export default async function PaybackSurveysPage() {
                     </td>
                     <td className="px-4 py-2.5">
                       {s.phone ? (
-                        <span className="font-semibold text-primary">
-                          📞 {s.phone}
-                        </span>
+                        <PiiReveal entity="pb_apply_surveys" id={s.id} field="phone" masked={maskPhone(s.phone)} icon="📞" />
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}

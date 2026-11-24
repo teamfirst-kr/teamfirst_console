@@ -8,7 +8,11 @@ import { appLabel, describeMarketSource, getPlan, isPlanKey, parseMarketSource }
 import { getMarketApps, getMarketConfig } from "@/lib/solution-market-server";
 import { describeSubscriptionSource, parseSubscriptionSource } from "@/lib/solution-pricing";
 import { consultLabelOfSource } from "@/lib/consult";
+import { maskEmail, maskPhone } from "@/lib/pii";
 import type { SolutionSubscriptionRow } from "@/types/database";
+
+import { PiiReveal } from "../_pii/pii-reveal";
+import { PiiAccessLog } from "../_pii/access-log";
 
 import { LEAD_STATUS_LABEL, SUB_STATUS_LABEL, monthlyEquivalent } from "./labels";
 import { LeadStatusEditor } from "./lead-row";
@@ -142,14 +146,12 @@ export default async function AdminSolutionsPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-2.5 align-top">
-                        <a href={`tel:${l.phone.replace(/[^\d+]/g, "")}`} className="font-semibold text-primary hover:underline">
-                          📞 {l.phone}
-                        </a>
+                        <PiiReveal entity="pb_leads" id={l.id} field="phone" masked={maskPhone(l.phone)} icon="📞" />
                       </td>
                       <td className="px-4 py-2.5 align-top text-xs text-muted-foreground">
                         {describeLead(l.source)}
-                        {l.email ? <span className="mt-0.5 block text-foreground">✉ {l.email}</span> : null}
-                        {l.message ? <span className="mt-0.5 block whitespace-pre-line text-foreground">“{l.message}”</span> : null}
+                        {l.email ? <PiiReveal entity="pb_leads" id={l.id} field="email" masked={maskEmail(l.email)} icon="✉" className="mt-0.5 flex" /> : null}
+                        {l.message ? <PiiReveal entity="pb_leads" id={l.id} field="message" masked={`💬 문의 내용 ${l.message.length}자`} className="mt-0.5 flex" /> : null}
                       </td>
                       <td className="px-4 py-2.5 align-top whitespace-nowrap">
                         {l.expected_budget ? (
@@ -213,7 +215,7 @@ export default async function AdminSolutionsPage() {
                         </Link>
                         <p className="text-xs text-muted-foreground">
                           {s.contact_name ? `${s.contact_name} · ` : ""}
-                          {s.phone}
+                          <PiiReveal entity="solution_subscriptions" id={s.id} field="phone" masked={maskPhone(s.phone)} />
                         </p>
                         {s.solution_login_id ? <p className="text-[11px] text-muted-foreground">ID {s.solution_login_id}</p> : null}
                       </td>
@@ -266,6 +268,8 @@ export default async function AdminSolutionsPage() {
           </div>
         )}
       </section>
+
+      <PiiAccessLog />
     </div>
   );
 }

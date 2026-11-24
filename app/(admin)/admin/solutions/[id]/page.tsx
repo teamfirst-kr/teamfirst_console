@@ -6,6 +6,8 @@ import { isPlanKey } from "@/lib/solution-market";
 import { getMarketApps, getMarketConfig } from "@/lib/solution-market-server";
 import type { SolutionSubscriptionRow } from "@/types/database";
 
+import { logPiiView } from "../../_pii/actions";
+
 import { SubscriptionForm, defaultSubscriptionValues } from "../subscription-form";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +18,8 @@ export default async function EditSubscriptionPage({ params }: { params: Promise
   const { data } = await supabase.from("solution_subscriptions").select("*").eq("id", id).maybeSingle();
   if (!data) notFound();
   const s = data as SolutionSubscriptionRow;
+  // 수정 화면은 연락처·이메일 원문이 필요 → 진입 자체를 열람 기록으로 남긴다 (D-093)
+  await logPiiView("solution_subscriptions", s.id, "all");
   const [config, { apps }] = await Promise.all([getMarketConfig(), getMarketApps()]);
 
   const initial = defaultSubscriptionValues({
