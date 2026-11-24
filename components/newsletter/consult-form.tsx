@@ -40,8 +40,6 @@ export function NewsletterConsultForm({ slug, defaultBrand }: { slug: string; de
             phone,
             budget,
             source: `nl:${slug}`.slice(0, 40),
-            label: "뉴스레터 상담 신청",
-            budgetLabel: "월 마케팅 예산",
           });
           if (!r.ok) {
             setErr("접수에 실패했습니다. 잠시 후 다시 시도해주세요.");

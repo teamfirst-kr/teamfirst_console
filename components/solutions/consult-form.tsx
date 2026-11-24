@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Honeypot } from "@/components/forms/honeypot";
 import { submitConsultation } from "@/app/(public)/solutions/consult-actions";
 import { trackConversion } from "@/components/analytics/track";
 import { CONSULT_OTHER_MIN, CONSULT_TYPES, type ConsultType } from "@/lib/consult";
@@ -16,6 +17,7 @@ export function MarketConsultForm() {
   const [brand, setBrand] = useState("");
   const [type, setType] = useState<ConsultType | null>(null);
   const [message, setMessage] = useState("");
+  const [hp, setHp] = useState("");
   const [pending, start] = useTransition();
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -39,13 +41,13 @@ export function MarketConsultForm() {
 
   return (
     <form
-      className="rounded-2xl border bg-card p-6 shadow-sm md:p-8"
+      className="relative rounded-2xl border bg-card p-6 shadow-sm md:p-8"
       onSubmit={(e) => {
         e.preventDefault();
         if (!valid || pending || !type) return;
         setErr(null);
         start(async () => {
-          const r = await submitConsultation({ email, phone, brand, type, message });
+          const r = await submitConsultation({ email, phone, brand, type, message, hp });
           if (!r.ok) {
             setErr(r.error);
             return;
@@ -66,6 +68,7 @@ export function MarketConsultForm() {
           <Input value={brand} onChange={(e) => setBrand(e.target.value)} maxLength={100} placeholder="브랜드명" required />
         </Field>
       </div>
+      <Honeypot value={hp} onChange={setHp} />
 
       <fieldset className="mt-6">
         <legend className="mb-2 text-sm font-semibold text-secondary">상담 종류</legend>
@@ -109,7 +112,12 @@ export function MarketConsultForm() {
 
       {err ? <p className="mt-4 text-sm text-destructive">{err}</p> : null}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground">입력하신 정보는 상담 안내 목적으로만 사용합니다.</p>
+        <p className="text-xs text-muted-foreground">
+          입력하신 정보는 상담 안내 목적으로만 사용하며, 암호화 전송·운영자 전용 접근으로 보호됩니다.{" "}
+          <a href="/privacy" className="underline underline-offset-2 hover:text-secondary">
+            개인정보처리방침
+          </a>
+        </p>
         <Button type="submit" size="lg" disabled={!valid || pending}>
           {pending ? "접수 중…" : "상담 신청하기"}
         </Button>
